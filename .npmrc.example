@@ -1,0 +1,4 @@
+# Copy to .npmrc and set a GitHub token with read:packages to install
+# @gerem66/deveye-types from GitHub Packages.
+@gerem66:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}

@@ -1,0 +1,21 @@
+name: CI
+
+on:
+    push:
+    pull_request:
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  registry-url: https://npm.pkg.github.com
+            # deveye-types is published on GitHub Packages: authenticate the
+            # @gerem66 scope (see .npmrc.example for the local equivalent).
+            - run: npm install
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - run: npm run ci

@@ -1,0 +1,50 @@
+/*
+ * Feature styles: a CSS module, scoped by construction. Use DevEye's design
+ * tokens (var(--...)) instead of hard-coded colors so the feature follows the
+ * theme. The committed .d.ts next to this file types the class names; keep it
+ * in sync when you add classes.
+ */
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm, 8px);
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm, 8px);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm, 6px);
+    background: var(--surface-2, rgba(255, 255, 255, 0.04));
+}
+
+.label {
+    font-weight: 600;
+}
+
+.when {
+    color: var(--text-secondary, #9aa4b2);
+    font-size: 0.85rem;
+}
+
+.due {
+    color: var(--accent, #22d3ee);
+}
+
+.form {
+    display: flex;
+    gap: var(--space-sm, 8px);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.empty {
+    color: var(--text-secondary, #9aa4b2);
+}
+
+.widgetNext {
+    font-size: 1.4rem;
+    font-weight: 700;
+}
