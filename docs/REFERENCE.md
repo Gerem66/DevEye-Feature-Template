@@ -59,8 +59,11 @@ and the app-provided `deveye-sdk-client` module.
 - Data: `useResource(key, load, fallback, deps?)`, `invalidate(...keys)`,
   `useResourceVersion(key)`, `humanizeError(e, fallback)`,
   `featureApi(manifest)` (typed `send`).
-- Live: `useLiveSegment`, `useLiveItemTarget`, `useLiveOutline(s)`,
-  `useTypers`, `useTypingSignal`.
+- Live: `useLiveSegment`, `useLiveItemTarget`, `useLiveOutline(s)` (+
+  `LiveOutlineProps`), `useTypers`, `useTypingSignal`.
+- Push events: `onServerEvent(event, schema, cb)` (typed server-push
+  subscription), `onSocketOpen(cb)` (the resubscribe-on-reconnect primitive).
+- Shared helpers: `formatBytesFr`, `DeviceFolderPicker`, `useDevices`.
 - Rights and workspace: `useWorkspacePermissions()` (incl. `canExtra`,
   `extraValue`), `useActiveWorkspace()` (`.kind`), `useFeatureLifecycle`.
 

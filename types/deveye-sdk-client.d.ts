@@ -62,6 +62,12 @@ declare module 'deveye-sdk-client' {
     /** The canonical settings row classes (channelRow, field, sectionHint...). */
     export const settingsStyles: Readonly<Record<string, string>>;
 
+    // ── Server push events ─────────────────────────────────────────────────
+    /** Typed push subscription: filters `event`, safeParses, drops mismatches. */
+    export function onServerEvent<T>(event: string, schema: ZodType<T>, cb: (payload: T) => void): () => void;
+    /** Fires now if the socket is open, then on every reopen (resubscribe primitive). */
+    export function onSocketOpen(cb: () => void): () => void;
+
     // ── Data ───────────────────────────────────────────────────────────────
     export function useResource<T>(
         key: string,
@@ -92,6 +98,18 @@ declare module 'deveye-sdk-client' {
     ): void;
     export function useTypers(): { connId: string; userId: number }[];
     export function useTypingSignal(): { onInput: () => void; stop: () => void };
+
+    // ── Shared helpers ─────────────────────────────────────────────────────
+    /** Byte size with French units (o / Ko / Mo / Go). */
+    export function formatBytesFr(bytes: number): string;
+    /** Folder picker over an enrolled device's filesystem (shared with Backup). */
+    export const DeviceFolderPicker: ComponentType<Record<string, unknown>>;
+    /** The workspace's enrolled devices, live. */
+    export function useDevices(): { id: string; name: string; online: boolean }[];
+    export interface LiveOutlineProps {
+        'data-live-peer'?: true;
+        style?: Record<string, unknown>;
+    }
 
     // ── Rights and workspace ───────────────────────────────────────────────
     export function useWorkspacePermissions(): {
