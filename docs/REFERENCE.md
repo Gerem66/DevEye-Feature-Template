@@ -39,7 +39,9 @@ and the app-provided `deveye-sdk-client` module.
 ## `deveye-types/sdk/client`
 
 - `FeatureClient`: your `./client` export: `Widget` (no props),
-  `Full({ closeFeature })`, `settingsPanels?`, `cacheDurationMinutes?`,
+  `Full({ closeFeature })`, `settingsPanels?`, `TopbarWidget?` (no props: it
+  may only show what your own commands return, which the server authorizes
+  against the caller's grants), `cacheDurationMinutes?`,
   `preload?`, `holdSecrecy?`.
 - `SettingsPanelProps`: `{ scope, canWrite }`; `SdkSettingsScope` is
   `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`.
@@ -57,12 +59,13 @@ and the app-provided `deveye-sdk-client` module.
   `SegmentedControl`, `Dialog`, `StatusBadge`, `ConfirmDialog`,
   `FeatureSettingsButton`, `settingsStyles` (the canonical settings rows).
 - Data: `useResource(key, load, fallback, deps?)`, `invalidate(...keys)`,
-  `useResourceVersion(key)`, `humanizeError(e, fallback)`,
-  `featureApi(manifest)` (typed `send`).
+  `useResourceVersion(key)`, `onResourceChange(key, cb)`,
+  `humanizeError(e, fallback)`, `featureApi(manifest)` (typed `send`).
 - Live: `useLiveSegment`, `useLiveItemTarget`, `useLiveOutline(s)` (+
   `LiveOutlineProps`), `useTypers`, `useTypingSignal`.
 - Push events: `onServerEvent(event, schema, cb)` (typed server-push
-  subscription), `onSocketOpen(cb)` (the resubscribe-on-reconnect primitive).
+  subscription), `onSocketOpen(cb)` (the resubscribe-on-reconnect primitive),
+  `isSocketOpen()`.
 - Shared helpers: `formatBytesFr`, `DeviceFolderPicker`, `useDevices`.
 - Rights and workspace: `useWorkspacePermissions()` (incl. `canExtra`,
   `extraValue`), `useActiveWorkspace()` (`.kind`), `useFeatureLifecycle`.

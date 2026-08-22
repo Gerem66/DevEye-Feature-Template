@@ -19,6 +19,7 @@ command names, which is what makes `featureApi(manifest)` fully typed.
 | `sources` | the feature-scope Sources tab (API keys, destinations); `hint` is its lead sentence |
 | `shareTier` | must be `'never'` for external modules for now |
 | `tile.compact` | half-height card, like device tiles |
+| `topbarWidget` | offers your `TopbarWidget` component in the navbar widget picker; `description` is its subtitle there |
 | `resources` | the client cache keys your topic refreshes |
 | `invalidatedByTopic` | subset of `resources` refreshed on broadcast (default: all) |
 | `itemSegment` | builds the live/teleport segment of one item, e.g. `` (id) => `job:${id}` `` |

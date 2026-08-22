@@ -44,6 +44,20 @@ No props, half the size, seconds of attention: show the one number or line
 that makes the card worth placing. `manifest.tile.compact` halves its height
 if that suits it.
 
+## The topbar mini-widget (optional)
+
+Declare `topbarWidget: { description: '...' }` in the manifest and export a
+`TopbarWidget` component from the client entry: members can then pin it to the
+navbar, next to the native status widgets. It renders inside the host's status
+chip (frame and tooltip provided), so keep it to a glyph and a number.
+
+It receives **no props, on purpose**: that is the security contract. The host
+hands it nothing (no other feature's data, no workspace internals); everything
+it shows must come through your own feature's commands, which the server
+authorizes against the caller's grants. The host also only offers and mounts
+it for members whose role grants your feature. Freedom inside the box, nothing
+outside it.
+
 ## The full view
 
 Opened when the card expands. `cacheDurationMinutes` decides how long it stays

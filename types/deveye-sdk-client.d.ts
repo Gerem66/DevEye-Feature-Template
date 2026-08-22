@@ -67,6 +67,8 @@ declare module 'deveye-sdk-client' {
     export function onServerEvent<T>(event: string, schema: ZodType<T>, cb: (payload: T) => void): () => void;
     /** Fires now if the socket is open, then on every reopen (resubscribe primitive). */
     export function onSocketOpen(cb: () => void): () => void;
+    /** Whether the socket is open right now (to tell a real error from an outage). */
+    export function isSocketOpen(): boolean;
 
     // ── Data ───────────────────────────────────────────────────────────────
     export function useResource<T>(
@@ -77,6 +79,8 @@ declare module 'deveye-sdk-client' {
     ): { data: T | null; error: string | null; loading: boolean; reload: () => void };
     export function invalidate(...keys: string[]): void;
     export function useResourceVersion(key: string): number;
+    /** Imperative subscription to one resource key's invalidations. Returns the unsubscribe. */
+    export function onResourceChange(key: string, cb: () => void): () => void;
     export function humanizeError(error: unknown, fallback: string): string;
     export function featureApi<const M extends FeatureManifest>(manifest: M): {
         send<N extends M['commands'][number]['command']>(
