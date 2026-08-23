@@ -7,7 +7,7 @@ peer's location. Most of it costs you nothing.
 ## What is free
 
 - **Presence and cursors**: as soon as your feature is in the catalog, the
-  presence widget shows "Alice · Countdown" and cursors render over your view.
+  presence widget shows "Alice · Counter" and cursors render over your view.
 - **Refresh on writes**: your `mutates` commands broadcast your topic; peers'
   clients re-fetch your resources. Covered in [05-client](05-client.md).
 - **Card outlines**: the home card of a feature a peer is inside gets their

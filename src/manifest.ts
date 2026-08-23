@@ -1,6 +1,6 @@
 import type { FeatureManifest } from 'deveye-types/sdk';
 
-import { countdownCommands } from './contracts/commands';
+import { counterCommands } from './contracts/commands';
 
 /**
  * The manifest: everything DevEye needs to know about this feature, once.
@@ -14,11 +14,11 @@ import { countdownCommands } from './contracts/commands';
  */
 export const manifest = {
     /** `x-<slug>`: the prefix guarantees no collision with built-in features. */
-    id: 'x-countdown',
-    label: 'Countdown',
-    description: 'Deadlines with a shared countdown, and a notification when one lands.',
-    /** Ships as assets/icons/hourglass.svg; DevEye copies and namespaces it. */
-    icon: 'hourglass',
+    id: 'x-counter',
+    label: 'Counter',
+    description: 'A shared counter: one big button, the increment done server-side, every click journaled plain AND encrypted.',
+    /** Ships as assets/icons/tally.svg; DevEye copies and namespaces it. */
+    icon: 'tally',
     category: 'daily',
 
     /** Opens the Notifications settings tab and the channels grant in roles. */
@@ -27,7 +27,7 @@ export const manifest = {
     shareTier: 'never',
 
     /** One resource key: what `useResource` caches and the live topic refreshes. */
-    resources: ['x-countdown.list'],
+    resources: ['x-counter.state'],
 
     settings: { feature: ['general'] },
 
@@ -38,9 +38,9 @@ export const manifest = {
      */
     extraPermissions: [
         {
-            key: 'manageDeadlines',
-            label: 'Add and remove deadlines',
-            description: 'Without it, write access only lets a member edit their own private notes.',
+            key: 'reset',
+            label: 'Reset the counter',
+            description: 'Write access clicks; resetting wipes the value and its journal for everyone.',
             type: 'toggle'
         }
     ],
@@ -48,5 +48,5 @@ export const manifest = {
     /** Native features this module calls through `ctx.deveye`. Undeclared = forbidden. */
     nativeCapabilities: ['notify'],
 
-    commands: countdownCommands
+    commands: counterCommands
 } satisfies FeatureManifest;

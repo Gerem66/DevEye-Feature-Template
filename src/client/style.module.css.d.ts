@@ -1,11 +1,16 @@
 declare const styles: {
-    readonly list: string;
-    readonly row: string;
-    readonly label: string;
+    readonly root: string;
+    readonly hero: string;
+    readonly value: string;
+    readonly bigButton: string;
+    readonly clickError: string;
+    readonly journal: string;
     readonly when: string;
-    readonly due: string;
-    readonly form: string;
+    readonly plain: string;
+    readonly sealed: string;
     readonly empty: string;
-    readonly widgetNext: string;
+    readonly widget: string;
+    readonly widgetValue: string;
+    readonly widgetHint: string;
 };
 export = styles;

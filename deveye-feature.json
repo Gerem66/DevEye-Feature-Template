@@ -1,6 +1,6 @@
 {
-    "id": "x-countdown",
+    "id": "x-counter",
     "tables": [],
-    "icons": ["hourglass"],
+    "icons": ["tally"],
     "minTypesVersion": "0.15.0"
 }

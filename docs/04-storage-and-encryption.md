@@ -33,7 +33,7 @@ returning garbage.
 
 `ctx.store` is scoped to your feature and the request's workspace. `putJson` /
 `getJson` take a zod schema, so what you persist is validated both ways. Ideal
-for lists, settings, small documents; the Countdown example stores everything
+for lists, settings, small documents; the Counter example stores everything
 this way and ships zero migrations.
 
 ## Your own tables

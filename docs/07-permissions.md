@@ -26,7 +26,7 @@ row in every role editor, rendered by DevEye:
 
 ```ts
 extraPermissions: [
-    { key: 'manageDeadlines', label: '...', description: '...', type: 'toggle' },
+    { key: 'reset', label: '...', description: '...', type: 'toggle' },
     { key: 'exportScope', label: '...', description: '...', type: 'choice',
       options: [{ value: 'own', label: '...' }, { value: 'all', label: '...' }],
       default: 'own', ownerValue: 'all' }
@@ -39,8 +39,8 @@ Two bounded types only. The semantics are fail-closed and non-negotiable:
 - `choice`: absent = `default`, which MUST be the least-privileged option.
   The owner = `ownerValue`.
 
-Enforce them declaratively (`access: { extras: ['manageDeadlines'] }`, all
-required) or imperatively (`ctx.canExtra('manageDeadlines')`,
+Enforce them declaratively (`access: { extras: ['reset'] }`, all
+required) or imperatively (`ctx.canExtra('reset')`,
 `ctx.extraValue('exportScope')`) when the answer shapes the result instead of
 gating the command.
 

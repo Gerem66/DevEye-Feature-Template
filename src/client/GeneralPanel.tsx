@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { featureApi, settingsStyles as shell, SegmentedControl } from 'deveye-sdk-client';
+import { Button, featureApi, invalidate, SegmentedControl, settingsStyles as shell, useWorkspacePermissions } from 'deveye-sdk-client';
 import type { SettingsPanelProps } from 'deveye-types/sdk/client';
 
 import { manifest } from '../manifest';
 
 const api = featureApi(manifest);
 
-const LEAD_OPTIONS = [
-    { value: '0', label: 'À l’échéance' },
-    { value: '60', label: '1 h avant' },
-    { value: '1440', label: '1 jour avant' }
+const STEP_OPTIONS = [
+    { value: '1', label: '+1' },
+    { value: '5', label: '+5' },
+    { value: '10', label: '+10' }
 ] as const;
 
 /**
@@ -19,27 +19,51 @@ const LEAD_OPTIONS = [
  * settings look and behave the same.
  */
 export default function GeneralPanel({ canWrite }: SettingsPanelProps) {
-    const [lead, setLead] = useState('0');
+    // UI hides, the server authorizes: `reset` is the extra permission the
+    // manifest declares, granted per role (the owner always has it).
+    const canReset = useWorkspacePermissions().canExtra('x-counter', 'reset');
+    const [step, setStep] = useState('1');
 
     useEffect(() => {
-        void api.send('x-countdown.list', {}).then((res) => setLead(String(res.settings.leadMinutes)));
+        void api.send('x-counter.state', {}).then((res) => setStep(String(res.step)));
     }, []);
 
     const save = (value: string): void => {
-        setLead(value);
-        void api.send('x-countdown.settingsSet', { leadMinutes: Number(value) });
+        setStep(value);
+        void api
+            .send('x-counter.stepSet', { step: Number(value) as 1 | 5 | 10 })
+            .then(() => invalidate('x-counter.state'));
+    };
+
+    const reset = (): void => {
+        void api.send('x-counter.reset', {}).then(() => invalidate('x-counter.state'));
     };
 
     return (
         <div className={shell.section}>
-            <span className={shell.sectionLabel}>Notification</span>
-            <p className={shell.sectionHint}>Quand prévenir, par rapport à l’échéance.</p>
+            <span className={shell.sectionLabel}>Pas du compteur</span>
+            <p className={shell.sectionHint}>Combien chaque clic ajoute, pour tout l’espace.</p>
             <SegmentedControl
-                aria-label='Moment de la notification'
-                value={lead}
-                options={[...LEAD_OPTIONS]}
+                aria-label='Pas du compteur'
+                value={step}
+                options={[...STEP_OPTIONS]}
                 onChange={canWrite ? save : () => undefined}
             />
+
+            {canReset && (
+                <>
+                    <span className={shell.sectionLabel}>Remise à zéro</span>
+                    <p className={shell.sectionHint}>
+                        Efface la valeur et le journal, pour tout le monde. L’action est tracée dans le journal
+                        d’audit.
+                    </p>
+                    <div className={shell.sectionActions}>
+                        <Button variant='danger' onClick={reset}>
+                            Remettre à zéro
+                        </Button>
+                    </div>
+                </>
+            )}
         </div>
     );
 }

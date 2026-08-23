@@ -5,14 +5,14 @@ as `serverEntry.features`.
 
 ```ts
 defineSdkFeature({
-    ...countdownAdd,                       // { command, input, output } from your contracts
-    access: { level: 'write', extras: ['manageDeadlines'] },
+    ...counterReset,                       // { command, input, output } from your contracts
+    access: { level: 'write', extras: ['reset'] },
     mutates: true,                         // broadcast your topic on success
     handler: async (ctx, input) => {
         // input is already validated; the caller already has write access
-        // AND the manageDeadlines extra in this workspace.
+        // AND the reset extra in this workspace.
         ...
-        return { countdown };              // validated against `output` before it leaves
+        return state;                      // validated against `output` before it leaves
     }
 });
 ```

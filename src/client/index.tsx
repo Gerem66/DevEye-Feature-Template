@@ -1,6 +1,6 @@
 import type { FeatureClient } from 'deveye-types/sdk/client';
 
-import CountdownFull, { CountdownWidget } from './Countdown';
+import CounterFull, { CounterWidget } from './Counter';
 import GeneralPanel from './GeneralPanel';
 
 /**
@@ -9,8 +9,8 @@ import GeneralPanel from './GeneralPanel';
  * DevEye renders it for you from the manifest).
  */
 export const clientEntry: FeatureClient = {
-    Widget: CountdownWidget,
-    Full: CountdownFull,
+    Widget: CounterWidget,
+    Full: CounterFull,
     settingsPanels: { general: GeneralPanel },
     cacheDurationMinutes: 10
 };

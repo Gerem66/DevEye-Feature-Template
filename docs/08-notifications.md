@@ -21,7 +21,7 @@ generic tab: you write no UI.
 ```ts
 // in a handler
 await ctx.deveye.notify.send(
-    { subject: 'Deadline: demo', body: '"Demo day" is due.', payload: { id } },
+    { subject: 'Compteur : 100 atteint', body: 'Le compteur vient de passer 100.', payload: { value } },
     { itemId }                      // optional, when routes are per item
 );
 
@@ -34,7 +34,8 @@ Everything is off by default: no channel or no route means nothing is sent,
 and `send` resolves `false`. Never treat that as an error; a workspace that
 chose silence chose it. If your feature marks things as "already notified", do
 it whether or not the send happened, or a later route configuration would
-replay history (see the Countdown service).
+replay history (see the milestone notification in the Counter example:
+sent from the increment handler itself, no background service needed).
 
 ## Test it end to end
 

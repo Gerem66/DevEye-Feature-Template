@@ -37,9 +37,9 @@ let touched = 0;
 for (const file of files) {
     const before = fs.readFileSync(file, 'utf8');
     const after = before
-        .replaceAll('x-countdown', `x-${slug}`)
-        .replaceAll('deveye-feature-countdown', `deveye-feature-${slug}`)
-        .replaceAll('ft_countdown_', `ft_${slug}_`);
+        .replaceAll('x-counter', `x-${slug}`)
+        .replaceAll('deveye-feature-counter', `deveye-feature-${slug}`)
+        .replaceAll('ft_counter_', `ft_${slug}_`);
     if (after !== before) {
         fs.writeFileSync(file, after);
         touched++;

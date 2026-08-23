@@ -1,7 +1,7 @@
 {
-    "name": "deveye-feature-countdown",
+    "name": "deveye-feature-counter",
     "version": "0.1.0",
-    "description": "A DevEye feature module. Built from DevEye-Feature-Template.",
+    "description": "DevEye feature template: a shared counter with one big button, a server-side increment, and a journal showing each value plain and encrypted.",
     "type": "module",
     "main": "src/index.ts",
     "types": "src/index.ts",

@@ -1,97 +1,117 @@
-import { randomUUID } from 'node:crypto';
+import { z } from 'zod';
 
-import { defineSdkFeature, FeatureError, type FeatureStore, type SdkFeatureContext } from 'deveye-types/sdk/server';
+import { defineSdkFeature, type SdkFeatureContext } from 'deveye-types/sdk/server';
 
+import { counterIncrement, counterReset, counterState, counterStepSet } from '../contracts/commands';
 import {
-    countdownAdd,
-    countdownList,
-    countdownNoteGet,
-    countdownNoteSet,
-    countdownRemove,
-    countdownSettingsSet
-} from '../contracts/commands';
-import { countdownListSchema, countdownSettingsSchema, DEFAULT_SETTINGS, type StoredCountdown } from '../contracts/domain';
+    COUNTER_CLICKS_KEPT,
+    COUNTER_MILESTONE,
+    counterStepSchema,
+    storedClicksSchema,
+    type CounterState,
+    type CounterStep,
+    type StoredClick
+} from '../contracts/domain';
 
 /**
  * Handlers: one per command. The dispatcher has already validated the input,
  * checked the caller's access on YOUR feature (plus any `extras` you declare),
  * and resolved the workspace; you receive a ready-to-use context.
  *
- * Storage here is the KV store: no table, no migration, encryption in one
- * argument. The list itself is `'server'` (default: encrypted, readable by the
- * background ticker); each private note is `'private'` (readable only inside
- * an unlocked user session).
+ * Storage here is the KV store: no table, no migration. The twist this example
+ * exists for: each click's value is stored ONCE, as a ciphertext produced by
+ * `ctx.cipher()` — the plain column the client shows is recomputed by
+ * DECRYPTING at read time. That is exactly how a sensitive column in your own
+ * tables works: the handler seals before writing, unseals after reading, and
+ * storage only ever sees blobs.
  */
 
-const LIST_KEY = 'countdowns';
-const SETTINGS_KEY = 'settings';
-const noteKey = (id: string): string => `note:${id}`;
+const VALUE_KEY = 'value';
+const STEP_KEY = 'step';
+const CLICKS_KEY = 'clicks';
 
-export async function readList(store: FeatureStore): Promise<StoredCountdown[]> {
-    return (await store.getJson(LIST_KEY, countdownListSchema)) ?? [];
+const valueSchema = z.number().int().nonnegative();
+
+async function readStep(ctx: SdkFeatureContext): Promise<CounterStep> {
+    return (await ctx.store.getJson(STEP_KEY, counterStepSchema)) ?? 1;
 }
 
-export const countdownHandlers = [
+/** The full state, with the journal's plain column decrypted on the way out. */
+async function readState(ctx: SdkFeatureContext): Promise<CounterState> {
+    const value = (await ctx.store.getJson(VALUE_KEY, valueSchema)) ?? 0;
+    const stored = (await ctx.store.getJson(CLICKS_KEY, storedClicksSchema)) ?? [];
+    const clicks = [];
+    for (const row of stored) {
+        // `tryDecrypt`, not `decrypt`: a blob sealed under a previous server
+        // key reads as null — that row is dropped, the screen never breaks.
+        const plain = await ctx.cipher().tryDecrypt(row.sealed);
+        if (plain !== null) clicks.push({ at: row.at, value: Number(plain), sealed: row.sealed });
+    }
+    return { value, step: await readStep(ctx), clicks };
+}
+
+export const counterHandlers = [
     defineSdkFeature({
-        ...countdownList,
+        ...counterState,
+        handler: async (ctx: SdkFeatureContext) => readState(ctx)
+    }),
+    defineSdkFeature({
+        ...counterIncrement,
+        access: { level: 'write' },
+        mutates: true,
         handler: async (ctx: SdkFeatureContext) => {
-            const stored = await readList(ctx.store);
-            const countdowns = await Promise.all(
-                stored.map(async (c) => ({ ...c, hasNote: (await ctx.store.get(noteKey(c.id))) !== null }))
-            );
-            const settings = (await ctx.store.getJson(SETTINGS_KEY, countdownSettingsSchema)) ?? DEFAULT_SETTINGS;
-            return { countdowns, settings };
+            const previous = (await ctx.store.getJson(VALUE_KEY, valueSchema)) ?? 0;
+            const value = previous + (await readStep(ctx));
+
+            // The demo's heart: seal the value BY HAND, store only the blob.
+            // (The KV store can also encrypt transparently — pass
+            // `{ encryption: 'server' }` — but then you would never SEE a
+            // ciphertext, which is the whole point of this journal.)
+            const sealed = await ctx.cipher().encrypt(String(value));
+            const stored = (await ctx.store.getJson(CLICKS_KEY, storedClicksSchema)) ?? [];
+            const clicks: StoredClick[] = [{ at: Date.now(), sealed }, ...stored].slice(0, COUNTER_CLICKS_KEPT);
+
+            // The counter itself is plain metadata: 'none' keeps it readable
+            // in SQL, and there is nothing to hide about a click count.
+            await ctx.store.putJson(VALUE_KEY, valueSchema, value, { encryption: 'none' });
+            await ctx.store.putJson(CLICKS_KEY, storedClicksSchema, clicks, { encryption: 'none' });
+
+            // A milestone crossed: notify through the channels the workspace
+            // routed to this feature (capability 'notify' in the manifest).
+            if (Math.floor(value / COUNTER_MILESTONE) > Math.floor(previous / COUNTER_MILESTONE)) {
+                const milestone = Math.floor(value / COUNTER_MILESTONE) * COUNTER_MILESTONE;
+                await ctx.deveye.notify.send({
+                    subject: `Compteur : ${milestone} atteint`,
+                    body: `Le compteur vient de passer ${milestone} (valeur : ${value}).`,
+                    payload: { feature: 'x-counter', value }
+                });
+            }
+
+            return readState(ctx);
         }
     }),
     defineSdkFeature({
-        ...countdownAdd,
-        access: { level: 'write', extras: ['manageDeadlines'] },
+        ...counterReset,
+        // `extras`: ALL listed keys are required on top of the level. The
+        // dispatcher enforces them before this handler runs; the UI only hides.
+        access: { level: 'write', extras: ['reset'] },
         mutates: true,
-        handler: async (ctx: SdkFeatureContext, input) => {
-            const list = await readList(ctx.store);
-            const countdown: StoredCountdown = { id: randomUUID(), label: input.label, at: input.at, notified: false };
-            await ctx.store.putJson(LIST_KEY, countdownListSchema, [...list, countdown]);
-            ctx.audit({ action: 'x-countdown.add', description: `Deadline added: "${input.label}"` });
-            return { countdown: { ...countdown, hasNote: false } };
+        handler: async (ctx: SdkFeatureContext) => {
+            const value = (await ctx.store.getJson(VALUE_KEY, valueSchema)) ?? 0;
+            await ctx.store.putJson(VALUE_KEY, valueSchema, 0, { encryption: 'none' });
+            await ctx.store.putJson(CLICKS_KEY, storedClicksSchema, [], { encryption: 'none' });
+            // Destructive and silent afterwards: exactly what the audit log is for.
+            ctx.audit({ action: 'x-counter.reset', description: `Compteur remis à zéro (valeur : ${value})` });
+            return readState(ctx);
         }
     }),
     defineSdkFeature({
-        ...countdownRemove,
-        access: { level: 'write', extras: ['manageDeadlines'] },
-        mutates: true,
-        handler: async (ctx: SdkFeatureContext, input) => {
-            const list = await readList(ctx.store);
-            if (!list.some((c) => c.id === input.id)) throw new FeatureError('not_found', 'Deadline not found');
-            await ctx.store.putJson(LIST_KEY, countdownListSchema, list.filter((c) => c.id !== input.id));
-            await ctx.store.remove(noteKey(input.id));
-            return { id: input.id };
-        }
-    }),
-    defineSdkFeature({
-        ...countdownNoteGet,
-        handler: async (ctx: SdkFeatureContext, input) => {
-            // A 'private' read can throw `locked` (session sealed) or
-            // `forbidden` (foreign caller): let it surface, the client copes.
-            return { note: await ctx.store.get(noteKey(input.id)) };
-        }
-    }),
-    defineSdkFeature({
-        ...countdownNoteSet,
+        ...counterStepSet,
         access: { level: 'write' },
         mutates: true,
         handler: async (ctx: SdkFeatureContext, input) => {
-            if (input.note.trim().length === 0) await ctx.store.remove(noteKey(input.id));
-            else await ctx.store.put(noteKey(input.id), input.note, { encryption: 'private' });
-            return { id: input.id };
-        }
-    }),
-    defineSdkFeature({
-        ...countdownSettingsSet,
-        access: { level: 'write' },
-        mutates: true,
-        handler: async (ctx: SdkFeatureContext, input) => {
-            await ctx.store.putJson(SETTINGS_KEY, countdownSettingsSchema, input);
-            return input;
+            await ctx.store.putJson(STEP_KEY, counterStepSchema, input.step, { encryption: 'none' });
+            return readState(ctx);
         }
     })
 ];

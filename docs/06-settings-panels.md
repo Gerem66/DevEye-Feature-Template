@@ -45,7 +45,7 @@ hide the information itself.
 Inside your full view, mount the standard button where actions live:
 
 ```tsx
-<FeatureSettingsButton scope={{ kind: 'feature', feature: 'x-countdown' }} />
+<FeatureSettingsButton scope={{ kind: 'feature', feature: 'x-counter' }} />
 ```
 
 It renders nothing when no tab is readable for the caller; that rule lives in

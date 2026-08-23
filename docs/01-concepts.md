@@ -14,7 +14,7 @@ user ── member of ──> workspace (personal | shared)
 
 ## The request path
 
-1. The client sends a WebSocket command, e.g. `x-countdown.add`. The active
+1. The client sends a WebSocket command, e.g. `x-counter.increment`. The active
    workspace travels on the envelope; you never pass or check it.
 2. The dispatcher validates the input against your zod schema, resolves the
    caller's rights in that workspace, enforces your declared `access`, then

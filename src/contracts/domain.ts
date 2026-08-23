@@ -8,29 +8,41 @@ import { z } from 'zod';
  * that does not match never crosses the wire.
  */
 
-export const COUNTDOWN_LABEL_MAX = 80;
+/** How many clicks the journal keeps. Older rows fall off the end. */
+export const COUNTER_CLICKS_KEPT = 20;
 
-export const countdownSchema = z.object({
-    id: z.uuid(),
-    label: z.string().min(1).max(COUNTDOWN_LABEL_MAX),
-    /** Unix seconds. */
+/** Every this many, the increment sends a notification (see handlers). */
+export const COUNTER_MILESTONE = 100;
+
+/** How much one click adds. A closed set keeps the settings UI a three-way toggle. */
+export const counterStepSchema = z.union([z.literal(1), z.literal(5), z.literal(10)]);
+export type CounterStep = z.infer<typeof counterStepSchema>;
+
+/**
+ * One click, as the CLIENT sees it: the counter value it produced, twice.
+ * `value` is decrypted server-side at read time; `sealed` is the very blob
+ * sitting in storage — shown as-is, so the example makes encryption tangible.
+ */
+export const counterClickSchema = z.object({
+    /** Unix milliseconds. */
     at: z.number().int().positive(),
-    /** Whether the deadline notification has already been sent. */
-    notified: z.boolean(),
-    /** The caller has a private note attached (its content never travels in lists). */
-    hasNote: z.boolean()
+    value: z.number().int().positive(),
+    sealed: z.string().min(1)
 });
-export type Countdown = z.infer<typeof countdownSchema>;
+export type CounterClick = z.infer<typeof counterClickSchema>;
 
-/** What the KV store persists (see server/handlers.ts). */
-export const countdownListSchema = z.array(countdownSchema.omit({ hasNote: true }));
-export type StoredCountdown = z.infer<typeof countdownListSchema>[number];
+/**
+ * One click, as the KV store persists it: the ciphertext ONLY. The plain
+ * column never touches storage — it is recomputed by decrypting on read,
+ * which is exactly the pattern for a column you encrypt in your own tables.
+ */
+export const storedClicksSchema = z.array(counterClickSchema.omit({ value: true }));
+export type StoredClick = z.infer<typeof storedClicksSchema>[number];
 
-/** Feature-level settings, edited in the General settings tab. */
-export const countdownSettingsSchema = z.object({
-    /** Minutes before the deadline at which the notification fires. */
-    leadMinutes: z.number().int().min(0).max(7 * 24 * 60)
+/** The whole feature state. Every command returns it: one shape, one cache key. */
+export const counterStateSchema = z.object({
+    value: z.number().int().nonnegative(),
+    step: counterStepSchema,
+    clicks: z.array(counterClickSchema).max(COUNTER_CLICKS_KEPT)
 });
-export type CountdownSettings = z.infer<typeof countdownSettingsSchema>;
-
-export const DEFAULT_SETTINGS: CountdownSettings = { leadMinutes: 0 };
+export type CounterState = z.infer<typeof counterStateSchema>;

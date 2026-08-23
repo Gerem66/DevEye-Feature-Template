@@ -3,7 +3,7 @@
 Build your own [DevEye](https://github.com/Gerem66/DevEye) feature: a card on
 the home grid, a full view, settings in the shared shell, permissions in
 workspace roles, storage with encryption in one argument, notifications, live
-presence. This repository is a working example feature, **Countdown**, meant to
+presence. This repository is a working example feature, **Counter**, meant to
 be renamed into yours.
 
 ## Quick start (10 minutes)
@@ -40,13 +40,12 @@ src/
 ├── manifest.ts          THE declaration: everything DevEye knows about you
 ├── contracts/           zod schemas: entities and commands
 ├── server/
-│   ├── index.ts         serverEntry: handlers (+ repo factory, migrations, service)
+│   ├── index.ts         serverEntry: handlers (+ optional repo, migrations, service)
 │   ├── handlers.ts      one handler per command, SDK context
-│   ├── service.ts       optional background ticker
 │   └── handlers.test.ts node:test against the in-memory harness
 └── client/
     ├── index.tsx        clientEntry: Widget, Full view, settings panels
-    ├── Countdown.tsx    the components, on `deveye-sdk-client`
+    ├── Counter.tsx      the components, on `deveye-sdk-client`
     ├── GeneralPanel.tsx a settings tab panel
     └── style.module.css scoped styles on DevEye's design tokens
 ```

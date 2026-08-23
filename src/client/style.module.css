@@ -1,50 +1,134 @@
 /*
- * Feature styles: a CSS module, scoped by construction. Use DevEye's design
- * tokens (var(--...)) instead of hard-coded colors so the feature follows the
- * theme. The committed .d.ts next to this file types the class names; keep it
- * in sync when you add classes.
+ * Scoped styles on DevEye's design tokens: colors, spacing and radii come from
+ * CSS variables the app defines, so the feature follows the active theme
+ * without a line of theme code. Never hardcode a color.
  */
-.list {
+
+.root {
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm, 8px);
+    gap: var(--space-lg);
+    height: 100%;
+    overflow-y: auto;
 }
 
-.row {
+/* ------------------------------- Le geste -------------------------------- */
+
+.hero {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-sm, 8px);
-    padding: 4px 8px;
-    border-radius: var(--radius-sm, 6px);
-    background: var(--surface-2, rgba(255, 255, 255, 0.04));
+    gap: var(--space-md);
+    padding: var(--space-lg) 0;
 }
 
-.label {
-    font-weight: 600;
+.value {
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
 }
 
-.when {
-    color: var(--text-secondary, #9aa4b2);
+/* THE button. Big on purpose: it is the whole feature. */
+.bigButton {
+    min-width: 160px;
+    padding: var(--space-md) var(--space-lg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-size: 1.6rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.08s ease;
+}
+
+.bigButton:hover:not(:disabled) {
+    transform: scale(1.04);
+}
+
+.bigButton:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.bigButton:disabled {
+    cursor: default;
+    filter: opacity(0.5);
+}
+
+.clickError {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--danger);
+}
+
+/* ------------------------------ Le journal -------------------------------- */
+
+.journal {
+    width: 100%;
+    border-collapse: collapse;
     font-size: 0.85rem;
 }
 
-.due {
-    color: var(--accent, #22d3ee);
+.journal th {
+    padding: var(--space-xs) var(--space-sm);
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--glass-border);
 }
 
-.form {
-    display: flex;
-    gap: var(--space-sm, 8px);
-    align-items: center;
-    flex-wrap: wrap;
+.journal td {
+    padding: var(--space-xs) var(--space-sm);
+    border-bottom: 1px solid var(--glass-border);
+    vertical-align: baseline;
+}
+
+.when {
+    white-space: nowrap;
+    color: var(--text-secondary);
+}
+
+.plain {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+/* The ciphertext cell: one line, ellipsized — the title shows it whole. */
+.sealed {
+    display: block;
+    max-width: 340px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    color: var(--text-muted);
 }
 
 .empty {
-    color: var(--text-secondary, #9aa4b2);
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
 }
 
-.widgetNext {
-    font-size: 1.4rem;
+/* ------------------------------- La carte --------------------------------- */
+
+.widget {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.widgetValue {
+    font-size: 2rem;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Bottom-left, like the other cards: `margin-top: auto` pins it down. */
+.widgetHint {
+    margin-top: auto;
+    font-size: 0.75rem;
+    color: var(--text-muted);
 }

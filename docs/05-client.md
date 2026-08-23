@@ -21,17 +21,17 @@ in `types/deveye-sdk-client.d.ts` for standalone typecheck.
 ```ts
 const api = featureApi(manifest);       // typed by your manifest's commands
 
-function useCountdowns() {
+function useCounter() {
     return useResource(
-        'x-countdown.list',                                   // your resource key
-        async () => (await api.send('x-countdown.list', {})).countdowns,
-        'Deadlines could not be loaded.'
+        'x-counter.state',                                    // your resource key
+        () => api.send('x-counter.state', {}),
+        'Le compteur est injoignable.'
     );
 }
 ```
 
 `useResource` re-runs on mount, on socket reconnect, and whenever the key is
-invalidated. After one of your own writes, call `invalidate('x-countdown.list')`
+invalidated. After one of your own writes, call `invalidate('x-counter.state')`
 for an instant local refresh; other members get theirs through the live topic
 (your `mutates: true` commands trigger it server-side). There is no polling
 anywhere, and no cache to manage.
