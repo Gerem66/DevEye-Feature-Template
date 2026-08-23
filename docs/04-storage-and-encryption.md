@@ -16,8 +16,12 @@ await ctx.store.put('color', value, { encryption: 'none' });
 - **`'private'`**: for user secrets the server operator must not be able to
   read when the workspace owner enables password encryption. Handlers only:
   reads can throw `locked` (session sealed) or `forbidden` (foreign caller),
-  and your UI must tolerate both. **Never available in background services**:
-  if your scheduler needs the value, store a `'server'` projection instead.
+  and your UI must tolerate both. Client-side, `deveye-sdk-client` gives you
+  the pieces: wrap the call in `withSecrecy(...)` to retry once after the
+  global unlock prompt, or read `useSecrecy()` and keep the screen usable
+  while showing locked rows as such. **Never available in background
+  services**: if your scheduler needs the value, store a `'server'` projection
+  instead.
 - **`'none'`**: plaintext, for non-sensitive metadata you want to query in SQL.
 
 The mode is stored per row, so a read always knows how to decrypt. The wrong
@@ -53,3 +57,15 @@ await ctx.repo.saveKey(ctx.workspaceId, sealed);
 
 Migrations run at boot without a transaction: make every statement replayable
 (guard on INFORMATION_SCHEMA, no-op branch), exactly like DevEye's own.
+
+## Uninstall
+
+A module that declares migrations must also ship their destructive mirror:
+`src/server/uninstall.sql`, dropping every table the migrations created
+(`DROP TABLE IF EXISTS ft_<slug>_...;` — idempotent, so a failed cleanup can
+simply be re-run). DevEye's `scripts/uninstall-feature.ts` executes it when an
+administrator removes your module, then cleans everything the app stored FOR
+you (KV rows, migration records, notification channels and routes, role
+grants, placed tiles). The file may only touch your `ft_<slug>_` prefix —
+both that script and `gen:features` refuse anything else. No migrations, no
+tables, no `uninstall.sql` needed: the app side is cleaned either way.

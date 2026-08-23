@@ -85,9 +85,27 @@ declare module 'deveye-sdk-client' {
     export function featureApi<const M extends FeatureManifest>(manifest: M): {
         send<N extends M['commands'][number]['command']>(
             name: N,
-            input: z.input<Extract<M['commands'][number], { command: N }>['input'] & ZodType>
+            input: z.input<Extract<M['commands'][number], { command: N }>['input'] & ZodType>,
+            /** `timeoutMs` stretches the wait for a command that queries a slow third party. */
+            opts?: { timeoutMs?: number }
         ): Promise<z.output<Extract<M['commands'][number], { command: N }>['output'] & ZodType>>;
     };
+
+    // ── Password-based encryption (secrecy) ────────────────────────────────
+    // The surface any feature needs when one of its commands can answer
+    // `locked` (contracts stored with `'private'` encryption server-side).
+    export interface SecrecyState {
+        /** True when password-based encryption is enabled for the account. */
+        enabled: boolean;
+        /** True while the session holds the unlocked key. */
+        unlocked: boolean;
+    }
+    /** Live lock state of the session (shared with the topbar widget and the global prompt). */
+    export function useSecrecy(): SecrecyState;
+    /** Resolves once the session is unlocked, opening the global prompt if needed. Rejects on cancel. */
+    export function ensureSecrecyUnlocked(): Promise<void>;
+    /** Runs `run`; on a `locked` error, opens the unlock prompt and retries once. */
+    export function withSecrecy<T>(run: () => Promise<T>): Promise<T>;
 
     // ── Live ───────────────────────────────────────────────────────────────
     export type LiveSegmentKind = 'view' | 'l1' | 'l2' | 'l3' | 'l4';

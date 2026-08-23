@@ -56,7 +56,10 @@ src/
 - **Your id prefixes everything.** Feature id `x-myfeature`, commands
   `x-myfeature.<verb>`, resource keys `x-myfeature.<name>`, tables
   `ft_myfeature_*`. The prefix is what makes collisions impossible; both this
-  repo's CI and DevEye's install step enforce it.
+  repo's CI and DevEye's install step enforce it. It also bounds a clean
+  uninstall: if you ship migrations, ship their destructive mirror
+  `src/server/uninstall.sql` too (see
+  [docs/04-storage-and-encryption.md](docs/04-storage-and-encryption.md)).
 - **The server authorizes, the UI hides.** Declare `access` on each command
   (read/write level plus your own `extraPermissions`); the dispatcher enforces
   it before your handler runs. Client checks are cosmetics.
@@ -86,8 +89,15 @@ src/
 | [11-cookbook](docs/11-cookbook.md) | task-shaped recipes |
 | [REFERENCE](docs/REFERENCE.md) | the API surface, type by type |
 
-## The living native example
+## The living native examples
 
-DevEye's own Weather feature is built on this exact contract, inside the main
-repo (`features/weather/`). When a doc here feels abstract, read Weather: it is
-kept current by the app's CI.
+DevEye's own features are being migrated onto this exact contract, inside the
+main repo, and the app's CI keeps them current. When a doc here feels
+abstract, read them:
+
+- `features/weather/` — the simple shape: one screen, a shared store, a
+  topbar mini-widget, provider API keys in a Sources panel.
+- `features/osint/` — the richer shape: several client components, a 30s
+  command timeout (`featureApi` third argument), password-based encryption on
+  reads (`useSecrecy` / `withSecrecy`), and handler tests on the in-memory
+  harness (`src/server/handlers.test.ts`).

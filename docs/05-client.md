@@ -38,6 +38,16 @@ anywhere, and no cache to manage.
 
 The card and the full view share the same hook, so they always agree.
 
+Two escape hatches for less ordinary commands:
+
+- `api.send(name, input, { timeoutMs: 30_000 })` stretches the wait for a
+  command that queries a slow third party — the default socket timeout stays
+  for everything else.
+- A command that reads `'private'` data can answer `locked`. Wrap the call in
+  `withSecrecy(() => api.send(...))` to retry once after the global unlock
+  prompt, or read `useSecrecy()` and render locked rows as such (see
+  [04-storage-and-encryption](04-storage-and-encryption.md)).
+
 ## The widget
 
 No props, half the size, seconds of attention: show the one number or line

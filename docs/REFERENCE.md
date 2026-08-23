@@ -19,7 +19,10 @@ and the app-provided `deveye-sdk-client` module.
 ## `deveye-types/sdk/server`
 
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
-  `migrationsDir`, `createService(deps)`.
+  `migrationsDir`, `createService(deps)`. A module with migrations also ships
+  `src/server/migrations/`' destructive mirror `src/server/uninstall.sql`
+  (`DROP TABLE IF EXISTS` on its own `ft_<slug>_` tables only — see
+  04-storage-and-encryption).
 - `SdkFeatureDefinition` / `defineSdkFeature`: one command:
   `access?: { level?: 'read' | 'write'; extras?: string[] }`, `mutates?: boolean`,
   `handler(ctx, input)`.
@@ -60,7 +63,12 @@ and the app-provided `deveye-sdk-client` module.
   `FeatureSettingsButton`, `settingsStyles` (the canonical settings rows).
 - Data: `useResource(key, load, fallback, deps?)`, `invalidate(...keys)`,
   `useResourceVersion(key)`, `onResourceChange(key, cb)`,
-  `humanizeError(e, fallback)`, `featureApi(manifest)` (typed `send`).
+  `humanizeError(e, fallback)`, `featureApi(manifest)` (typed `send`, with an
+  optional `{ timeoutMs }` for commands that query a slow third party).
+- Password-based encryption: `useSecrecy()` (live lock state), `withSecrecy(run)`
+  (retry once after the unlock prompt on a `locked` error),
+  `ensureSecrecyUnlocked()` (explicit unlock gesture). Needed as soon as one of
+  your commands reads `'private'` data.
 - Live: `useLiveSegment`, `useLiveItemTarget`, `useLiveOutline(s)` (+
   `LiveOutlineProps`), `useTypers`, `useTypingSignal`.
 - Push events: `onServerEvent(event, schema, cb)` (typed server-push
