@@ -24,9 +24,7 @@
         "ci": "npm run lint && npm run typecheck && npm run validate && npm run test"
     },
     "peerDependencies": {
-        "deveye-types": "*",
-        "react": "^19.0.0",
-        "zod": "^4.0.0"
+        "deveye-types": "npm:@gerem66/deveye-types@>=0.15.0"
     },
     "devDependencies": {
         "@eslint/js": "^9.0.0",

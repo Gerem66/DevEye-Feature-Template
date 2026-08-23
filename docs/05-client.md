@@ -13,8 +13,10 @@ export const clientEntry: FeatureClient = {
 
 Everything imports from **`deveye-sdk-client`**: the UI kit (Button, Dialog,
 TextInput, SegmentedControl...), the data hooks, the live hooks, the
-permissions hook. Nothing else of the app is API; this repo types the module
-in `types/deveye-sdk-client.d.ts` for standalone typecheck.
+permissions hook. Nothing else of the app is API. The typed portrait of that
+barrel ships with `deveye-types` (`src/sdk/client-ambient.d.ts`) and DevEye's
+own CI checks the real barrel against it; this repo's `types/` stub merely
+references it for the standalone typecheck.
 
 ## Data: declare, mutate, it refreshes
 
