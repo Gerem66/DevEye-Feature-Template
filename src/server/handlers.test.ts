@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { createTestContext } from 'deveye-types/sdk/testing';
+import { createTestContext } from '@deveye/types/sdk/testing';
 
 import { COUNTER_CLICKS_KEPT, type CounterState } from '../contracts/domain';
 import { counterHandlers } from './handlers';

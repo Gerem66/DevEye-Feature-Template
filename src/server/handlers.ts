@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { defineSdkFeature, type SdkFeatureContext } from 'deveye-types/sdk/server';
+import { defineSdkFeature, type SdkFeatureContext } from '@deveye/types/sdk/server';
 
 import { counterIncrement, counterReset, counterState, counterStepSet } from '../contracts/commands';
 import {

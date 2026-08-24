@@ -1,4 +1,4 @@
-import type { FeatureServer } from 'deveye-types/sdk/server';
+import type { FeatureServer } from '@deveye/types/sdk/server';
 
 import { counterHandlers } from './handlers';
 

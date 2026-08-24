@@ -29,6 +29,6 @@
     "include": [
         "src",
         "scripts",
-        "node_modules/deveye-types/src/sdk/client-ambient.d.ts"
+        "node_modules/@deveye/types/src/sdk/client-ambient.d.ts"
     ]
 }

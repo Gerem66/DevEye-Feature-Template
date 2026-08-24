@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, featureApi, invalidate, SegmentedControl, settingsStyles as shell, useWorkspacePermissions } from 'deveye-sdk-client';
-import type { SettingsPanelProps } from 'deveye-types/sdk/client';
+import type { SettingsPanelProps } from '@deveye/types/sdk/client';
 
 import { manifest } from '../manifest';
 

@@ -1,4 +1,4 @@
-import type { FeatureManifest } from 'deveye-types/sdk';
+import type { FeatureManifest } from '@deveye/types/sdk';
 
 import { counterCommands } from './contracts/commands';
 

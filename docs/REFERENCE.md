@@ -1,10 +1,10 @@
 # API reference
 
-The surface, type by type. Sources of truth: `deveye-types/sdk` (shared),
-`deveye-types/sdk/server`, `deveye-types/sdk/client`, `deveye-types/sdk/testing`,
+The surface, type by type. Sources of truth: `@deveye/types/sdk` (shared),
+`@deveye/types/sdk/server`, `@deveye/types/sdk/client`, `@deveye/types/sdk/testing`,
 and the app-provided `deveye-sdk-client` module.
 
-## `deveye-types/sdk`
+## `@deveye/types/sdk`
 
 - `FeatureManifest`: the declaration; see [02-manifest](02-manifest.md).
 - `ManifestCommand`: `{ command, input, output }`, zod both ways.
@@ -16,7 +16,7 @@ and the app-provided `deveye-sdk-client` module.
 - Ids: `externalFeatureIdSchema` (`/^x-[a-z][a-z0-9]{1,24}$/`), `featureIdSchema`,
   `isExternalFeatureId`, types `ExternalFeatureId`, `FeatureId`.
 
-## `deveye-types/sdk/server`
+## `@deveye/types/sdk/server`
 
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
   `migrationsDir`, `createService(deps)`. A module with migrations also ships
@@ -39,7 +39,7 @@ and the app-provided `deveye-sdk-client` module.
 - `FeatureError(code, message, details?)`: codes `validation`, `forbidden`,
   `not_found`, `conflict`, `locked`, `internal`.
 
-## `deveye-types/sdk/client`
+## `@deveye/types/sdk/client`
 
 - `FeatureClient`: your `./client` export: `Widget` (no props),
   `Full({ closeFeature })`, `settingsPanels?`, `TopbarWidget?` (no props: it
@@ -49,7 +49,7 @@ and the app-provided `deveye-sdk-client` module.
 - `SettingsPanelProps`: `{ scope, canWrite }`; `SdkSettingsScope` is
   `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`.
 
-## `deveye-types/sdk/testing`
+## `@deveye/types/sdk/testing`
 
 - `createTestContext(overrides?)`: in-memory `SdkFeatureContext` plus
   `recorded` (notifications, audits) and an inspectable `store.rows`.

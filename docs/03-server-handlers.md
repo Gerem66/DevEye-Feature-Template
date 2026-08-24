@@ -42,7 +42,7 @@ Anything else becomes an opaque `internal` error with a server-side log.
 
 ## Testing
 
-`createTestContext()` from `deveye-types/sdk/testing` gives you a fully
+`createTestContext()` from `@deveye/types/sdk/testing` gives you a fully
 in-memory context: identity ciphers, a recording facade
 (`ctx.recorded.notifications`), a store whose rows you can inspect
 (`ctx.store.rows`). Call your handlers directly from `node:test` files; see

@@ -14,7 +14,7 @@ export const clientEntry: FeatureClient = {
 Everything imports from **`deveye-sdk-client`**: the UI kit (Button, Dialog,
 TextInput, SegmentedControl...), the data hooks, the live hooks, the
 permissions hook. Nothing else of the app is API. The typed portrait of that
-barrel ships with `deveye-types` (`src/sdk/client-ambient.d.ts`) and DevEye's
+barrel ships with `@deveye/types` (`src/sdk/client-ambient.d.ts`) and DevEye's
 own CI checks the real barrel against it; this repo pulls it into the
 standalone typecheck via one `include` entry in `tsconfig.json`.
 

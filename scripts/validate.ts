@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { validateManifest } from 'deveye-types/sdk';
+import { validateManifest } from '@deveye/types/sdk';
 
 import { manifest } from '../src/manifest';
 

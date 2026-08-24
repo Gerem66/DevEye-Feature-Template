@@ -1,4 +1,4 @@
-import type { FeatureClient } from 'deveye-types/sdk/client';
+import type { FeatureClient } from '@deveye/types/sdk/client';
 
 import CounterFull, { CounterWidget } from './Counter';
 import GeneralPanel from './GeneralPanel';
