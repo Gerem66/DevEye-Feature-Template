@@ -1,7 +1,11 @@
 {
     "compilerOptions": {
         "target": "ES2022",
-        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "lib": [
+            "ES2022",
+            "DOM",
+            "DOM.Iterable"
+        ],
         "module": "ESNext",
         "moduleResolution": "Bundler",
         "jsx": "react-jsx",
@@ -13,10 +17,18 @@
         "noUnusedParameters": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
-        "types": ["node"],
+        "types": [
+            "node"
+        ],
         "paths": {
-            "deveye-sdk-client": ["./types/deveye-sdk-client.d.ts"]
+            "deveye-sdk-client": [
+                "./types/deveye-sdk-client.d.ts"
+            ]
         }
     },
-    "include": ["src", "types", "scripts"]
+    "include": [
+        "src",
+        "scripts",
+        "node_modules/deveye-types/src/sdk/client-ambient.d.ts"
+    ]
 }
