@@ -13,8 +13,7 @@ be renamed into yours.
    ```bash
    npx tsx scripts/rename.ts myfeature     # id becomes x-myfeature
    ```
-3. Install and check (needs a GitHub token for the types package, see
-   `.npmrc.example`):
+3. Install and check:
    ```bash
    npm install
    npm run ci        # lint + typecheck + manifest validation + handler tests
