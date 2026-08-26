@@ -10,11 +10,20 @@ and the app-provided `deveye-sdk-client` module.
 - `ManifestCommand`: `{ command, input, output }`, zod both ways.
 - `ExtraPermissionSpec`: `toggle` or `choice` (2..5 options, least-privileged
   `default`, explicit `ownerValue`). `MAX_EXTRA_PERMISSIONS = 4`.
-- `NativeCapability`: `'notify' | 'mail.accounts' | 'members.read'`.
+- `NativeCapability`: `'notify' | 'mail.accounts' | 'members.read' |
+  'devices.read' | 'agents'`; the last is reserved to native-id modules
+  (`validateManifest` refuses it on an `x-` id).
+- `CrossTopicInvalidation`: `{ topic, keys }`, the element of the manifest's
+  `alsoInvalidatedBy` (a native topic, a subset of `resources`; at most 4).
 - `SettingsTab`, `CustomTabRef`, `FeatureCategory`.
 - `validateManifest(manifest)`: throws with a named reason.
 - Ids: `externalFeatureIdSchema` (`/^x-[a-z][a-z0-9]{1,24}$/`), `featureIdSchema`,
   `isExternalFeatureId`, types `ExternalFeatureId`, `FeatureId`.
+- Provider contracts (`providers.ts`, the inversion for app code that needs a
+  module's data; see [10-background-services](10-background-services.md#offering-a-contract-to-the-host-providers)):
+  `CLOUDSYNC_BACKUP_PROVIDER` (`'cloudsync.backup'`), `CloudSyncBackupProvider`
+  (`findShare`, `listShares`, `statsByShare`, `listPresentFiles`, `openBlob`)
+  and its row types `SyncBackupShare`, `SyncBackupStats`, `SyncBackupFile`.
 
 ## `@deveye/types/sdk/server`
 
@@ -27,15 +36,40 @@ and the app-provided `deveye-sdk-client` module.
   `access?: { level?: 'read' | 'write'; extras?: string[] }`, `mutates?: boolean`,
   `handler(ctx, input)`.
 - `SdkFeatureContext<Repo>`: see [03-server-handlers](03-server-handlers.md).
+  Carries `transport: SdkSocketTransport` (capability `'agents'`; every method
+  throws `forbidden` otherwise).
 - `FeatureStore`: `put/putJson/get/getJson/remove/keys`; `putJson`/`getJson`
   take a zod schema. `StorageEncryption = 'server' | 'private' | 'none'`.
 - `SessionlessFeatureStore`: the service variant; `'private'` unrepresentable.
 - `SdkCipher`: `encrypt`, `decrypt` (throws), `tryDecrypt` (null).
 - `SdkQueryable`: `query<T>(sql, params): Promise<T[]>`,
   `execute(sql, params): Promise<{ affectedRows, insertId }>`.
-- `DevEyeFacade`: `notify.hasRoute/send`, `mail.listAccounts`, `members.list`;
-  each gated by the manifest's `nativeCapabilities`.
-- `FeatureService` (`start/stop`), `FeatureServiceDeps` (incl. `createTicker`).
+- `DevEyeFacade`: `notify.hasRoute/send`, `mail.listAccounts`, `members.list`,
+  `devices.authorize/list/isOnline`, `agents` (an `AgentsFacade`); each gated
+  by the manifest's `nativeCapabilities`.
+- `SdkDevice`: `{ id, name, online }`, what the devices facade reveals.
+- `FeatureService`: `start` (may be async; awaited at boot, before the agent
+  sockets open), `stop`, `agentHooks?: FeatureAgentHooks`,
+  `providers?: Readonly<Record<string, unknown>>` (keyed by a published
+  provider key).
+- `FeatureServiceDeps<Repo>`: `repo`, `listWorkspaceIds`, `storeFor`,
+  `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
+  `isOnline`), `audit` (system source, optional `userId`), `agents`, `keys`,
+  `createTicker({ intervalMs, tick })`, `logger`.
+- `SdkServerKeys`: `sealBytes(Uint8Array): string`,
+  `openBytes(string): Uint8Array | null` (null: tampered, or server keys
+  changed). Server key, module-owned key material only, never user data.
+- Reserved to native-id modules (capability `'agents'`): `AgentsFacade`
+  (`isOnline`; `requestSyncConfig`, `requestSyncScan`, `requestSyncPush`,
+  `requestSyncApplyChunk`, `requestSyncApplyStart`, `requestSyncApplyDir`,
+  `requestSyncApplyLocal`, `requestSyncMove`, `requestSyncDelete`, each
+  `false` when the agent is offline; `publishSyncProgress`,
+  `publishSyncState`), `SdkSocketTransport` (`subscribeSync`,
+  `unsubscribeSync`, `sendSyncChunk` returning the send-buffer size,
+  `syncChunkBuffered`), `FeatureAgentHooks` (`onAgentConnect`,
+  `onAgentOffline`, `onSyncChanged`, `onSyncIndex`, `onSyncChunk`,
+  `onSyncAck`, `onSyncOpResult`, all optional). Their payload types come from
+  `@deveye/types` itself, outside the SDK's stability promise.
 - `FeatureError(code, message, details?)`: codes `validation`, `forbidden`,
   `not_found`, `conflict`, `locked`, `internal`.
 
@@ -52,15 +86,30 @@ and the app-provided `deveye-sdk-client` module.
 ## `@deveye/types/sdk/testing`
 
 - `createTestContext(overrides?)`: in-memory `SdkFeatureContext` plus
-  `recorded` (notifications, audits) and an inspectable `store.rows`.
-  Overrides: `repo`, `userId`, `workspaceId`, `kind`, `isOwner`, `canWrite`,
-  `extras`, `hasRoute`, `deveye`.
+  `recorded` (notifications, audits, agentRequests) and an inspectable
+  `store.rows`. Its facade answers by default: `devices.authorize` resolves
+  `{ id, name: 'Test device', online: true }`, `devices.list` is empty,
+  `devices.isOnline` is true, `agents` records every request and answers true,
+  `transport` is a no-op. Overrides: `repo`, `userId`, `workspaceId`, `kind`,
+  `isOwner`, `canWrite`, `extras`, `hasRoute`, `deveye` (a partial facade).
 
 ## `deveye-sdk-client` (provided by the app)
+
+The list below mirrors `@deveye/types/src/sdk/client-ambient.d.ts`, the typed
+portrait of the barrel that DevEye's own CI checks against the real one; it is
+maintained separately from the server sections above, and that file is the
+authority when the two differ.
 
 - UI kit: `Button`, `TextInput`, `SelectInput`, `Checkbox`, `Switch`,
   `SegmentedControl`, `Dialog`, `StatusBadge`, `ConfirmDialog`,
   `FeatureSettingsButton`, `settingsStyles` (the canonical settings rows).
+- `useDialogClose()`: the enclosing `Dialog`'s guarded close (unsaved-changes
+  prompt included).
+- `useDialogSubmit(fn | null)`: `fn` becomes the enclosing `Dialog`'s primary
+  action (Enter triggers it); `null` clears it.
+- `useDismissLayer(open, onEscape | null)`: registers the topmost dismissible
+  layer while `open`, so Escape closes overlays innermost first; `null`
+  absorbs Escape without closing.
 - Data: `useResource(key, load, fallback, deps?)`, `invalidate(...keys)`,
   `useResourceVersion(key)`, `onResourceChange(key, cb)`,
   `humanizeError(e, fallback)`, `featureApi(manifest)` (typed `send`, with an

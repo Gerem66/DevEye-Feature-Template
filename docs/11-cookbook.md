@@ -52,6 +52,23 @@ defineSdkFeature({ ...purgeCmd, access: { level: 'write', extras: ['purge'] }, m
 // client: show the button only when canExtra('x-f', 'purge')
 ```
 
+## Act on a device the client named
+
+```ts
+// manifest: nativeCapabilities: ['devices.read']
+const device = await ctx.deveye.devices.authorize(input.deviceId);   // throws unless it is this workspace's
+if (!ctx.deveye.devices.isOnline(device.id)) throw new FeatureError('conflict', 'Device offline');
+// service side: deps.devicesFor(workspaceId).list()   (same gate, no authorize)
+```
+
+## Keep a raw key of your own
+
+```ts
+// service only: deps.keys wraps bytes under the SERVER key; never user data
+await store.put('blobKey', deps.keys.sealBytes(randomBytes(32)), { encryption: 'none' });
+const raw = deps.keys.openBytes(await store.get('blobKey') ?? '');   // null = refuse to start
+```
+
 ## Ship your own table
 
 ```

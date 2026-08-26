@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { featureApi, humanizeError, invalidate, useResource, useWorkspacePermissions } from 'deveye-sdk-client';
+import {
+    featureApi,
+    FeatureSettingsButton,
+    humanizeError,
+    invalidate,
+    useResource,
+    useWorkspacePermissions
+} from 'deveye-sdk-client';
 
 import { manifest } from '../manifest';
 import styles from './style.module.css';
@@ -66,6 +73,16 @@ export default function CounterFull() {
 
     return (
         <div className={styles.root}>
+            {/* The header every feature shares: the title on the left, the
+                actions on the right, among them the standard settings button.
+                It opens the shared settings shell (our General tab lives in
+                GeneralPanel.tsx) and renders nothing when the caller can read
+                no tab: that rule lives in the shell, not here. */}
+            <div className={styles.header}>
+                <h2 className={styles.title}>{manifest.label}</h2>
+                <FeatureSettingsButton scope={{ kind: 'feature', feature: 'x-counter' }} />
+            </div>
+
             {error && <p className={styles.empty}>{error}</p>}
 
             <div className={styles.hero}>

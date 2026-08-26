@@ -12,6 +12,23 @@
     overflow-y: auto;
 }
 
+/* ------------------------------ L'en-tête -------------------------------- */
+
+/* Title left, actions right: the row every feature's full view opens with. */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+}
+
+.title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
 /* ------------------------------- Le geste -------------------------------- */
 
 .hero {

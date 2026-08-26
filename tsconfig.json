@@ -19,12 +19,7 @@
         "noFallthroughCasesInSwitch": true,
         "types": [
             "node"
-        ],
-        "paths": {
-            "deveye-sdk-client": [
-                "./types/deveye-sdk-client.d.ts"
-            ]
-        }
+        ]
     },
     "include": [
         "src",

@@ -83,7 +83,7 @@ src/
 | [07-permissions](docs/07-permissions.md) | read/write, channels, your own extras |
 | [08-notifications](docs/08-notifications.md) | sending through the workspace's channels |
 | [09-live](docs/09-live.md) | presence, outlines, teleport |
-| [10-background-services](docs/10-background-services.md) | the ticker, and its limits |
+| [10-background-services](docs/10-background-services.md) | the ticker and its limits, devices, key wrapping, providers, what is reserved |
 | [11-cookbook](docs/11-cookbook.md) | task-shaped recipes |
 | [REFERENCE](docs/REFERENCE.md) | the API surface, type by type |
 

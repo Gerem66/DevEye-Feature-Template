@@ -1,5 +1,7 @@
 declare const styles: {
     readonly root: string;
+    readonly header: string;
+    readonly title: string;
     readonly hero: string;
     readonly value: string;
     readonly bigButton: string;

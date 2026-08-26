@@ -22,11 +22,63 @@ command names, which is what makes `featureApi(manifest)` fully typed.
 | `topbarWidget` | offers your `TopbarWidget` component in the navbar widget picker; `description` is its subtitle there |
 | `resources` | the client cache keys your topic refreshes |
 | `invalidatedByTopic` | subset of `resources` refreshed on broadcast (default: all) |
+| `alsoInvalidatedBy` | keys of yours ALSO refreshed when a native topic fires; see [below](#refreshing-on-another-features-topic) |
 | `itemSegment` | builds the live/teleport segment of one item, e.g. `` (id) => `job:${id}` `` |
 | `settings` | which tabs exist, per scope; see [06-settings-panels](06-settings-panels.md) |
 | `extraPermissions` | your own permissions in the role editor; see [07-permissions](07-permissions.md) |
-| `nativeCapabilities` | which `ctx.deveye` facades you may call; undeclared calls throw |
+| `nativeCapabilities` | which `ctx.deveye` facades you may call; undeclared calls throw; the full list is [below](#native-capabilities) |
+| `commandPrefix` | reserved for DevEye's own modules; never set it (see [below](#reserved-for-deveyes-own-modules)) |
 | `commands` | your zod contracts; every name must start with `<id>.` |
+
+## Native capabilities
+
+`nativeCapabilities` is what an administrator reads before installing your
+module: every facade your server code can reach, and nothing else. A call
+through a facade you did not declare throws `forbidden`. The full list, as
+the `NativeCapability` type in `@deveye/types/sdk`:
+
+| Capability | What it opens |
+|---|---|
+| `'notify'` | `ctx.deveye.notify` and `deps.deveyeFor(id).notify`: send through the channels the workspace routed to you; pair it with `notifies: true`, which gives the workspace the tab to route them ([08-notifications](08-notifications.md)) |
+| `'mail.accounts'` | `ctx.deveye.mail.listAccounts()`: the workspace's open-tier mail accounts, metadata only (`id`, `label`, `address`), never credentials |
+| `'members.read'` | `ctx.deveye.members.list()`: `{ userId, name, isOwner }` per member |
+| `'devices.read'` | `ctx.deveye.devices` (`authorize`, `list`, `isOnline`) in handlers, `deps.devicesFor(id)` (`list`, `isOnline`) in services ([03-server-handlers](03-server-handlers.md#native-features-through-ctxdeveye)) |
+| `'agents'` | the agent-fleet sync transport; **reserved**, see below |
+
+## Refreshing on another feature's topic
+
+Your topic covers your own writes. When rows of yours embed data a native
+feature owns, declare the coupling instead of polling:
+
+```ts
+alsoInvalidatedBy: [{ topic: 'devices', keys: ['x-myfeature.list'] }]
+```
+
+`topic` is a native live topic (a native feature's id such as `devices`, or
+`workspace` for members, roles and the workspace's name); `keys` is the subset
+of your `resources` to re-fetch when it beats. Native topics only, never your
+own, at most 4 entries: it is the escape hatch for real data coupling (a share
+list that shows device names must refresh when a device is renamed), not a
+general subscription mechanism.
+
+## Reserved for DevEye's own modules
+
+Two declarations exist for DevEye's native features migrated onto this same
+contract, and `validateManifest` refuses both on an `x-` id:
+
+- **`nativeCapabilities: ['agents']`**: the agent-fleet sync transport
+  (outbound requests to the agent installed on the workspace's devices, the
+  fan-out to browsers, per-socket subscriptions), together with
+  `ctx.transport` and `FeatureService.agentHooks`. The agent protocol is app
+  infrastructure, the contract between DevEye and its own agent binary, and
+  its payload types live outside the `sdk*` entries whose stability the SDK
+  promises: a third-party module cannot depend on it. What a module may know
+  about devices is behind `'devices.read'`. Details, for the record, in
+  [10-background-services](10-background-services.md#the-agent-fleet-reserved).
+- **`commandPrefix`**: overrides the `<id>.` prefix checked on commands and
+  resources, and must still equal `<id>.` case-insensitively. It exists
+  because one native id (`cloudsync`) has always owned `cloudSync.*`
+  commands. Your prefix is `x-<slug>.`, and nothing else.
 
 ## Validation
 

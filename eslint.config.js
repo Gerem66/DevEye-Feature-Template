@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
 export default [
-    { ignores: ['node_modules', 'types'] },
+    { ignores: ['node_modules'] },
     { files: ['**/*.{ts,tsx}'] },
     js.configs.recommended,
     ...tseslint.configs.recommended,
