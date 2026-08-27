@@ -19,6 +19,7 @@ command names, which is what makes `featureApi(manifest)` fully typed.
 | `sources` | the feature-scope Sources tab (API keys, destinations); `hint` is its lead sentence |
 | `shareTier` | must be `'never'` for external modules for now; anything else commits a module to the sharing contract (a server `items` entry, listings that read `ctx.sharing.scope()`), which DevEye's own modules use |
 | `tile.compact` | half-height card, like device tiles |
+| `links` | data links to other features (`{ to, what }`, at most 6), read in both directions by the home grid's "About" card |
 | `topbarWidget` | offers your `TopbarWidget` component in the navbar widget picker; `description` is its subtitle there |
 | `resources` | the client cache keys your topic refreshes |
 | `invalidatedByTopic` | subset of `resources` refreshed on broadcast (default: all) |

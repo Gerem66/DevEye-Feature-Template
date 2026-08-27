@@ -15,7 +15,8 @@ and the app-provided `deveye-sdk-client` module.
   native-id modules (`validateManifest` refuses them on an `x-` id).
 - `CrossTopicInvalidation`: `{ topic, keys }`, the element of the manifest's
   `alsoInvalidatedBy` (a native topic, a subset of `resources`; at most 4).
-- `SettingsTab`, `CustomTabRef`, `FeatureCategory`.
+- `SettingsTab`, `CustomTabRef`, `FeatureCategory`, `FeatureLink` (`{ to, what }`,
+  `MAX_FEATURE_LINKS = 6`).
 - `validateManifest(manifest)`: throws with a named reason.
 - Ids: `externalFeatureIdSchema` (`/^x-[a-z][a-z0-9]{1,24}$/`), `featureIdSchema`,
   `isExternalFeatureId`, types `ExternalFeatureId`, `FeatureId`.
@@ -114,13 +115,14 @@ and the app-provided `deveye-sdk-client` module.
   every request and answers true, `transport` is a no-op, `secrecy` is
   unlocked, `items.restrictions()` is empty and `sharing.scope()` has no
   projection. Overrides: `repo`, `userId`, `workspaceId`, `kind`, `isOwner`,
-  `canWrite`, `extras`, `manifest`, `hasRoute`, `devices`, `snapshots`,
+  `canWrite`, `extras`, `manifest`, `hasRoute`, `notifyAccepted` (what
+  `notify.send` resolves; recorded either way), `devices`, `snapshots`,
   `deveye` (a partial facade), `unlocked` (false also seals the `'private'`
   cipher: `decrypt` throws `locked`, `tryDecrypt` answers null, like the
   app's guarded tier in a locked session), `itemRestrictions`, `shares`.
 - `createTestServiceDeps(overrides?)`: the service twin; `recorded` adds
   `tickers` and `liveChanges`. Overrides: `repo`, `workspaceIds`, `devices`,
-  `hasRoute`, `snapshots`.
+  `hasRoute`, `notifyAccepted`, `snapshots`.
 - `testDevice(over)`: an `SdkDevice` with sensible defaults.
 
 ## `deveye-sdk-client` (provided by the app)
