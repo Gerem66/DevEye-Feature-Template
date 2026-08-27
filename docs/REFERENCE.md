@@ -115,7 +115,9 @@ and the app-provided `deveye-sdk-client` module.
   unlocked, `items.restrictions()` is empty and `sharing.scope()` has no
   projection. Overrides: `repo`, `userId`, `workspaceId`, `kind`, `isOwner`,
   `canWrite`, `extras`, `manifest`, `hasRoute`, `devices`, `snapshots`,
-  `deveye` (a partial facade), `unlocked`, `itemRestrictions`, `shares`.
+  `deveye` (a partial facade), `unlocked` (false also seals the `'private'`
+  cipher: `decrypt` throws `locked`, `tryDecrypt` answers null, like the
+  app's guarded tier in a locked session), `itemRestrictions`, `shares`.
 - `createTestServiceDeps(overrides?)`: the service twin; `recorded` adds
   `tickers` and `liveChanges`. Overrides: `repo`, `workspaceIds`, `devices`,
   `hasRoute`, `snapshots`.
