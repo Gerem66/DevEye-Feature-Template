@@ -22,6 +22,10 @@ settings: {
 - `'notifications'` is **fully generic**: if your manifest says
   `notifies: true`, DevEye renders the whole channels-and-routing tab for you.
   You write nothing.
+- `'encryption'` (item scope only) is where an item chooses the form of its
+  own data when your feature leaves the choice (Backup: sealed or plain
+  archives, per job). The shell names and places the tab; you provide
+  `settingsPanels.encryption`.
 
 ## Writing a panel
 

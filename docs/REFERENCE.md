@@ -15,7 +15,7 @@ and the app-provided `deveye-sdk-client` module.
   native-id modules (`validateManifest` refuses them on an `x-` id).
 - `CrossTopicInvalidation`: `{ topic, keys }`, the element of the manifest's
   `alsoInvalidatedBy` (a native topic, a subset of `resources`; at most 4).
-- `SettingsTab`, `CustomTabRef`, `FeatureCategory`, `FeatureLink` (`{ to, what }`,
+- `SettingsTab` (`'general' | 'sources' | 'notifications' | 'permissions' | 'encryption'`), `CustomTabRef`, `FeatureCategory`, `FeatureLink` (`{ to, what }`,
   `MAX_FEATURE_LINKS = 6`).
 - `validateManifest(manifest)`: throws with a named reason.
 - Ids: `externalFeatureIdSchema` (`/^x-[a-z][a-z0-9]{1,24}$/`), `featureIdSchema`,
@@ -29,7 +29,11 @@ and the app-provided `deveye-sdk-client` module.
   (`exists(serviceId, workspaceId)`); `UPTIME_CLIENT_PROVIDER`
   (`'uptime.client'`, its contract `UptimeClientProvider` lives in
   `sdk/client`); `SENTINEL_AGENT_CONFIG_PROVIDER` (`'sentinel.agentConfig'`),
-  `SentinelAgentConfig`, `SentinelAgentConfigProvider` (`configFor(deviceId)`).
+  `SentinelAgentConfig`, `SentinelAgentConfigProvider` (`configFor(deviceId)`);
+  `DATABASE_BACKUP_PROVIDER` (`'database.backup'`), `DatabaseBackupProvider`
+  (`listDatabases`, `findDatabase`, `openAccess`), `DatabaseBackupCandidate`,
+  `DatabaseBackupAccess` (an open access, `close()` releases the tunnel):
+  offered by the app while Databases is native, by its module afterwards.
 
 ## `@deveye/types/sdk/server`
 
@@ -47,8 +51,10 @@ and the app-provided `deveye-sdk-client` module.
   Carries `transport: SdkSocketTransport` (capability `'agents'`; every method
   throws `forbidden` otherwise), `secrecy: SdkSecrecy` (`isUnlocked()`),
   `items: SdkItems` (`restrictions()`, `assert(itemId, level?)`,
-  `forget(itemId)`) and `sharing: SdkSharing` (`scope()` returning an
-  `SdkShareScope`: `foreignIds`, `homeOf`, `cipherFor`).
+  `forget(itemId)`), `sharing: SdkSharing` (`scope()` returning an
+  `SdkShareScope`: `foreignIds`, `homeOf`, `cipherFor`) and
+  `providers: SdkProviders` (`get<T>(key)`: a published contract, whoever
+  offers it; `undefined` when nobody does).
 - `FeatureStore`: `put/putJson/get/getJson/remove/keys`; `putJson`/`getJson`
   take a zod schema. `StorageEncryption = 'server' | 'private' | 'none'`.
 - `SessionlessFeatureStore`: the service variant; `'private'` unrepresentable.
@@ -71,18 +77,22 @@ and the app-provided `deveye-sdk-client` module.
   `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
   `isOnline`), `devices` (`SdkFleetDevices`: `find`, `isOnline`),
   `telemetry`, `live` (`SdkLive`: `changed(workspaceId)`), `audit` (system
-  source, optional `userId`), `agents`, `keys`,
-  `createTicker({ intervalMs, tick })`, `logger`.
+  source, optional `userId`), `agents`, `keys`, `providers` (`SdkProviders`,
+  same as on the context), `createTicker({ intervalMs, tick })`, `logger`.
 - `SdkServerKeys`: `sealBytes(Uint8Array): string`,
   `openBytes(string): Uint8Array | null` (null: tampered, or server keys
-  changed). Server key, module-owned key material only, never user data.
+  changed), `derive(salt, info, length): Uint8Array` (HKDF-SHA256 over the
+  server key, never stored: for material that must survive the database).
+  Server key, module-owned key material only, never user data.
 - Reserved to native-id modules (capability `'agents'`): `AgentsFacade`
   (`isOnline`, `requestScan`, `pushConfig`; `requestSyncConfig`,
   `requestSyncScan`, `requestSyncPush`,
   `requestSyncApplyChunk`, `requestSyncApplyStart`, `requestSyncApplyDir`,
   `requestSyncApplyLocal`, `requestSyncMove`, `requestSyncDelete`, each
   `false` when the agent is offline; `publishSyncProgress`,
-  `publishSyncState`), `SdkSocketTransport` (`subscribeSync`,
+  `publishSyncState`; the file orders of the explorer: `requestFilesMutate`,
+  `requestFilesUpload`, `awaitFilesOp(opId, timeoutMs)`, `cancelFilesOp`,
+  `buffered(deviceId)` for backpressure), `SdkSocketTransport` (`subscribeSync`,
   `unsubscribeSync`, `sendSyncChunk` returning the send-buffer size,
   `syncChunkBuffered`), `FeatureAgentHooks` (`onAgentConnect`,
   `onAgentOffline`, `onReport`, `onMetricsBatch`, `onIntegrity`,

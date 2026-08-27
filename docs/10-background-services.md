@@ -138,6 +138,22 @@ it means for you:
 - The app calls a provider without a session, like every service: only
   `'server'`-tier data can serve it.
 
+## Consuming a contract: `providers.get`
+
+The same registry works the other way: a module that needs what another
+feature owns reads the published contract through `deps.providers.get<T>(key)`
+(service) or `ctx.providers.get<T>(key)` (handler), and degrades cleanly on
+`undefined`. Who offers the key is none of your business: a module's service,
+or the app itself for a feature still native (`DATABASE_BACKUP_PROVIDER` is
+offered by DevEye while Databases is native; the day it becomes a module, its
+service publishes the same key and nothing changes for you).
+
+```ts
+const databases = deps.providers.get<DatabaseBackupProvider>(DATABASE_BACKUP_PROVIDER);
+if (!databases) throw new Error('Source indisponible.');   // a clean failure, not a crash
+const access = await databases.openAccess(sourceId, workspaceId);
+```
+
 ## The agent fleet (reserved)
 
 DevEye installs an agent on the workspace's devices, and one native feature

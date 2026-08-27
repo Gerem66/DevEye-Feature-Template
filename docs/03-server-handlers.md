@@ -32,6 +32,7 @@ defineSdkFeature({
 | `ctx.secrecy.isUnlocked()` | whether the guarded tier is readable in this session; ask it when you must decide BEFORE reading (list private rows as masked, refuse an edit that would overwrite a body the session cannot see); a `'private'` read throws `locked` on its own |
 | `ctx.items.restrictions()`, `ctx.items.assert(itemId, level?)`, `ctx.items.forget(itemId)` | your items as the workspace's roles see them: the caller's role restrictions (`'none'` hidden, `'read'` read-only, restrictive only), the per-item guard commands targeting one item call first, and the removal bookkeeping (projections, restrictions, notification route) your delete handler calls, since nothing links those rows to your table |
 | `ctx.sharing.scope()` | what is projected INTO the active workspace (`foreignIds`, `homeOf(itemId)`, `cipherFor(itemId)`: the open cipher of the item's home, the only way to read a projected row); throws `forbidden` under `shareTier: 'never'` |
+| `ctx.providers.get<T>(key)` | a published contract another feature offers (`sdk/providers.ts`), whoever offers it: a module's service or the app for a feature still native; `undefined` when nobody does, degrade cleanly (see [10-background-services](10-background-services.md#consuming-a-contract-providersget)) |
 | `ctx.audit({ action, description })` | fire-and-forget audit line; actor and workspace pre-bound |
 | `ctx.logger`, `ctx.requestId` | structured logging |
 
