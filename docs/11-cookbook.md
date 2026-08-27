@@ -31,9 +31,9 @@ await ctx.store.put(`secret:${ctx.userId}`, value, { encryption: 'private' });
 ## Make items teleportable and outlined
 
 ```ts
-// manifest: hasItems: true, itemNoun: 'job', itemSegment: (id) => `job:${id}`
-// view: useLiveItemTarget('l1', opened && `job:${opened}`, listLoaded, apply)
-// rows: {...useLiveOutlines('l1')(`job:${row.id}`)}
+// manifest: hasItems: true, itemNoun: 'job'
+// view: useLiveItemTarget('l1', opened === null ? null : String(opened), listLoaded, apply)
+// rows: {...useLiveOutlines('l1')(String(row.id))}
 ```
 
 ## Refresh another of your keys after a write

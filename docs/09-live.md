@@ -36,10 +36,10 @@ Two contracts to respect:
 - **One declarer per level.** `useLiveSegment`/`useLiveItemTarget` declare the
   view's current position; call them once per kind, never per row. Rows use
   `useLiveOutlines`.
-- **The rendezvous is byte-for-byte.** The string your view declares for an
-  item MUST equal what your manifest's `itemSegment(id)` builds: that function
-  is how "open the settings of item 42 from another workspace" and "join
-  Alice" find your view.
+- **An item's segment is its bare id.** Declare `useLiveSegment('l1',
+  String(id))` for the open item, nothing else: `view:<your id>` already says
+  what kind of item it is, and that bare id is how "open the settings of item
+  42 from another workspace" and "join Alice" find your view.
 
 ## Writes without a command
 

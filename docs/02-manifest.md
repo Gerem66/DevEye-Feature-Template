@@ -24,7 +24,6 @@ command names, which is what makes `featureApi(manifest)` fully typed.
 | `resources` | the client cache keys your topic refreshes |
 | `invalidatedByTopic` | subset of `resources` refreshed on broadcast (default: all) |
 | `alsoInvalidatedBy` | keys of yours ALSO refreshed when a native topic fires; see [below](#refreshing-on-another-features-topic) |
-| `itemSegment` | builds the live/teleport segment of one item, e.g. `` (id) => `job:${id}` `` |
 | `settings` | which tabs exist, per scope; see [06-settings-panels](06-settings-panels.md) |
 | `extraPermissions` | your own permissions in the role editor; see [07-permissions](07-permissions.md) |
 | `nativeCapabilities` | which `ctx.deveye` facades you may call; undeclared calls throw; the full list is [below](#native-capabilities) |
@@ -97,6 +96,5 @@ you will simply meet it at the earliest one.
 ## What stays out of the manifest
 
 Anything executable for the app: your components live in the client entry,
-your handlers in the server entry. The manifest is data (plus the optional
-`itemSegment` function), so both bundles can load it without dragging the
-other's world in.
+your handlers in the server entry. The manifest is data, so both bundles can
+load it without dragging the other's world in.
