@@ -29,6 +29,9 @@ defineSdkFeature({
 | `ctx.cipher(mode?)` | a cipher for your own tables; default `'server'` |
 | `ctx.deveye` | native features, gated by `nativeCapabilities`; see [below](#native-features-through-ctxdeveye) |
 | `ctx.transport` | the caller's own browser socket; capability `'agents'` only, reserved to DevEye's modules ([10-background-services](10-background-services.md#the-agent-fleet-reserved)); every method throws `forbidden` otherwise |
+| `ctx.secrecy.isUnlocked()` | whether the guarded tier is readable in this session; ask it when you must decide BEFORE reading (list private rows as masked, refuse an edit that would overwrite a body the session cannot see); a `'private'` read throws `locked` on its own |
+| `ctx.items.restrictions()`, `ctx.items.assert(itemId, level?)`, `ctx.items.forget(itemId)` | your items as the workspace's roles see them: the caller's role restrictions (`'none'` hidden, `'read'` read-only, restrictive only), the per-item guard commands targeting one item call first, and the removal bookkeeping (projections, restrictions, notification route) your delete handler calls, since nothing links those rows to your table |
+| `ctx.sharing.scope()` | what is projected INTO the active workspace (`foreignIds`, `homeOf(itemId)`, `cipherFor(itemId)`: the open cipher of the item's home, the only way to read a projected row); throws `forbidden` under `shareTier: 'never'` |
 | `ctx.audit({ action, description })` | fire-and-forget audit line; actor and workspace pre-bound |
 | `ctx.logger`, `ctx.requestId` | structured logging |
 
@@ -46,12 +49,17 @@ throws `forbidden`.
 - `mail.listAccounts()`: `{ id, label, address }` for the workspace's open-tier
   mail accounts; never credentials.
 - `members.list()`: `{ userId, name, isOwner }` per member.
-- `devices.list()`: the workspace's devices as `{ id, name, online }`;
+- `devices.list()`: the devices this workspace sees (its own, or the whole
+  fleet for a global administrator in their personal workspace, DevEye's own
+  rule for its device list), each as `{ id, name, online, status,
+  ownerUserId, workspaceId, metricIntervalSeconds, report }`;
   `devices.isOnline(id)`: presence, synchronous; `devices.authorize(id)`: the
   device when it exists and belongs to this workspace, a throw otherwise
   (`not_found` for an unknown id). Call `authorize` before acting on a device
   id the client sent: the id is caller input, and this check is what ties it
   to the request's workspace.
+- `telemetry`: the devices' metric store, capability `'telemetry.read'`,
+  reserved to DevEye's own modules.
 - `agents`: the agent-fleet transport, capability `'agents'`, reserved to
   DevEye's own modules.
 

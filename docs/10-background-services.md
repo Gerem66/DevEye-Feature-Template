@@ -33,10 +33,14 @@ ticker and delegate: `{ start: () => ticker.start(), stop: () => ticker.stop(), 
 
 `repo`, `listWorkspaceIds()`, `storeFor(workspaceId)`, `cipherFor(workspaceId)`,
 `deveyeFor(workspaceId)` (notify only), `devicesFor(workspaceId)` (`list` and
-`isOnline`, capability `'devices.read'`), `audit(entry)` (recorded as the
-system; pass `userId` when the work concerns one user's data), `keys` (raw key
-wrapping, [below](#wrapping-key-material-of-your-own-depskeys)), `agents`
-(reserved, [below](#the-agent-fleet-reserved)), `createTicker`, `logger`.
+`isOnline`, capability `'devices.read'`), `devices` (`find(id)` and
+`isOnline`, the whole fleet, same capability), `telemetry` (reserved,
+capability `'telemetry.read'`), `live.changed(workspaceId)` (your topic,
+from a service: see [09-live](09-live.md#writes-without-a-command)),
+`audit(entry)` (recorded as the system; pass `userId` when the work concerns
+one user's data), `keys` (raw key wrapping,
+[below](#wrapping-key-material-of-your-own-depskeys)), `agents` (reserved,
+[below](#the-agent-fleet-reserved)), `createTicker`, `logger`.
 
 No user, no session, no `'private'` tier: the sessionless store cannot write
 private values (the type refuses), and reading one throws `locked`. If your
@@ -121,8 +125,14 @@ it means for you:
 
 - You can only fill a contract the host already knows: a key nothing looks up
   is inert. The published contracts today: `CLOUDSYNC_BACKUP_PROVIDER`
-  (`'cloudsync.backup'`, interface `CloudSyncBackupProvider`). Proposing a new
-  one is a change to `@deveye/types`, hence a pull request against DevEye.
+  (`'cloudsync.backup'`, interface `CloudSyncBackupProvider`),
+  `UPTIME_ITEMS_PROVIDER` (`'uptime.items'`, `UptimeItemsProvider`, what the
+  Projects feature asks before linking a service), `SENTINEL_AGENT_CONFIG_PROVIDER`
+  (`'sentinel.agentConfig'`, `SentinelAgentConfigProvider`, what Sentinel
+  contributes to the config pushed to an agent). Proposing a new one is a
+  change to `@deveye/types`, hence a pull request against DevEye. The client
+  twin (`FeatureClient.providers`, `UPTIME_CLIENT_PROVIDER`) lets an app
+  screen compose a module's components the same way ([05-client](05-client.md#offering-components-to-the-host-providers)).
 - Providers live on the service: a module that offers one exports
   `createService`, even with no ticker.
 - The app calls a provider without a session, like every service: only
@@ -141,18 +151,24 @@ payload types the facade takes come from `@deveye/types` itself, outside the
 cannot depend on them. What a module may know about devices is
 `'devices.read'`, above. For the record, what the capability opens:
 
-- `ctx.deveye.agents` and `deps.agents` (`AgentsFacade`): `isOnline`, nine
-  outbound `requestSync*` calls that answer `false` when the agent is offline
-  (frame dropped, never queued), and `publishSyncProgress` /
-  `publishSyncState`, the fan-out to the browsers subscribed to a share.
+- `ctx.deveye.agents` and `deps.agents` (`AgentsFacade`): `isOnline`,
+  `requestScan` (an immediate security scan), `pushConfig` (the device's
+  collection config, recomposed by the app from the device row and the
+  modules' contributions), nine outbound `requestSync*` calls that answer
+  `false` when the agent is offline (frame dropped, never queued), and
+  `publishSyncProgress` / `publishSyncState`, the fan-out to the browsers
+  subscribed to a share.
 - `ctx.transport` (`SdkSocketTransport`): the caller's own browser socket,
   `subscribeSync` / `unsubscribeSync`, and chunked downloads with backpressure
   (`sendSyncChunk` returns the socket's send-buffer size after the frame,
   `syncChunkBuffered` reads it). Every method throws `forbidden` without the
   capability.
 - `FeatureService.agentHooks` (`FeatureAgentHooks`): the inbound side,
-  `onAgentConnect`, `onAgentOffline`, `onSyncChanged`, `onSyncIndex`,
-  `onSyncChunk`, `onSyncAck`, `onSyncOpResult`. Every hook is optional; an
+  `onAgentConnect`, `onAgentOffline`, the telemetry once the app has
+  persisted it (`onReport`, `onMetricsBatch`, `onIntegrity`, `onAuthEvents`;
+  only for active devices, and whether a device is watched by your feature
+  is your decision), `onSyncChanged`, `onSyncIndex`, `onSyncChunk`,
+  `onSyncAck`, `onSyncOpResult`. Every hook is optional; an
   absent one is a no-op. The app aggregates the hooks of every module that
   declares `'agents'` and calls each in isolation: a throw or a rejection in
   one module is logged by the host (`{ err, module, hook }`) and reaches

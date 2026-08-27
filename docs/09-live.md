@@ -41,6 +41,15 @@ Two contracts to respect:
   is how "open the settings of item 42 from another workspace" and "join
   Alice" find your view.
 
+## Writes without a command
+
+Your `mutates: true` commands broadcast your topic on their own. A background
+service writes without a command, so it says so itself:
+`deps.live.changed(workspaceId)` makes every member's client re-fetch your
+declared resources (and the workspaces linked by projections, for a
+share-wired feature). Call it on state transitions, never on every tick: each
+call re-fetches for everyone.
+
 ## Typing indicator
 
 For chat-like surfaces: `useTypingSignal().onInput()` while the user types,

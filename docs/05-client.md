@@ -50,6 +50,27 @@ Two escape hatches for less ordinary commands:
   prompt, or read `useSecrecy()` and render locked rows as such (see
   [04-storage-and-encryption](04-storage-and-encryption.md)).
 
+## Dialogs, popups and the other shared pieces
+
+The barrel also carries the app's imperative dialog layer (`Popup`, driven by
+`OpenPopup(id, input)`, which resolves with what `ClosePopup(id, result)`
+passes), `DialogCancelButton` for a Dialog footer, `openInfo` for an "i"
+explainer, `CountWidget` + `useWorkspaceCount` for a home card that shows a
+plain count of one of your `.count` commands, and `useDragReorder`, the one
+drag-and-drop reorder gesture of the app (a handle per row, an insertion bar
+the hook positions itself). Same rule as the rest: nothing else of the app
+is API.
+
+## Offering components to the host: `providers`
+
+The client twin of a service's `providers`: an app screen sometimes composes a
+module's components (Projects shows the availability strip of a linked Uptime
+service). The contract is published in `@deveye/types/sdk` (a key in
+`providers.ts`, the component types in `sdk/client.ts`); the module fills it
+on its client entry, `providers: { [KEY]: {...} }`; the app looks it up at
+render time and degrades cleanly when the module is absent. Like the server
+side, you can only fill a contract the host already knows.
+
 ## The widget
 
 No props, half the size, seconds of attention: show the one number or line

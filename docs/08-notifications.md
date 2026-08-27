@@ -30,6 +30,13 @@ const notify = deps.deveyeFor(workspaceId).notify;
 if (await notify.hasRoute()) await notify.send({ subject, body });
 ```
 
+An alert is `{ subject, body, payload?, embeds? }`. `subject` and `body` are
+what every channel receives (mail, Slack, a custom webhook): keep them
+complete on their own. `payload` adds structured fields for a custom
+endpoint. `embeds` is an optional Discord layout (embed objects as the
+Discord webhook API takes them), used only on a Discord channel, where it
+replaces the plain text; a channel that knows no embeds loses nothing.
+
 Everything is off by default: no channel or no route means nothing is sent,
 and `send` resolves `false`. Never treat that as an error; a workspace that
 chose silence chose it. If your feature marks things as "already notified", do

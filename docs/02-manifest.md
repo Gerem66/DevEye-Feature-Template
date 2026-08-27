@@ -17,7 +17,7 @@ command names, which is what makes `featureApi(manifest)` fully typed.
 | `notifies` | the Notifications settings tab and the channels grant; required for the `notify` capability |
 | `hasItems`, `itemNoun` | per-item settings screens ("Settings of this service") |
 | `sources` | the feature-scope Sources tab (API keys, destinations); `hint` is its lead sentence |
-| `shareTier` | must be `'never'` for external modules for now |
+| `shareTier` | must be `'never'` for external modules for now; anything else commits a module to the sharing contract (a server `items` entry, listings that read `ctx.sharing.scope()`), which DevEye's own modules use |
 | `tile.compact` | half-height card, like device tiles |
 | `topbarWidget` | offers your `TopbarWidget` component in the navbar widget picker; `description` is its subtitle there |
 | `resources` | the client cache keys your topic refreshes |
@@ -42,7 +42,8 @@ the `NativeCapability` type in `@deveye/types/sdk`:
 | `'notify'` | `ctx.deveye.notify` and `deps.deveyeFor(id).notify`: send through the channels the workspace routed to you; pair it with `notifies: true`, which gives the workspace the tab to route them ([08-notifications](08-notifications.md)) |
 | `'mail.accounts'` | `ctx.deveye.mail.listAccounts()`: the workspace's open-tier mail accounts, metadata only (`id`, `label`, `address`), never credentials |
 | `'members.read'` | `ctx.deveye.members.list()`: `{ userId, name, isOwner }` per member |
-| `'devices.read'` | `ctx.deveye.devices` (`authorize`, `list`, `isOnline`) in handlers, `deps.devicesFor(id)` (`list`, `isOnline`) in services ([03-server-handlers](03-server-handlers.md#native-features-through-ctxdeveye)) |
+| `'devices.read'` | `ctx.deveye.devices` (`authorize`, `list`, `isOnline`) in handlers, `deps.devicesFor(id)` (`list`, `isOnline`) and `deps.devices` (`find`, `isOnline`, the whole fleet) in services ([03-server-handlers](03-server-handlers.md#native-features-through-ctxdeveye)) |
+| `'telemetry.read'` | the devices' telemetry (`ctx.deveye.telemetry`, `deps.telemetry`); **reserved**, see below |
 | `'agents'` | the agent-fleet sync transport; **reserved**, see below |
 
 ## Refreshing on another feature's topic
@@ -63,8 +64,8 @@ general subscription mechanism.
 
 ## Reserved for DevEye's own modules
 
-Two declarations exist for DevEye's native features migrated onto this same
-contract, and `validateManifest` refuses both on an `x-` id:
+Three declarations exist for DevEye's native features migrated onto this same
+contract, and `validateManifest` refuses them on an `x-` id:
 
 - **`nativeCapabilities: ['agents']`**: the agent-fleet sync transport
   (outbound requests to the agent installed on the workspace's devices, the
@@ -75,6 +76,11 @@ contract, and `validateManifest` refuses both on an `x-` id:
   promises: a third-party module cannot depend on it. What a module may know
   about devices is behind `'devices.read'`. Details, for the record, in
   [10-background-services](10-background-services.md#the-agent-fleet-reserved).
+- **`nativeCapabilities: ['telemetry.read']`**: the devices' metric store
+  (`telemetry.snapshot(deviceId, ts)`, the process list and metric row
+  nearest an instant; `telemetry.pinInstant(deviceId, ts)`, so retention
+  never prunes the evidence a finding rests on). App infrastructure like the
+  agent protocol, and reserved for the same reason.
 - **`commandPrefix`**: overrides the `<id>.` prefix checked on commands and
   resources, and must still equal `<id>.` case-insensitively. It exists
   because one native id (`cloudsync`) has always owned `cloudSync.*`

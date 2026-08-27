@@ -11,8 +11,8 @@ and the app-provided `deveye-sdk-client` module.
 - `ExtraPermissionSpec`: `toggle` or `choice` (2..5 options, least-privileged
   `default`, explicit `ownerValue`). `MAX_EXTRA_PERMISSIONS = 4`.
 - `NativeCapability`: `'notify' | 'mail.accounts' | 'members.read' |
-  'devices.read' | 'agents'`; the last is reserved to native-id modules
-  (`validateManifest` refuses it on an `x-` id).
+  'devices.read' | 'telemetry.read' | 'agents'`; the last two are reserved to
+  native-id modules (`validateManifest` refuses them on an `x-` id).
 - `CrossTopicInvalidation`: `{ topic, keys }`, the element of the manifest's
   `alsoInvalidatedBy` (a native topic, a subset of `resources`; at most 4).
 - `SettingsTab`, `CustomTabRef`, `FeatureCategory`.
@@ -23,51 +23,69 @@ and the app-provided `deveye-sdk-client` module.
   module's data; see [10-background-services](10-background-services.md#offering-a-contract-to-the-host-providers)):
   `CLOUDSYNC_BACKUP_PROVIDER` (`'cloudsync.backup'`), `CloudSyncBackupProvider`
   (`findShare`, `listShares`, `statsByShare`, `listPresentFiles`, `openBlob`)
-  and its row types `SyncBackupShare`, `SyncBackupStats`, `SyncBackupFile`.
+  and its row types `SyncBackupShare`, `SyncBackupStats`, `SyncBackupFile`;
+  `UPTIME_ITEMS_PROVIDER` (`'uptime.items'`), `UptimeItemsProvider`
+  (`exists(serviceId, workspaceId)`); `UPTIME_CLIENT_PROVIDER`
+  (`'uptime.client'`, its contract `UptimeClientProvider` lives in
+  `sdk/client`); `SENTINEL_AGENT_CONFIG_PROVIDER` (`'sentinel.agentConfig'`),
+  `SentinelAgentConfig`, `SentinelAgentConfigProvider` (`configFor(deviceId)`).
 
 ## `@deveye/types/sdk/server`
 
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
-  `migrationsDir`, `createService(deps)`. A module with migrations also ships
-  `src/server/migrations/`' destructive mirror `src/server/uninstall.sql`
-  (`DROP TABLE IF EXISTS` on its own `ft_<slug>_` tables only — see
-  04-storage-and-encryption).
+  `migrationsDir`, `createService(deps)`, `items` (`FeatureItemsEntry`:
+  `homeOf(repo, itemId, workspaceId)`, `labelOf(repo, cipher, itemId,
+  workspaceId)`, required by a `shareTier` other than `'never'`). A module
+  with migrations also ships `src/server/migrations/`' destructive mirror
+  `src/server/uninstall.sql` (`DROP TABLE IF EXISTS` on its own `ft_<slug>_`
+  tables only; see 04-storage-and-encryption).
 - `SdkFeatureDefinition` / `defineSdkFeature`: one command:
   `access?: { level?: 'read' | 'write'; extras?: string[] }`, `mutates?: boolean`,
   `handler(ctx, input)`.
 - `SdkFeatureContext<Repo>`: see [03-server-handlers](03-server-handlers.md).
   Carries `transport: SdkSocketTransport` (capability `'agents'`; every method
-  throws `forbidden` otherwise).
+  throws `forbidden` otherwise), `secrecy: SdkSecrecy` (`isUnlocked()`),
+  `items: SdkItems` (`restrictions()`, `assert(itemId, level?)`,
+  `forget(itemId)`) and `sharing: SdkSharing` (`scope()` returning an
+  `SdkShareScope`: `foreignIds`, `homeOf`, `cipherFor`).
 - `FeatureStore`: `put/putJson/get/getJson/remove/keys`; `putJson`/`getJson`
   take a zod schema. `StorageEncryption = 'server' | 'private' | 'none'`.
 - `SessionlessFeatureStore`: the service variant; `'private'` unrepresentable.
 - `SdkCipher`: `encrypt`, `decrypt` (throws), `tryDecrypt` (null).
 - `SdkQueryable`: `query<T>(sql, params): Promise<T[]>`,
   `execute(sql, params): Promise<{ affectedRows, insertId }>`.
-- `DevEyeFacade`: `notify.hasRoute/send`, `mail.listAccounts`, `members.list`,
-  `devices.authorize/list/isOnline`, `agents` (an `AgentsFacade`); each gated
-  by the manifest's `nativeCapabilities`.
-- `SdkDevice`: `{ id, name, online }`, what the devices facade reveals.
+- `DevEyeFacade`: `notify.hasRoute/send` (an `SdkAlert`: `subject`, `body`,
+  `payload?`, `embeds?`), `mail.listAccounts`, `members.list`,
+  `devices.authorize/list/isOnline`, `telemetry` (an `SdkTelemetry`:
+  `snapshot(deviceId, ts)` returning an `SdkTelemetrySnapshot` or null,
+  `pinInstant(deviceId, ts)`), `agents` (an `AgentsFacade`); each gated by
+  the manifest's `nativeCapabilities`.
+- `SdkDevice`: `{ id, name, online, status, ownerUserId, workspaceId,
+  metricIntervalSeconds, report }`, what the devices facade reveals.
 - `FeatureService`: `start` (may be async; awaited at boot, before the agent
   sockets open), `stop`, `agentHooks?: FeatureAgentHooks`,
   `providers?: Readonly<Record<string, unknown>>` (keyed by a published
   provider key).
 - `FeatureServiceDeps<Repo>`: `repo`, `listWorkspaceIds`, `storeFor`,
   `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
-  `isOnline`), `audit` (system source, optional `userId`), `agents`, `keys`,
+  `isOnline`), `devices` (`SdkFleetDevices`: `find`, `isOnline`),
+  `telemetry`, `live` (`SdkLive`: `changed(workspaceId)`), `audit` (system
+  source, optional `userId`), `agents`, `keys`,
   `createTicker({ intervalMs, tick })`, `logger`.
 - `SdkServerKeys`: `sealBytes(Uint8Array): string`,
   `openBytes(string): Uint8Array | null` (null: tampered, or server keys
   changed). Server key, module-owned key material only, never user data.
 - Reserved to native-id modules (capability `'agents'`): `AgentsFacade`
-  (`isOnline`; `requestSyncConfig`, `requestSyncScan`, `requestSyncPush`,
+  (`isOnline`, `requestScan`, `pushConfig`; `requestSyncConfig`,
+  `requestSyncScan`, `requestSyncPush`,
   `requestSyncApplyChunk`, `requestSyncApplyStart`, `requestSyncApplyDir`,
   `requestSyncApplyLocal`, `requestSyncMove`, `requestSyncDelete`, each
   `false` when the agent is offline; `publishSyncProgress`,
   `publishSyncState`), `SdkSocketTransport` (`subscribeSync`,
   `unsubscribeSync`, `sendSyncChunk` returning the send-buffer size,
   `syncChunkBuffered`), `FeatureAgentHooks` (`onAgentConnect`,
-  `onAgentOffline`, `onSyncChanged`, `onSyncIndex`, `onSyncChunk`,
+  `onAgentOffline`, `onReport`, `onMetricsBatch`, `onIntegrity`,
+  `onAuthEvents`, `onSyncChanged`, `onSyncIndex`, `onSyncChunk`,
   `onSyncAck`, `onSyncOpResult`, all optional). Their payload types come from
   `@deveye/types` itself, outside the SDK's stability promise.
 - `FeatureError(code, message, details?)`: codes `validation`, `forbidden`,
@@ -79,19 +97,29 @@ and the app-provided `deveye-sdk-client` module.
   `Full({ closeFeature })`, `settingsPanels?`, `TopbarWidget?` (no props: it
   may only show what your own commands return, which the server authorizes
   against the caller's grants), `cacheDurationMinutes?`,
-  `preload?`, `holdSecrecy?`.
+  `preload?`, `holdSecrecy?`, `providers?` (named contracts offered to the
+  host's screens; `UptimeClientProvider` with `UptimeLinkedService`,
+  `UptimeHistoryPoint`, `UptimeHistoryResolution` is the one published).
 - `SettingsPanelProps`: `{ scope, canWrite }`; `SdkSettingsScope` is
   `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`.
 
 ## `@deveye/types/sdk/testing`
 
 - `createTestContext(overrides?)`: in-memory `SdkFeatureContext` plus
-  `recorded` (notifications, audits, agentRequests) and an inspectable
+  `recorded` (notifications, audits, agentRequests, pinnedInstants),
+  `forgotten` (the item ids passed to `items.forget`) and an inspectable
   `store.rows`. Its facade answers by default: `devices.authorize` resolves
-  `{ id, name: 'Test device', online: true }`, `devices.list` is empty,
-  `devices.isOnline` is true, `agents` records every request and answers true,
-  `transport` is a no-op. Overrides: `repo`, `userId`, `workspaceId`, `kind`,
-  `isOwner`, `canWrite`, `extras`, `hasRoute`, `deveye` (a partial facade).
+  `testDevice({ id })` (active, online, unreported), `devices.list` is empty,
+  `devices.isOnline` is true, `telemetry.snapshot` is null, `agents` records
+  every request and answers true, `transport` is a no-op, `secrecy` is
+  unlocked, `items.restrictions()` is empty and `sharing.scope()` has no
+  projection. Overrides: `repo`, `userId`, `workspaceId`, `kind`, `isOwner`,
+  `canWrite`, `extras`, `manifest`, `hasRoute`, `devices`, `snapshots`,
+  `deveye` (a partial facade), `unlocked`, `itemRestrictions`, `shares`.
+- `createTestServiceDeps(overrides?)`: the service twin; `recorded` adds
+  `tickers` and `liveChanges`. Overrides: `repo`, `workspaceIds`, `devices`,
+  `hasRoute`, `snapshots`.
+- `testDevice(over)`: an `SdkDevice` with sensible defaults.
 
 ## `deveye-sdk-client` (provided by the app)
 
@@ -101,8 +129,11 @@ maintained separately from the server sections above, and that file is the
 authority when the two differ.
 
 - UI kit: `Button`, `TextInput`, `SelectInput`, `Checkbox`, `Switch`,
-  `SegmentedControl`, `Dialog`, `StatusBadge`, `ConfirmDialog`,
-  `FeatureSettingsButton`, `settingsStyles` (the canonical settings rows).
+  `SegmentedControl`, `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
+  `ClosePopup` (the imperative dialog layer), `openInfo`, `StatusBadge`,
+  `ConfirmDialog`, `FeatureSettingsButton`, `settingsStyles` (the canonical
+  settings rows), `CountWidget` + `useWorkspaceCount` (+ `CountState`),
+  `useDragReorder`.
 - `useDialogClose()`: the enclosing `Dialog`'s guarded close (unsaved-changes
   prompt included).
 - `useDialogSubmit(fn | null)`: `fn` becomes the enclosing `Dialog`'s primary
