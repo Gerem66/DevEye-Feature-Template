@@ -40,7 +40,7 @@ anywhere, and no cache to manage.
 
 The card and the full view share the same hook, so they always agree.
 
-Two escape hatches for less ordinary commands:
+A few escape hatches for less ordinary commands:
 
 - `api.send(name, input, { timeoutMs: 30_000 })` stretches the wait for a
   command that queries a slow third party — the default socket timeout stays
@@ -49,6 +49,16 @@ Two escape hatches for less ordinary commands:
   `withSecrecy(() => api.send(...))` to retry once after the global unlock
   prompt, or read `useSecrecy()` and render locked rows as such (see
   [04-storage-and-encryption](04-storage-and-encryption.md)).
+- The error a command rejects with is a `WsError` (exported by the barrel,
+  `instanceof` works): `code` is the protocol code (`locked`, `forbidden`,
+  `not_found`, `validation`, `conflict`, `timeout`...), `details` carries the
+  validation breakdown when there is one. `humanizeError(e, fallback)` turns
+  the common codes into a sentence; read `code` yourself when your feature
+  knows better (Mail tells an expired mailbox authorization from a sealed
+  session, and spells out which field a validation refused).
+- `touchSecrecy()` keeps the unlocked session alive during a long operation
+  the user is watching (a mailbox sync). `withSecrecy` already touches after
+  every successful call, so most features never call it directly.
 
 ## Dialogs, popups and the other shared pieces
 

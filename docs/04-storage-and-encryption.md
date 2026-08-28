@@ -58,6 +58,27 @@ await ctx.repo.saveKey(ctx.workspaceId, sealed);
 Migrations run at boot without a transaction: make every statement replayable
 (guard on INFORMATION_SCHEMA, no-op branch), exactly like DevEye's own.
 
+## Beyond strings: `ctx.keys`, and tickets
+
+`ctx.cipher()` and the store encrypt strings. Two things they do not cover:
+
+- **Key material of your own.** A module that runs its own bulk encryption
+  (files, streams) owns a raw symmetric key. `ctx.keys` (the same
+  `SdkServerKeys` a service gets as `deps.keys`) wraps it under the server key
+  (`sealBytes` / `openBytes`) or derives one from it (`derive(salt, info,
+  length)`: HKDF over the server key, never stored anywhere, for material
+  that must survive the database). Details and the unwrap-at-start pattern in
+  [10-background-services](10-background-services.md#wrapping-key-material-of-your-own-depskeys).
+- **A browser request without a session.** A download the browser must open
+  natively, an OAuth consent that comes back through the provider: no header
+  to add, so no session. `ctx.secrecy.ticket(payload, { ttlSeconds? })` mints
+  a short-lived ticket, signed by the host and bound to the caller (their
+  session, this workspace, your module); a public route of your service
+  redeems it with `deps.secrecy.redeem(ticket)` and gets the caller's ciphers
+  back, private tier included while their session is unlocked. The module
+  never sees a session id nor a key. See
+  [10-background-services](10-background-services.md#tickets-a-public-route-acting-for-a-session).
+
 ## Uninstall
 
 A module that declares migrations must also ship their destructive mirror:

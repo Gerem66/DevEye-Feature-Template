@@ -10,7 +10,7 @@ popup; it declares tabs and provides panels.
 // manifest
 settings: {
     feature: ['general', 'sources', { id: 'advanced', label: 'Advanced', icon: 'settings' }],
-    item: ['general']        // only if hasItems
+    item: ['general', 'sync', 'encryption']        // only if hasItems
 }
 ```
 
@@ -22,10 +22,13 @@ settings: {
 - `'notifications'` is **fully generic**: if your manifest says
   `notifies: true`, DevEye renders the whole channels-and-routing tab for you.
   You write nothing.
+- `'sync'` (item scope only) is the cadence and maintenance of an item your
+  feature keeps fresh in the background (Mail: how often a mailbox is polled,
+  pausing it, rebuilding a folder's cache). You provide `settingsPanels.sync`.
 - `'encryption'` (item scope only) is where an item chooses the form of its
   own data when your feature leaves the choice (Backup: sealed or plain
-  archives, per job). The shell names and places the tab; you provide
-  `settingsPanels.encryption`.
+  archives, per job; Mail: the open or guarded tier of a mailbox). The shell
+  names and places the tab; you provide `settingsPanels.encryption`.
 
 ## Writing a panel
 

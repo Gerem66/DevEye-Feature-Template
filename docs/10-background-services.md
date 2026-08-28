@@ -38,9 +38,13 @@ ticker and delegate: `{ start: () => ticker.start(), stop: () => ticker.stop(), 
 capability `'telemetry.read'`), `live.changed(workspaceId)` (your topic,
 from a service: see [09-live](09-live.md#writes-without-a-command)),
 `audit(entry)` (recorded as the system; pass `userId` when the work concerns
-one user's data), `keys` (raw key wrapping,
-[below](#wrapping-key-material-of-your-own-depskeys)), `agents` (reserved,
-[below](#the-agent-fleet-reserved)), `createTicker`, `logger`.
+one user's data), `keys` (raw key wrapping and derivation,
+[below](#wrapping-key-material-of-your-own-depskeys)), `secrecy`
+(`redeem(ticket)`, [below](#tickets-a-public-route-acting-for-a-session)),
+`origins` (`{ app, public }`, the same a handler gets as `ctx.origins`),
+`providers` (`get<T>(key)`, [below](#consuming-a-contract-providersget)),
+`agents` (reserved, [below](#the-agent-fleet-reserved)), `createTicker`,
+`logger`.
 
 No user, no session, no `'private'` tier: the sessionless store cannot write
 private values (the type refuses), and reading one throws `locked`. If your
@@ -93,11 +97,19 @@ if (wrapped === null) {
   server keys changed. Treat `null` as fatal for that key and say so loudly:
   generating a fresh one would silently make everything sealed under the old
   one unreadable.
+- `derive(salt: string, info: string, length: number): Uint8Array` yields a
+  key DERIVED from the server key (HKDF-SHA256 over the same material as
+  `sealBytes`), never stored anywhere: for material that must survive the
+  database, since a key kept in a table would sit inside the very backup it
+  protects. The same `(salt, info)` always yields the same key as long as
+  `CRYPT_KEY_A` / `CRYPT_KEY_B` do not change; it is also the salt of a module
+  that hashes something (a visitor id), never `CRYPT_KEY_A` itself.
 - Key material only, never user data: user data goes through the ciphers and
   the store, whose tiers (`'server'`, `'private'`) the server key knows nothing
   about.
-- Service deps only: there is no `keys` on the handler context. Unwrap at
-  `start()`, keep the raw key in memory, hand it to your handlers yourself.
+- Handlers get the same object as `ctx.keys`, so a request can derive or
+  unwrap at its own pace. A key a service works with is still best unwrapped
+  once at `start()` and kept in memory.
 
 ## Public HTTP routes: `publicRoutes`
 
@@ -135,15 +147,37 @@ createService(deps) {
   origins. Whatever gate you need (a public key, an origin allowlist, a
   rate limit) is yours to enforce in the handler; `rateLimit` adds a
   per-address ceiling on top of the host's own.
+- `exposure` picks the listeners: `'everywhere'` (default) serves the route
+  on the app and on the public surface, for what the outside world calls (a
+  beacon); `'app'` serves it on the app's own origin only, for what the
+  logged-in browser fetches without a session header (a ticketed download,
+  an OAuth callback that lands back in the app).
 - `req` is `{ headers, body, ip }` and nothing else: no user, no workspace,
   no `'private'` tier. Route the request from what it carries (a key in the
   body) to the workspace it belongs to, through your repo.
 - The reply surface is minimal and chainable: `header(name, value)`,
   `code(status)`, `send(payload?)`.
 - What you hand to the outside world (an install snippet, a callback URL)
-  comes from `ctx.origins.public` in a handler, never from the browser's
-  location: the app members use and the surface the outside reaches may be
-  two different addresses.
+  comes from `ctx.origins.public` in a handler, or `deps.origins` in a service
+  (`{ app, public }`, no trailing slash), never from the browser's location:
+  the app members use and the surface the outside reaches may be two
+  different addresses.
+
+### Tickets: a public route acting for a session
+
+A public route has no session, yet some of them serve the logged-in browser:
+a download the browser must open natively (no header to add), an OAuth
+consent that comes back through the provider. The handler that starts the
+gesture mints a ticket, `await ctx.secrecy.ticket(payload, { ttlSeconds })`
+(two minutes by default), signed by the host and bound to the caller: their
+session, this workspace, YOUR module. It hands the ticket to the browser (in
+the download URL, as the OAuth `state`); the public route redeems it,
+`await deps.secrecy.redeem(ticket)`, and gets `{ userId, workspaceId,
+payload, cipher: { server, private } }` back: the caller's open cipher
+always, the private one while their session is unlocked (`null` otherwise).
+`null` as a whole means invalid, expired, or another module's ticket: answer
+403 and stop. The module never sees a session id nor a key, and the route
+stays sessionless for everyone who does not hold a ticket.
 
 ## Offering a contract to the host: `providers`
 

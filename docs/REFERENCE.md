@@ -18,8 +18,9 @@ and the app-provided `deveye-sdk-client` module.
   [10-background-services](10-background-services.md#public-http-routes-publicroutes)).
 - `CrossTopicInvalidation`: `{ topic, keys }`, the element of the manifest's
   `alsoInvalidatedBy` (a native topic, a subset of `resources`; at most 4).
-- `SettingsTab` (`'general' | 'sources' | 'notifications' | 'permissions' | 'encryption'`), `CustomTabRef`, `FeatureCategory`, `FeatureLink` (`{ to, what }`,
-  `MAX_FEATURE_LINKS = 6`).
+- `SettingsTab` (`'general' | 'sources' | 'notifications' | 'permissions' | 'sync' | 'encryption'`;
+  `'sync'` and `'encryption'` are item-scope tabs), `CustomTabRef`,
+  `FeatureCategory`, `FeatureLink` (`{ to, what }`, `MAX_FEATURE_LINKS = 6`).
 - `validateManifest(manifest)`: throws with a named reason.
 - Ids: `externalFeatureIdSchema` (`/^x-[a-z][a-z0-9]{1,24}$/`), `featureIdSchema`,
   `isExternalFeatureId`, types `ExternalFeatureId`, `FeatureId`.
@@ -31,7 +32,10 @@ and the app-provided `deveye-sdk-client` module.
   `UPTIME_ITEMS_PROVIDER` (`'uptime.items'`), `UptimeItemsProvider`
   (`exists(serviceId, workspaceId)`); `UPTIME_CLIENT_PROVIDER`
   (`'uptime.client'`, its contract `UptimeClientProvider` lives in
-  `sdk/client`); `SENTINEL_AGENT_CONFIG_PROVIDER` (`'sentinel.agentConfig'`),
+  `sdk/client`); `MAIL_CLIENT_PROVIDER` (`'mail.client'`, contract
+  `MailClientProvider` in `sdk/client`: `listSenders()`, the ready senders an
+  email notification channel picks from, and `AccountDialog`, the feature's
+  own account form); `SENTINEL_AGENT_CONFIG_PROVIDER` (`'sentinel.agentConfig'`),
   `SentinelAgentConfig`, `SentinelAgentConfigProvider` (`configFor(deviceId)`);
   `DATABASE_BACKUP_PROVIDER` (`'database.backup'`), `DatabaseBackupProvider`
   (`listDatabases`, `findDatabase`, `openAccess`), `DatabaseBackupCandidate`,
@@ -52,7 +56,11 @@ and the app-provided `deveye-sdk-client` module.
   `handler(ctx, input)`.
 - `SdkFeatureContext<Repo>`: see [03-server-handlers](03-server-handlers.md).
   Carries `transport: SdkSocketTransport` (capability `'agents'`; every method
-  throws `forbidden` otherwise), `secrecy: SdkSecrecy` (`isUnlocked()`),
+  throws `forbidden` otherwise), `secrecy: SdkSecrecy` (`isUnlocked()`, and
+  `ticket(payload, { ttlSeconds? })`: a short-lived ticket signed by the host
+  and bound to the caller, their session, this workspace and your module, that
+  a public route of your service redeems with `deps.secrecy.redeem`; two
+  minutes by default), `keys: SdkServerKeys` (the same object a service gets),
   `items: SdkItems` (`restrictions()`, `assert(itemId, level?)`,
   `forget(itemId)`), `sharing: SdkSharing` (`scope()` returning an
   `SdkShareScope`: `foreignIds`, `homeOf`, `cipherFor`) and
@@ -92,7 +100,10 @@ and the app-provided `deveye-sdk-client` module.
 - `SdkPublicApp`: `get(path, opts, handler)` / `post(path, opts, handler)`;
   paths are absolute (`/t.js`, `/api/t/b`) and a path the host already serves
   is refused at boot. `SdkPublicRouteOptions`: `rateLimit?: { max,
-  timeWindow }` (a per-address ceiling on top of the host's own).
+  timeWindow }` (a per-address ceiling on top of the host's own),
+  `exposure?: 'everywhere' | 'app'` (`'everywhere'`, the default, mounts the
+  route on the app and the public surface; `'app'` on the app's own origin
+  only, for a ticketed download or an OAuth callback).
   `SdkPublicHandler(req: SdkPublicRequest, reply: SdkPublicReply)`: the request
   is `{ headers, body (JSON, already decoded, `undefined` when absent or
   unreadable), ip }`, nothing of a session; the reply is the chainable
@@ -101,8 +112,13 @@ and the app-provided `deveye-sdk-client` module.
   `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
   `isOnline`), `devices` (`SdkFleetDevices`: `find`, `isOnline`),
   `telemetry`, `live` (`SdkLive`: `changed(workspaceId)`), `audit` (system
-  source, optional `userId`), `agents`, `keys`, `providers` (`SdkProviders`,
-  same as on the context), `createTicker({ intervalMs, tick })`, `logger`.
+  source, optional `userId`), `agents`, `keys`, `secrecy`
+  (`redeem(ticket)`: an `SdkRedeemedTicket` `{ userId, workspaceId, payload,
+  cipher: { server, private } }`, the private cipher `null` while the caller's
+  session is sealed; `null` as a whole for a ticket invalid, expired or minted
+  by another module), `origins` (`{ app, public }`, as on the context),
+  `providers` (`SdkProviders`, same as on the context),
+  `createTicker({ intervalMs, tick })`, `logger`.
 - `SdkServerKeys`: `sealBytes(Uint8Array): string`,
   `openBytes(string): Uint8Array | null` (null: tampered, or server keys
   changed), `derive(salt, info, length): Uint8Array` (HKDF-SHA256 over the
@@ -129,12 +145,15 @@ and the app-provided `deveye-sdk-client` module.
 ## `@deveye/types/sdk/client`
 
 - `FeatureClient`: your `./client` export: `Widget` (no props),
-  `Full({ closeFeature })`, `settingsPanels?`, `TopbarWidget?` (no props: it
-  may only show what your own commands return, which the server authorizes
-  against the caller's grants), `cacheDurationMinutes?`,
-  `preload?`, `holdSecrecy?`, `providers?` (named contracts offered to the
-  host's screens; `UptimeClientProvider` with `UptimeLinkedService`,
-  `UptimeHistoryPoint`, `UptimeHistoryResolution` is the one published).
+  `Full({ closeFeature })`, `settingsPanels?` (one panel per manifest tab
+  that needs one: `general`, `sources`, `sync`, `encryption`, custom ids),
+  `TopbarWidget?` (no props: it may only show what your own commands return,
+  which the server authorizes against the caller's grants),
+  `cacheDurationMinutes?`, `preload?`, `holdSecrecy?`, `providers?` (named
+  contracts offered to the host's screens; `UptimeClientProvider` with
+  `UptimeLinkedService`, `UptimeHistoryPoint`, `UptimeHistoryResolution`, and
+  `MailClientProvider` with `listSenders` and `AccountDialog` are the ones
+  published).
 - `SettingsPanelProps`: `{ scope, canWrite }`; `SdkSettingsScope` is
   `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`.
 
@@ -183,12 +202,17 @@ authority when the two differ.
   absorbs Escape without closing.
 - Data: `useResource(key, load, fallback, deps?)`, `invalidate(...keys)`,
   `useResourceVersion(key)`, `onResourceChange(key, cb)`,
-  `humanizeError(e, fallback)`, `featureApi(manifest)` (typed `send`, with an
-  optional `{ timeoutMs }` for commands that query a slow third party).
+  `humanizeError(e, fallback)`, `WsError` (the class a command rejects with:
+  `code`, `message`, `details`; `instanceof` works), `featureApi(manifest)`
+  (typed `send`, with an optional `{ timeoutMs }` for commands that query a
+  slow third party).
 - Password-based encryption: `useSecrecy()` (live lock state), `withSecrecy(run)`
   (retry once after the unlock prompt on a `locked` error),
-  `ensureSecrecyUnlocked()` (explicit unlock gesture). Needed as soon as one of
-  your commands reads `'private'` data.
+  `ensureSecrecyUnlocked()` (explicit unlock gesture), `touchSecrecy()` (keep
+  the unlocked session alive during a long operation the user is watching),
+  `UnlockCancelledError` (the rejection of the two previous ones when the
+  prompt is dismissed: a cancel, not a failure). Needed as soon as one of your
+  commands reads `'private'` data.
 - Live: `useLiveSegment`, `useLiveItemTarget`, `useLiveOutline(s)` (+
   `LiveOutlineProps`), `useTypers`, `useTypingSignal`.
 - Push events: `onServerEvent(event, schema, cb)` (typed server-push
