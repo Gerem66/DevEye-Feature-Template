@@ -58,8 +58,15 @@ passes), `DialogCancelButton` for a Dialog footer, `openInfo` for an "i"
 explainer, `CountWidget` + `useWorkspaceCount` for a home card that shows a
 plain count of one of your `.count` commands, and `useDragReorder`, the one
 drag-and-drop reorder gesture of the app (a handle per row, an insertion bar
-the hook positions itself). Same rule as the rest: nothing else of the app
-is API.
+the hook positions itself). To put a face on "who did what" in a history
+list, `useWorkspaceMembers()` returns the members of the active workspace as
+the session lists them (empty before it answers, never `null`) and `Avatar`
+renders one member's identity dot (their avatar, or their initial on their
+account colour; `user` may be `undefined`, a deleted account must not break a
+row). To paint something else in a member's colour (a dot in a legend, a
+point on a chart), `userColorVar(color)` gives the CSS variable of an account
+colour, the same one the live presence uses. Same rule as the rest: nothing
+else of the app is API.
 
 ## Offering components to the host: `providers`
 
@@ -103,6 +110,10 @@ another feature of the active workspace, on one of its items when `itemId` is
 given (the host's teleport, for a "see this project" link), and
 `useRequestPopupWidth(px | null)` asks the feature popup for a wider frame
 while the calling component is mounted (a table explorer in expanded mode).
+When two sticky bands stack (a detail header, then a period bar under it),
+`useStickyOffset<T>()` measures the top one: put its `ref` on that band and its
+`style` on a common ancestor, and the lower band reads `--sticky-head` for its
+`top` (falling back to `0px` where there is no band above).
 
 ## Styles
 

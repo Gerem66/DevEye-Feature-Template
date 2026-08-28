@@ -99,6 +99,52 @@ if (wrapped === null) {
 - Service deps only: there is no `keys` on the handler context. Unwrap at
   `start()`, keep the raw key in memory, hand it to your handlers yourself.
 
+## Public HTTP routes: `publicRoutes`
+
+Some features are fed from outside: an analytics beacon posted by browsers
+that know nothing of DevEye, from sites that are not DevEye's. That is the one
+case where a module opens a door without a session, and it is declared for
+that reason: `nativeCapabilities: ['routes.public']` in the manifest (an
+administrator reviews it before installing), then `publicRoutes(app)` on the
+service object, next to `providers`:
+
+```ts
+createService(deps) {
+    return {
+        start() {},
+        stop() {},
+        publicRoutes(app: SdkPublicApp) {
+            app.get('/t.js', {}, async (_req, reply) => {
+                return reply.header('Content-Type', 'application/javascript').send(SCRIPT);
+            });
+            app.post('/api/t/b', { rateLimit: { max: 120, timeWindow: '1 minute' } }, async (req, reply) => {
+                const body = schema.safeParse(req.body);   // req.body: JSON, already decoded
+                if (body.success) queue.push(req.ip, body.data);
+                return reply.code(204).send();              // always 204: nothing to infer from it
+            });
+        }
+    };
+}
+```
+
+- Paths are absolute; a path the host already serves is refused at boot.
+- The host calls `publicRoutes` once **per listener** it exposes to the
+  outside (the app, and the public surface when it has one): register the
+  same routes each time, and keep the handler free of per-listener state.
+- CORS is open on these routes, on purpose: they are meant for other
+  origins. Whatever gate you need (a public key, an origin allowlist, a
+  rate limit) is yours to enforce in the handler; `rateLimit` adds a
+  per-address ceiling on top of the host's own.
+- `req` is `{ headers, body, ip }` and nothing else: no user, no workspace,
+  no `'private'` tier. Route the request from what it carries (a key in the
+  body) to the workspace it belongs to, through your repo.
+- The reply surface is minimal and chainable: `header(name, value)`,
+  `code(status)`, `send(payload?)`.
+- What you hand to the outside world (an install snippet, a callback URL)
+  comes from `ctx.origins.public` in a handler, never from the browser's
+  location: the app members use and the surface the outside reaches may be
+  two different addresses.
+
 ## Offering a contract to the host: `providers`
 
 Sometimes DevEye's own code needs data a module owns (its Backup feature

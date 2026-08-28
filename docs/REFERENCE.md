@@ -11,8 +11,11 @@ and the app-provided `deveye-sdk-client` module.
 - `ExtraPermissionSpec`: `toggle` or `choice` (2..5 options, least-privileged
   `default`, explicit `ownerValue`). `MAX_EXTRA_PERMISSIONS = 4`.
 - `NativeCapability`: `'notify' | 'mail.accounts' | 'members.read' |
-  'devices.read' | 'telemetry.read' | 'agents'`; the last two are reserved to
-  native-id modules (`validateManifest` refuses them on an `x-` id).
+  'devices.read' | 'telemetry.read' | 'agents' | 'routes.public'`;
+  `'telemetry.read'` and `'agents'` are reserved to native-id modules
+  (`validateManifest` refuses them on an `x-` id). `'routes.public'` opens
+  sessionless HTTP routes (`FeatureService.publicRoutes`, see
+  [10-background-services](10-background-services.md#public-http-routes-publicroutes)).
 - `CrossTopicInvalidation`: `{ topic, keys }`, the element of the manifest's
   `alsoInvalidatedBy` (a native topic, a subset of `resources`; at most 4).
 - `SettingsTab` (`'general' | 'sources' | 'notifications' | 'permissions' | 'encryption'`), `CustomTabRef`, `FeatureCategory`, `FeatureLink` (`{ to, what }`,
@@ -54,15 +57,26 @@ and the app-provided `deveye-sdk-client` module.
   `forget(itemId)`), `sharing: SdkSharing` (`scope()` returning an
   `SdkShareScope`: `foreignIds`, `homeOf`, `cipherFor`) and
   `providers: SdkProviders` (`get<T>(key)`: a published contract, whoever
-  offers it; `undefined` when nobody does).
+  offers it; `undefined` when nobody does) and `origins: { app, public }`
+  (where DevEye lives, as URLs without a trailing slash: `app` is the origin
+  members use, `public` the one reachable without the VPN when the host has a
+  public surface, else the same; for what a module hands to the outside
+  world, an install snippet or a callback URL, never derived from the
+  browser's location).
 - `FeatureStore`: `put/putJson/get/getJson/remove/keys`; `putJson`/`getJson`
   take a zod schema. `StorageEncryption = 'server' | 'private' | 'none'`.
 - `SessionlessFeatureStore`: the service variant; `'private'` unrepresentable.
 - `SdkCipher`: `encrypt`, `decrypt` (throws), `tryDecrypt` (null).
 - `SdkQueryable`: `query<T>(sql, params): Promise<T[]>`,
   `execute(sql, params): Promise<{ affectedRows, insertId }>`.
-- `DevEyeFacade`: `notify.hasRoute/send` (an `SdkAlert`: `subject`, `body`,
-  `payload?`, `embeds?`), `mail.listAccounts`, `members.list`,
+- `DevEyeFacade`: `notify.hasRoute(itemId?)`, `notify.send(alert, { itemId?,
+  except? })` (an `SdkAlert`: `subject`, `body`, `payload?`, `embeds?`;
+  `except` skips channel ids a live message already concluded on),
+  `notify.liveChannels({ itemId? })` (the routed `SdkLiveChannel`s able to
+  carry a live message), `notify.postLive(channelId, message, messageId?)`
+  (posts or edits an `SdkRichMessage` `{ content?, embeds? }`; resolves the
+  id to keep for the next edit, `null` when the channel refused: stop there),
+  `mail.listAccounts`, `members.list`,
   `devices.authorize/list/isOnline`, `telemetry` (an `SdkTelemetry`:
   `snapshot(deviceId, ts)` returning an `SdkTelemetrySnapshot` or null,
   `pinInstant(deviceId, ts)`), `agents` (an `AgentsFacade`); each gated by
@@ -72,7 +86,17 @@ and the app-provided `deveye-sdk-client` module.
 - `FeatureService`: `start` (may be async; awaited at boot, before the agent
   sockets open), `stop`, `agentHooks?: FeatureAgentHooks`,
   `providers?: Readonly<Record<string, unknown>>` (keyed by a published
-  provider key).
+  provider key), `publicRoutes?(app: SdkPublicApp)` (capability
+  `'routes.public'`; called once per listener the host exposes, register the
+  same routes each time).
+- `SdkPublicApp`: `get(path, opts, handler)` / `post(path, opts, handler)`;
+  paths are absolute (`/t.js`, `/api/t/b`) and a path the host already serves
+  is refused at boot. `SdkPublicRouteOptions`: `rateLimit?: { max,
+  timeWindow }` (a per-address ceiling on top of the host's own).
+  `SdkPublicHandler(req: SdkPublicRequest, reply: SdkPublicReply)`: the request
+  is `{ headers, body (JSON, already decoded, `undefined` when absent or
+  unreadable), ip }`, nothing of a session; the reply is the chainable
+  `header(name, value)`, `code(status)`, `send(payload?)`.
 - `FeatureServiceDeps<Repo>`: `repo`, `listWorkspaceIds`, `storeFor`,
   `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
   `isOnline`), `devices` (`SdkFleetDevices`: `find`, `isOnline`),
@@ -147,7 +171,9 @@ authority when the two differ.
   `ClosePopup` (the imperative dialog layer), `openInfo`, `StatusBadge`,
   `ConfirmDialog`, `FeatureSettingsButton`, `settingsStyles` (the canonical
   settings rows), `CountWidget` + `useWorkspaceCount` (+ `CountState`),
-  `useDragReorder`.
+  `useDragReorder`, `Avatar` (a member's identity dot; `user` may be
+  `undefined`), `userColorVar(color)` (the CSS variable of an account colour,
+  the one the live presence paints with).
 - `useDialogClose()`: the enclosing `Dialog`'s guarded close (unsaved-changes
   prompt included).
 - `useDialogSubmit(fn | null)`: `fn` becomes the enclosing `Dialog`'s primary
@@ -170,9 +196,14 @@ authority when the two differ.
   `isSocketOpen()`.
 - Shared helpers: `formatBytesFr`, `DeviceFolderPicker`, `useDevices`.
 - Rights and workspace: `useWorkspacePermissions()` (incl. `canExtra`,
-  `extraValue`), `useActiveWorkspace()` (`.kind`), `useFeatureLifecycle`.
+  `extraValue`), `useActiveWorkspace()` (`.kind`), `useWorkspaceMembers()`
+  (the active workspace's members as the session lists them, empty before it
+  answers), `useFeatureLifecycle`.
 - Host navigation and frame: `openFeature(feature, itemId?)` (open another
   feature of the active workspace, on one of its items), `useRequestPopupWidth(px | null)`
-  (ask the feature popup for a wider frame while mounted).
+  (ask the feature popup for a wider frame while mounted), `useStickyOffset<T>()`
+  (two sticky bands one under the other: `{ ref, style }`, the ref measures
+  the top band, the style hands a common ancestor the `--sticky-head`
+  variable the lower band offsets itself by; `StickyOffset<T>` is its type).
 
 Anything not listed here is DevEye internal and may change without notice.
