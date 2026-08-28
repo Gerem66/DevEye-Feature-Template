@@ -35,8 +35,9 @@ ticker and delegate: `{ start: () => ticker.start(), stop: () => ticker.stop(), 
 `deveyeFor(workspaceId)` (notify only), `devicesFor(workspaceId)` (`list` and
 `isOnline`, capability `'devices.read'`), `devices` (`find(id)` and
 `isOnline`, the whole fleet, same capability), `telemetry` (reserved,
-capability `'telemetry.read'`), `live.changed(workspaceId)` (your topic,
-from a service: see [09-live](09-live.md#writes-without-a-command)),
+capability `'telemetry.read'`), `live.changed(workspaceId, topics?)` (your
+topic, or the topics named, from a service: see
+[09-live](09-live.md#writes-without-a-command)),
 `audit(entry)` (recorded as the system; pass `userId` when the work concerns
 one user's data), `keys` (raw key wrapping and derivation,
 [below](#wrapping-key-material-of-your-own-depskeys)), `secrecy`

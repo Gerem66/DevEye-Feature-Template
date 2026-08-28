@@ -18,6 +18,11 @@ and the app-provided `deveye-sdk-client` module.
   [10-background-services](10-background-services.md#public-http-routes-publicroutes)).
 - `CrossTopicInvalidation`: `{ topic, keys }`, the element of the manifest's
   `alsoInvalidatedBy` (a native topic, a subset of `resources`; at most 4).
+- `FeatureManifest.topics`: `{ id, keys }[]`, secondary live topics of your
+  own (`id` prefixed by your feature id and different from it, `keys` a
+  subset of `resources`), beaten by `mutates: ['<topic>']` or
+  `live.changed(ws, ['<topic>'])`; see
+  [02-manifest](02-manifest.md#secondary-topics-of-your-own).
 - `SettingsTab` (`'general' | 'sources' | 'notifications' | 'permissions' | 'sync' | 'encryption'`;
   `'sync'` and `'encryption'` are item-scope tabs), `CustomTabRef`,
   `FeatureCategory`, `FeatureLink` (`{ to, what }`, `MAX_FEATURE_LINKS = 6`).
@@ -52,8 +57,11 @@ and the app-provided `deveye-sdk-client` module.
   `src/server/uninstall.sql` (`DROP TABLE IF EXISTS` on its own `ft_<slug>_`
   tables only; see 04-storage-and-encryption).
 - `SdkFeatureDefinition` / `defineSdkFeature`: one command:
-  `access?: { level?: 'read' | 'write'; extras?: string[] }`, `mutates?: boolean`,
-  `handler(ctx, input)`.
+  `access?: { level?: 'read' | 'write'; extras?: string[] }`,
+  `mutates?: boolean | readonly string[]` (`true` beats your feature's own
+  topic, its id; a list names the topics to beat instead: your id, one of
+  your `manifest.topics`, or another feature's topic whose screens mirror
+  this data; an unknown topic is refused at boot), `handler(ctx, input)`.
 - `SdkFeatureContext<Repo>`: see [03-server-handlers](03-server-handlers.md).
   Carries `transport: SdkSocketTransport` (capability `'agents'`; every method
   throws `forbidden` otherwise), `secrecy: SdkSecrecy` (`isUnlocked()`, and
@@ -111,7 +119,9 @@ and the app-provided `deveye-sdk-client` module.
 - `FeatureServiceDeps<Repo>`: `repo`, `listWorkspaceIds`, `storeFor`,
   `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
   `isOnline`), `devices` (`SdkFleetDevices`: `find`, `isOnline`),
-  `telemetry`, `live` (`SdkLive`: `changed(workspaceId)`), `audit` (system
+  `telemetry`, `live` (`SdkLive`: `changed(workspaceId, topics?)`: your
+  topic by default, or the topics named, your own secondary ones or another
+  feature's), `audit` (system
   source, optional `userId`), `agents`, `keys`, `secrecy`
   (`redeem(ticket)`: an `SdkRedeemedTicket` `{ userId, workspaceId, payload,
   cipher: { server, private } }`, the private cipher `null` while the caller's
@@ -151,8 +161,12 @@ and the app-provided `deveye-sdk-client` module.
   which the server authorizes against the caller's grants),
   `cacheDurationMinutes?`, `preload?`, `holdSecrecy?`, `providers?` (named
   contracts offered to the host's screens; `UptimeClientProvider` with
-  `UptimeLinkedService`, `UptimeHistoryPoint`, `UptimeHistoryResolution`, and
-  `MailClientProvider` with `listSenders` and `AccountDialog` are the ones
+  `UptimeLinkedService`, `UptimeHistoryPoint`, `UptimeHistoryResolution`,
+  `MailClientProvider` with `listSenders` and `AccountDialog`, and the four
+  Projects composes, `GitClientProvider`, `DeployClientProvider`,
+  `DatabaseClientProvider`, `AudienceClientProvider`, each a `list...`, a
+  `Linked...` block rendered in full inside a project's tab, and the
+  feature's own dialog, with their `...LinkedCandidate` rows, are the ones
   published).
 - `SettingsPanelProps`: `{ scope, canWrite }`; `SdkSettingsScope` is
   `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`.
@@ -222,7 +236,17 @@ authority when the two differ.
 - Rights and workspace: `useWorkspacePermissions()` (incl. `canExtra`,
   `extraValue`), `useActiveWorkspace()` (`.kind`), `useWorkspaceMembers()`
   (the active workspace's members as the session lists them, empty before it
+  answers), `useCurrentUser()` (the signed-in user, `null` before the session
   answers), `useFeatureLifecycle`.
+- Composing another module: `moduleClientProvider<T>(key)` (the client
+  contract another module offers under a key of `@deveye/types/sdk`,
+  `undefined` when that module is not installed: degrade, never assume).
+- Images: `fileToSquareDataUrl(file, { size, maxLength })` (a picked image
+  resized to a square data URL under `maxLength` characters; throws a
+  readable message), with `ACCEPTED_TYPES` and `MAX_INPUT_BYTES`, the
+  inputs it accepts.
+- Types: `InputChange` (the change event of a text input), `LiveSegmentKind`
+  (`'view' | 'l1' | 'l2' | 'l3' | 'l4'`).
 - Host navigation and frame: `openFeature(feature, itemId?)` (open another
   feature of the active workspace, on one of its items), `useRequestPopupWidth(px | null)`
   (ask the feature popup for a wider frame while mounted), `useStickyOffset<T>()`

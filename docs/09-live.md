@@ -9,7 +9,10 @@ peer's location. Most of it costs you nothing.
 - **Presence and cursors**: as soon as your feature is in the catalog, the
   presence widget shows "Alice · Counter" and cursors render over your view.
 - **Refresh on writes**: your `mutates` commands broadcast your topic; peers'
-  clients re-fetch your resources. Covered in [05-client](05-client.md).
+  clients re-fetch your resources. Covered in [05-client](05-client.md). A
+  write that must not refresh everything beats one of your secondary topics
+  instead (`manifest.topics`, `mutates: ['<topic>']`); see
+  [02-manifest](02-manifest.md#secondary-topics-of-your-own).
 - **Card outlines**: the home card of a feature a peer is inside gets their
   colored outline automatically.
 
@@ -48,7 +51,10 @@ service writes without a command, so it says so itself:
 `deps.live.changed(workspaceId)` makes every member's client re-fetch your
 declared resources (and the workspaces linked by projections, for a
 share-wired feature). Call it on state transitions, never on every tick: each
-call re-fetches for everyone.
+call re-fetches for everyone. `deps.live.changed(workspaceId, ['<topic>'])`
+beats the topics named instead of your id: one of your secondary topics
+(`manifest.topics`), or another feature's topic whose screens mirror what you
+just wrote.
 
 ## Typing indicator
 

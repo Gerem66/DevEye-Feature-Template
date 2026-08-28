@@ -17,6 +17,12 @@ defineSdkFeature({
 });
 ```
 
+`mutates` is `true` (beat your feature's topic, its id, on success) or a list
+of the topics to beat instead: your id, one of your secondary topics
+(`manifest.topics`, [02-manifest](02-manifest.md#secondary-topics-of-your-own)),
+or another feature's topic whose screens mirror this data. An unknown topic
+is refused at boot. Leave it out on a read.
+
 ## The context, member by member
 
 | Member | What |

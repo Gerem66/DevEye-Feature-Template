@@ -22,8 +22,9 @@ user ── member of ──> workspace (personal | shared)
 3. Your handler returns; the output is validated against your schema too.
 4. If the command declared `mutates: true`, the server broadcasts your
    feature's **topic** (= your id) to every member with read access. Their
-   clients re-fetch the **resource keys** your manifest declares. Nothing
-   polls, ever.
+   clients re-fetch the **resource keys** your manifest declares. A
+   `mutates` list beats other topics instead (a secondary one of yours, or
+   another feature's). Nothing polls, ever.
 
 ## The vocabulary
 

@@ -75,8 +75,14 @@ renders one member's identity dot (their avatar, or their initial on their
 account colour; `user` may be `undefined`, a deleted account must not break a
 row). To paint something else in a member's colour (a dot in a legend, a
 point on a chart), `userColorVar(color)` gives the CSS variable of an account
-colour, the same one the live presence uses. Same rule as the rest: nothing
-else of the app is API.
+colour, the same one the live presence uses. `useCurrentUser()` says who is
+signed in (`null` before the session answers; in practice it has answered
+before any feature mounts), for a thread that must not list its own author
+among the people typing. An image input becomes a bounded square data URL
+with `fileToSquareDataUrl(file, { size, maxLength })` (`ACCEPTED_TYPES` and
+`MAX_INPUT_BYTES` say what it takes): the icon of a project, stored inside
+the row like its title. Same rule as the rest: nothing else of the app is
+API.
 
 ## Offering components to the host: `providers`
 
@@ -87,6 +93,13 @@ service). The contract is published in `@deveye/types/sdk` (a key in
 on its client entry, `providers: { [KEY]: {...} }`; the app looks it up at
 render time and degrades cleanly when the module is absent. Like the server
 side, you can only fill a contract the host already knows.
+
+The consuming side is `moduleClientProvider<T>(KEY)` from the barrel, the
+client twin of `ctx.providers.get`: it answers `undefined` when the module
+that fills the contract is not installed, and it is on you to degrade (the
+Git tab of a project shows bare repository ids and a sentence saying the
+module is absent, never a blank). Look it up at render time, in the
+component that needs it: it is a registry read, not a hook.
 
 ## The widget
 
