@@ -52,7 +52,9 @@ and the app-provided `deveye-sdk-client` module.
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
   `migrationsDir`, `createService(deps)`, `items` (`FeatureItemsEntry`:
   `homeOf(repo, itemId, workspaceId)`, `labelOf(repo, cipher, itemId,
-  workspaceId)`, required by a `shareTier` other than `'never'`). A module
+  workspaceId)`, optional `shareable(repo, itemId, workspaceId)` answering
+  `false` for an item its tier forbids to project, required by a `shareTier`
+  other than `'never'`). A module
   with migrations also ships `src/server/migrations/`' destructive mirror
   `src/server/uninstall.sql` (`DROP TABLE IF EXISTS` on its own `ft_<slug>_`
   tables only; see 04-storage-and-encryption).
@@ -169,7 +171,9 @@ and the app-provided `deveye-sdk-client` module.
   feature's own dialog, with their `...LinkedCandidate` rows, are the ones
   published).
 - `SettingsPanelProps`: `{ scope, canWrite }`; `SdkSettingsScope` is
-  `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`.
+  `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel, shareable? }`
+  (`shareable: false` hides the Sharing tab for an item the server would
+  refuse to project).
 
 ## `@deveye/types/sdk/testing`
 
