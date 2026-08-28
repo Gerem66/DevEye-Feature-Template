@@ -59,6 +59,23 @@ A few escape hatches for less ordinary commands:
 - `touchSecrecy()` keeps the unlocked session alive during a long operation
   the user is watching (a mailbox sync). `withSecrecy` already touches after
   every successful call, so most features never call it directly.
+- `commandsApi(commands)` is `featureApi` for any list of contracts. Its one
+  use today is the native agent transport: `commandsApi(agentCommands)` (the
+  `agent.*` commands from `@deveye/types`: files, terminal, logs, packages,
+  power, lifecycle, live metrics subscription), typed like your own commands
+  and authorized under the workspace's `devices` right. Build it with your own
+  import of `@deveye/types` (the barrel cannot hand it out ready-made: the
+  type identity depends on who resolves the package). Deferred answers arrive
+  through `onServerEvent`; `acquireMetrics(deviceId)` counts the live
+  subscriptions to a device so that two consumers on one socket never
+  unsubscribe each other (release what it returns); `joinPath` and
+  `isWinPath` handle device paths as the agent reports them.
+- Two HTTP gestures exist for the routes that stay HTTP because they serve
+  binaries: `httpGet(path, schema)` (the session cookie rides along, an
+  expired access token is renewed and the call replayed once) and
+  `ensureFreshAccess()` before a raw `fetch` that bypasses the client (a
+  download). `APP_VERSION` is the DevEye version the interface was built
+  from, what an agent's reported version is compared against.
 
 ## Dialogs, popups and the other shared pieces
 
@@ -100,6 +117,17 @@ that fills the contract is not installed, and it is on you to degrade (the
 Git tab of a project shows bare repository ids and a sentence saying the
 module is absent, never a blank). Look it up at render time, in the
 component that needs it: it is a registry read, not a hook.
+
+The app itself consumes one this way: `DEVICES_CLIENT_PROVIDER`
+(`DevicesClientProvider` in `sdk/client`) is what the Devices module offers
+the home and the topbar, `useDevices()` (the workspace's devices as a live
+store, `{ devices, loading, error }`, each device an `SdkDeviceSummary`:
+`id`, `name`, `online`, `status`, `platform`), `refreshDevices()`,
+`resetDevices()`, `DevicePanel` (the view a device tile opens) and
+`DeviceWidget` (the tile). Without the module the home places no device. The
+barrel's `useDevices()` is that provider's hook with an empty, loaded,
+error-free fallback: what a module lists to pick a machine (Backup,
+CloudSync).
 
 ## The widget
 

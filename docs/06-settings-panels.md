@@ -41,6 +41,16 @@ export default function GeneralPanel({ scope, canWrite }: SettingsPanelProps) {
 }
 ```
 
+`scope` is `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`.
+The item id is a **number** for every row-keyed feature (the default); a
+feature whose items are strings (DevEye's own Devices module: a device is a
+UUID) types its panels `SettingsPanelProps<string>`. One component may serve
+both scales of the same tab (the Devices `general` panel shows the terminal
+preferences at feature scale and a device's collection config at item scale):
+branch on `scope.kind`. The shell's own sections (sharing, permissions,
+notifications) key their tables on the number and are never offered for a
+string-keyed feature.
+
 Use `settingsStyles` (from `deveye-sdk-client`) for the canonical rows:
 `section`, `sectionLabel`, `sectionHint`, `field`, `fieldLabel`, `channelRow`,
 `channelText`, `rowAction`... They are what makes every feature's settings

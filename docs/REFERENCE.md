@@ -11,10 +11,12 @@ and the app-provided `deveye-sdk-client` module.
 - `ExtraPermissionSpec`: `toggle` or `choice` (2..5 options, least-privileged
   `default`, explicit `ownerValue`). `MAX_EXTRA_PERMISSIONS = 4`.
 - `NativeCapability`: `'notify' | 'mail.accounts' | 'members.read' |
-  'devices.read' | 'telemetry.read' | 'agents' | 'routes.public'`;
-  `'telemetry.read'` and `'agents'` are reserved to native-id modules
-  (`validateManifest` refuses them on an `x-` id). `'routes.public'` opens
-  sessionless HTTP routes (`FeatureService.publicRoutes`, see
+  'workspaces.read' | 'devices.read' | 'telemetry.read' | 'agents' |
+  'routes.public'`; `'telemetry.read'` and `'agents'` are reserved to
+  native-id modules (`validateManifest` refuses them on an `x-` id).
+  `'workspaces.read'` lists every workspace of this DevEye and refuses anyone
+  but a global administrator. `'routes.public'` opens sessionless HTTP routes
+  (`FeatureService.publicRoutes`, see
   [10-background-services](10-background-services.md#public-http-routes-publicroutes)).
 - `CrossTopicInvalidation`: `{ topic, keys }`, the element of the manifest's
   `alsoInvalidatedBy` (a native topic, a subset of `resources`; at most 4).
@@ -46,7 +48,12 @@ and the app-provided `deveye-sdk-client` module.
   `DATABASE_BACKUP_PROVIDER` (`'database.backup'`), `DatabaseBackupProvider`
   (`listDatabases`, `findDatabase`, `openAccess`), `DatabaseBackupCandidate`,
   `DatabaseBackupAccess` (an open access, `close()` releases the tunnel):
-  offered by the app while Databases is native, by its module afterwards.
+  offered by the app while Databases is native, by its module afterwards;
+  `DEVICES_CLIENT_PROVIDER` (`'devices.client'`, contract
+  `DevicesClientProvider` in `sdk/client`): what the Devices module offers the
+  app's own home and topbar, `useDevices()`, `refreshDevices()`,
+  `resetDevices()`, `DevicePanel`, `DeviceWidget`, over `SdkDeviceSummary`
+  rows (`id`, `name`, `online`, `status`, `platform`).
 
 ## `@deveye/types/sdk/server`
 
@@ -60,13 +67,17 @@ and the app-provided `deveye-sdk-client` module.
   `src/server/uninstall.sql` (`DROP TABLE IF EXISTS` on its own `ft_<slug>_`
   tables only; see 04-storage-and-encryption).
 - `SdkFeatureDefinition` / `defineSdkFeature`: one command:
-  `access?: { level?: 'read' | 'write'; extras?: string[] }`,
+  `access?: { level?: 'read' | 'write'; extras?: string[]; admin?: boolean }`
+  (`admin: true` requires a global administrator on top of the feature check:
+  fleet management),
   `mutates?: boolean | readonly string[]` (`true` beats your feature's own
   topic, its id; a list names the topics to beat instead: your id, one of
   your `manifest.topics`, or another feature's topic whose screens mirror
   this data; an unknown topic is refused at boot), `handler(ctx, input)`.
 - `SdkFeatureContext<Repo>`: see [03-server-handlers](03-server-handlers.md).
-  Carries `transport: SdkSocketTransport` (capability `'agents'`; every method
+  Carries `isAdmin` (the caller is a global administrator: what a fleet-wide
+  view keys on; a command that must require it declares `access: { admin:
+  true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
   throws `forbidden` otherwise), `secrecy: SdkSecrecy` (`isUnlocked()`, and
   `ticket(payload, { ttlSeconds? })`: a short-lived ticket signed by the host
   and bound to the caller, their session, this workspace and your module, that
@@ -95,7 +106,9 @@ and the app-provided `deveye-sdk-client` module.
   carry a live message), `notify.postLive(channelId, message, messageId?)`
   (posts or edits an `SdkRichMessage` `{ content?, embeds? }`; resolves the
   id to keep for the next edit, `null` when the channel refused: stop there),
-  `mail.listAccounts`, `members.list`,
+  `mail.listAccounts`, `members.list`, `workspaces.list` (capability
+  `'workspaces.read'` and a global administrator as caller: every workspace,
+  `{ id, name, kind, ownerUserId }`),
   `devices.authorize/list/isOnline`, `telemetry` (an `SdkTelemetry`:
   `snapshot(deviceId, ts)` returning an `SdkTelemetrySnapshot` or null,
   `pinInstant(deviceId, ts)`), `agents` (an `AgentsFacade`); each gated by
@@ -138,7 +151,11 @@ and the app-provided `deveye-sdk-client` module.
   server key, never stored: for material that must survive the database).
   Server key, module-owned key material only, never user data.
 - Reserved to native-id modules (capability `'agents'`): `AgentsFacade`
-  (`isOnline`, `requestScan`, `pushConfig`; `requestSyncConfig`,
+  (`isOnline`, `requestScan`, `pushConfig`; the three orders a device's
+  lifecycle gives the hub, `requestDestroy` (the agent uninstalls itself),
+  `disconnectAgent` (its socket closes now), `resetAgentSession` (the hub
+  forgets what it remembered of it), each `false` when the agent is offline;
+  `requestSyncConfig`,
   `requestSyncScan`, `requestSyncPush`,
   `requestSyncApplyChunk`, `requestSyncApplyStart`, `requestSyncApplyDir`,
   `requestSyncApplyLocal`, `requestSyncMove`, `requestSyncDelete`, each
@@ -171,10 +188,13 @@ and the app-provided `deveye-sdk-client` module.
   `Linked...` block rendered in full inside a project's tab, and the
   feature's own dialog, with their `...LinkedCandidate` rows, are the ones
   published).
-- `SettingsPanelProps`: `{ scope, canWrite }`; `SdkSettingsScope` is
-  `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel, shareable? }`
+- `SettingsPanelProps<Id = number>`: `{ scope, canWrite }`; `SdkSettingsScope<Id>`
+  is `{ kind: 'feature' }` or `{ kind: 'item', itemId: Id, itemLabel, shareable? }`
   (`shareable: false` hides the Sharing tab for an item the server would
-  refuse to project).
+  refuse to project). `Id` is `number` for a row-keyed feature, `string` for
+  one whose items are UUIDs (Devices): a panel declares the one it takes.
+- `DevicesClientProvider` and `SdkDeviceSummary`: the Devices module's
+  client contract (see `DEVICES_CLIENT_PROVIDER` above).
 
 ## `@deveye/types/sdk/testing`
 
@@ -224,7 +244,13 @@ authority when the two differ.
   `humanizeError(e, fallback)`, `WsError` (the class a command rejects with:
   `code`, `message`, `details`; `instanceof` works), `featureApi(manifest)`
   (typed `send`, with an optional `{ timeoutMs }` for commands that query a
-  slow third party).
+  slow third party), `commandsApi(commands)` (the same over any list of
+  contracts: `commandsApi(agentCommands)`, the native agent transport, with
+  `agentCommands` from `@deveye/types`).
+- HTTP, for the routes that serve binaries: `httpGet(path, schema)` (session
+  cookie, one replay after an access refresh), `ensureFreshAccess()` (renew
+  the access cookie before a raw `fetch`); `APP_VERSION` (the DevEye version
+  the interface was built from).
 - Password-based encryption: `useSecrecy()` (live lock state), `withSecrecy(run)`
   (retry once after the unlock prompt on a `locked` error),
   `ensureSecrecyUnlocked()` (explicit unlock gesture), `touchSecrecy()` (keep
@@ -237,7 +263,12 @@ authority when the two differ.
 - Push events: `onServerEvent(event, schema, cb)` (typed server-push
   subscription), `onSocketOpen(cb)` (the resubscribe-on-reconnect primitive),
   `isSocketOpen()`.
-- Shared helpers: `formatBytesFr`, `DeviceFolderPicker`, `useDevices`.
+- Shared helpers: `formatBytesFr`, `DeviceFolderPicker`, `useDevices()` (the
+  workspace's devices through the Devices module's provider, `{ devices,
+  loading, error }`; empty, loaded and error-free without the module),
+  `acquireMetrics(deviceId)` (a counted live metrics subscription; call the
+  returned release), `joinPath(base, name)` and `isWinPath(p)` (device paths
+  as the agent reports them).
 - Rights and workspace: `useWorkspacePermissions()` (incl. `canExtra`,
   `extraValue`), `useActiveWorkspace()` (`.kind`), `useWorkspaceMembers()`
   (the active workspace's members as the session lists them, empty before it

@@ -43,6 +43,7 @@ the `NativeCapability` type in `@deveye/types/sdk`:
 | `'notify'` | `ctx.deveye.notify` and `deps.deveyeFor(id).notify`: send through the channels the workspace routed to you; pair it with `notifies: true`, which gives the workspace the tab to route them ([08-notifications](08-notifications.md)) |
 | `'mail.accounts'` | `ctx.deveye.mail.listAccounts()`: the workspace's open-tier mail accounts, metadata only (`id`, `label`, `address`), never credentials |
 | `'members.read'` | `ctx.deveye.members.list()`: `{ userId, name, isOwner }` per member |
+| `'workspaces.read'` | `ctx.deveye.workspaces.list()`: every workspace of this DevEye (`{ id, name, kind, ownerUserId }`); a global administrator's surface only, the call throws `forbidden` for anyone else (what a fleet needs to attach a device to workspaces) |
 | `'devices.read'` | `ctx.deveye.devices` (`authorize`, `list`, `isOnline`) in handlers, `deps.devicesFor(id)` (`list`, `isOnline`) and `deps.devices` (`find`, `isOnline`, the whole fleet) in services ([03-server-handlers](03-server-handlers.md#native-features-through-ctxdeveye)) |
 | `'telemetry.read'` | the devices' telemetry (`ctx.deveye.telemetry`, `deps.telemetry`); **reserved**, see below |
 | `'agents'` | the agent-fleet sync transport; **reserved**, see below |
