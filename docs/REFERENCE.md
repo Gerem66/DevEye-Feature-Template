@@ -35,7 +35,8 @@ and the app-provided `deveye-sdk-client` module.
   (`findShare`, `listShares`, `statsByShare`, `listPresentFiles`, `openBlob`)
   and its row types `SyncBackupShare`, `SyncBackupStats`, `SyncBackupFile`;
   `UPTIME_ITEMS_PROVIDER` (`'uptime.items'`), `UptimeItemsProvider`
-  (`exists(serviceId, workspaceId)`); `UPTIME_CLIENT_PROVIDER`
+  (`exists(serviceId, workspaceId)`, `labelOf(serviceId, workspaceId)`: the
+  name under the home's open cipher, `null` when gone); `UPTIME_CLIENT_PROVIDER`
   (`'uptime.client'`, its contract `UptimeClientProvider` lives in
   `sdk/client`); `MAIL_CLIENT_PROVIDER` (`'mail.client'`, contract
   `MailClientProvider` in `sdk/client`: `listSenders()`, the ready senders an
