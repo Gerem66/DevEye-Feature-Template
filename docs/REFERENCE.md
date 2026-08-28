@@ -171,5 +171,8 @@ authority when the two differ.
 - Shared helpers: `formatBytesFr`, `DeviceFolderPicker`, `useDevices`.
 - Rights and workspace: `useWorkspacePermissions()` (incl. `canExtra`,
   `extraValue`), `useActiveWorkspace()` (`.kind`), `useFeatureLifecycle`.
+- Host navigation and frame: `openFeature(feature, itemId?)` (open another
+  feature of the active workspace, on one of its items), `useRequestPopupWidth(px | null)`
+  (ask the feature popup for a wider frame while mounted).
 
 Anything not listed here is DevEye internal and may change without notice.

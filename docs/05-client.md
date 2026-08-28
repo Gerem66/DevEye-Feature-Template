@@ -98,6 +98,12 @@ mounted (state preserved) after closing: `0` unmounts immediately, omit for
 forever. `holdSecrecy: true` keeps the password-encryption session alive while
 open, if you read `'private'` data.
 
+Two hooks into the host from there: `openFeature(feature, itemId?)` opens
+another feature of the active workspace, on one of its items when `itemId` is
+given (the host's teleport, for a "see this project" link), and
+`useRequestPopupWidth(px | null)` asks the feature popup for a wider frame
+while the calling component is mounted (a table explorer in expanded mode).
+
 ## Styles
 
 CSS modules, with DevEye's design tokens (`var(--accent)`, `var(--space-sm)`,
