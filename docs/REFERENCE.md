@@ -308,7 +308,10 @@ loading, error }`; empty, loaded and error-free without the module),
   readable message), with `ACCEPTED_TYPES` and `MAX_INPUT_BYTES`, the
   inputs it accepts.
 - Types: `InputChange` (the change event of a text input), `LiveSegmentKind`
-  (`'view' | 'l1' | 'l2' | 'l3' | 'l4'`).
+  (`'view' | 'l1' | 'l2' | 'l3' | 'l4'`), `SecrecyState` (what `useSecrecy()`
+  answers), `ConfirmRequest` (what a `ConfirmDialog` is opened with),
+  `CountState` (what `useWorkspaceCount` answers), `ExternalResourceKey` (a
+  resource key of an `x-` module), `LiveOutlineProps`.
 - Host navigation and frame: `openFeature(feature, itemId?)` (open another
   feature of the active workspace, on one of its items), `useRequestPopupWidth(px | null)`
   (ask the feature popup for a wider frame while mounted), `useStickyOffset<T>()`
