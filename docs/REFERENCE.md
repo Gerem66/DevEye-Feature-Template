@@ -31,29 +31,50 @@ and the app-provided `deveye-sdk-client` module.
 - `validateManifest(manifest)`: throws with a named reason.
 - Ids: `externalFeatureIdSchema` (`/^x-[a-z][a-z0-9]{1,24}$/`), `featureIdSchema`,
   `isExternalFeatureId`, types `ExternalFeatureId`, `FeatureId`.
-- Provider contracts (`providers.ts`, the inversion for app code that needs a
-  module's data; see [10-background-services](10-background-services.md#offering-a-contract-to-the-host-providers)):
-  `CLOUDSYNC_BACKUP_PROVIDER` (`'cloudsync.backup'`), `CloudSyncBackupProvider`
-  (`findShare`, `listShares`, `statsByShare`, `listPresentFiles`, `openBlob`)
-  and its row types `SyncBackupShare`, `SyncBackupStats`, `SyncBackupFile`;
-  `UPTIME_ITEMS_PROVIDER` (`'uptime.items'`), `UptimeItemsProvider`
-  (`exists(serviceId, workspaceId)`, `labelOf(serviceId, workspaceId)`: the
-  name under the home's open cipher, `null` when gone); `UPTIME_CLIENT_PROVIDER`
-  (`'uptime.client'`, its contract `UptimeClientProvider` lives in
-  `sdk/client`); `MAIL_CLIENT_PROVIDER` (`'mail.client'`, contract
-  `MailClientProvider` in `sdk/client`: `listSenders()`, the ready senders an
-  email notification channel picks from, and `AccountDialog`, the feature's
-  own account form); `SENTINEL_AGENT_CONFIG_PROVIDER` (`'sentinel.agentConfig'`),
-  `SentinelAgentConfig`, `SentinelAgentConfigProvider` (`configFor(deviceId)`);
-  `DATABASE_BACKUP_PROVIDER` (`'database.backup'`), `DatabaseBackupProvider`
-  (`listDatabases`, `findDatabase`, `openAccess`), `DatabaseBackupCandidate`,
-  `DatabaseBackupAccess` (an open access, `close()` releases the tunnel),
-  published by the Databases module's service;
-  `DEVICES_CLIENT_PROVIDER` (`'devices.client'`, contract
-  `DevicesClientProvider` in `sdk/client`): what the Devices module offers the
-  app's own home and topbar, `useDevices()`, `refreshDevices()`,
-  `resetDevices()`, `DevicePanel`, `DeviceWidget`, over `SdkDeviceSummary`
-  rows (`id`, `name`, `online`, `status`, `platform`).
+- Provider contracts: a named key a module fills so another module, or the app
+  itself, can use what it owns without importing it. Server side under
+  `FeatureService.providers`, read with `ctx.providers.get` /
+  `deps.providers.get`; client side under `FeatureClient.providers`, read with
+  `moduleClientProvider`. Absent module, `undefined`, degrade cleanly. See
+  [10-background-services](10-background-services.md#offering-a-contract-to-the-host-providers).
+
+### Server contracts (`sdk/providers.ts`)
+
+| Key                      | Contract                      | What it hands over                                                                                                                               |
+| ------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `'cloudsync.backup'`     | `CloudSyncBackupProvider`     | `findShare`, `listShares`, `statsByShare`, `listPresentFiles`, `openBlob`; rows `SyncBackupShare`, `SyncBackupStats`, `SyncBackupFile`           |
+| `'database.backup'`      | `DatabaseBackupProvider`      | `listDatabases`, `findDatabase`, `openAccess`; `DatabaseBackupCandidate`, `DatabaseBackupAccess` (an open access, `close()` releases the tunnel) |
+| `'mail.transport'`       | `MailTransportProvider`       | `listSenders`, `isReady`, `send`: how an email alert leaves; `MailSender`                                                                        |
+| `'sentinel.agentConfig'` | `SentinelAgentConfigProvider` | `configFor(deviceId)`: what Sentinel adds to the config pushed to an agent; `SentinelAgentConfig`                                                |
+| `'projects.usage'`       | `ProjectsUsageProvider`       | `usageOf`, `countByItem` (which projects link an item of yours), `recordEvent` (one timeline line), `applyVersion`; `ProjectUsage`               |
+| `'uptime.items'`         | `UptimeItemsProvider`         | `exists`, `labelOf`                                                                                                                              |
+| `'git.items'`            | `GitItemsProvider`            | `exists`, `labelOf`                                                                                                                              |
+| `'deploy.items'`         | `DeployItemsProvider`         | `exists`, `labelOf`                                                                                                                              |
+| `'database.items'`       | `DatabaseItemsProvider`       | `exists`, `labelOf`                                                                                                                              |
+| `'audience.items'`       | `AudienceItemsProvider`       | `exists`, `labelOf`                                                                                                                              |
+
+The five `*.items` contracts share one shape: `exists(itemId, workspaceId)`,
+asked before linking an id a client sent (a foreign id can neither be linked
+nor leak its existence), and `labelOf(itemId, workspaceId)`, the item's name
+under its home's open cipher, `null` when it is gone. Projects consumes all
+five and publishes `'projects.usage'` in return.
+
+### Client contracts (`sdk/client.ts`)
+
+| Key                 | Contract                 | What it hands over                                                                                                                                               |
+| ------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'devices.client'`  | `DevicesClientProvider`  | `useDevices()`, `refreshDevices()`, `resetDevices()`, `DevicePanel`, `DeviceWidget`, over `SdkDeviceSummary` rows (`id`, `name`, `online`, `status`, `platform`) |
+| `'uptime.client'`   | `UptimeClientProvider`   | `listServices`, `useServiceHistory`, `StatusBars`, `Ratios`, `ServiceDialog`; `UptimeLinkedService`, `UptimeHistoryPoint`                                        |
+| `'mail.client'`     | `MailClientProvider`     | `listSenders()` (the ready senders an email channel picks from) and `AccountDialog`, the feature's own account form                                              |
+| `'git.client'`      | `GitClientProvider`      | `listRepos`, `LinkedRepo` (the whole linked-item block, rendered inside a project's tab), `RepoDialog`; `GitLinkedCandidate`                                     |
+| `'deploy.client'`   | `DeployClientProvider`   | `listTargets`, `LinkedTarget`, `TargetDialog`; `DeployLinkedCandidate`                                                                                           |
+| `'database.client'` | `DatabaseClientProvider` | `listDatabases`, `LinkedDatabase`, `DatabaseDialog`; `DatabaseLinkedCandidate`                                                                                   |
+| `'audience.client'` | `AudienceClientProvider` | `listSites`, `LinkedSite`, `SiteDialog`; `AudienceLinkedCandidate`                                                                                               |
+
+The four `*.client` contracts of linkable features share one shape too: the
+workspace's items to pick from, the block that renders one in full inside a
+project's tab, and the feature's own creation dialog, so a project never
+reimplements a reduced form of it.
 
 ## `@deveye/types/sdk/server`
 

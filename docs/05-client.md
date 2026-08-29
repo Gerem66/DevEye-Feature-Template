@@ -5,7 +5,7 @@ Your client entry exports three things:
 ```ts
 export const clientEntry: FeatureClient = {
     Widget,                 // the card body on the grid: NO props
-    Full,                   // the expanded view: receives { closeFeature }
+    Full,                   // the expanded view: FeatureViewProps, i.e. { closeFeature }
     settingsPanels: {...},  // one panel per settings tab that needs one
     cacheDurationMinutes: 10
 };
@@ -59,47 +59,73 @@ A few escape hatches for less ordinary commands:
 - `touchSecrecy()` keeps the unlocked session alive during a long operation
   the user is watching (a mailbox sync). `withSecrecy` already touches after
   every successful call, so most features never call it directly.
-- `commandsApi(commands)` is `featureApi` for any list of contracts. Its one
-  use today is the native agent transport: `commandsApi(agentCommands)` (the
-  `agent.*` commands from `@deveye/types`: files, terminal, logs, packages,
-  power, lifecycle, live metrics subscription), typed like your own commands
-  and authorized under the workspace's `devices` right. Build it with your own
-  import of `@deveye/types` (the barrel cannot hand it out ready-made: the
-  type identity depends on who resolves the package). Deferred answers arrive
-  through `onServerEvent`; `acquireMetrics(deviceId)` counts the live
-  subscriptions to a device so that two consumers on one socket never
-  unsubscribe each other (release what it returns); `joinPath` and
-  `isWinPath` handle device paths as the agent reports them.
-- Two HTTP gestures exist for the routes that stay HTTP because they serve
-  binaries: `httpGet(path, schema)` (the session cookie rides along, an
-  expired access token is renewed and the call replayed once) and
-  `ensureFreshAccess()` before a raw `fetch` that bypasses the client (a
-  download). `APP_VERSION` is the DevEye version the interface was built
-  from, what an agent's reported version is compared against.
 
-## Dialogs, popups and the other shared pieces
+## Talking to a device
 
-The barrel also carries the app's imperative dialog layer (`Popup`, driven by
-`OpenPopup(id, input)`, which resolves with what `ClosePopup(id, result)`
-passes), `DialogCancelButton` for a Dialog footer, `openInfo` for an "i"
-explainer, `CountWidget` + `useWorkspaceCount` for a home card that shows a
-plain count of one of your `.count` commands, and `useDragReorder`, the one
-drag-and-drop reorder gesture of the app (a handle per row, an insertion bar
-the hook positions itself). To put a face on "who did what" in a history
-list, `useWorkspaceMembers()` returns the members of the active workspace as
-the session lists them (empty before it answers, never `null`) and `Avatar`
-renders one member's identity dot (their avatar, or their initial on their
-account colour; `user` may be `undefined`, a deleted account must not break a
-row). To paint something else in a member's colour (a dot in a legend, a
-point on a chart), `userColorVar(color)` gives the CSS variable of an account
-colour, the same one the live presence uses. `useCurrentUser()` says who is
-signed in (`null` before the session answers; in practice it has answered
-before any feature mounts), for a thread that must not list its own author
-among the people typing. An image input becomes a bounded square data URL
-with `fileToSquareDataUrl(file, { size, maxLength })` (`ACCEPTED_TYPES` and
-`MAX_INPUT_BYTES` say what it takes): the icon of a project, stored inside
-the row like its title. Same rule as the rest: nothing else of the app is
-API.
+`commandsApi(commands)` is `featureApi` for any list of contracts. Its one use
+today is the native agent transport, `commandsApi(agentCommands)`: the
+`agent.*` commands of `@deveye/types` (files, terminal, logs, packages, power,
+lifecycle, live metrics subscription), typed like your own and authorized
+under the workspace's `devices` right.
+
+- Build it with your own import of `@deveye/types`: the barrel cannot hand it
+  out ready-made, the type identity depends on who resolves the package.
+- Deferred answers arrive through `onServerEvent`, not as the call's result.
+- `acquireMetrics(deviceId)` counts the live subscriptions to a device, so two
+  consumers on one socket never unsubscribe each other. Release what it
+  returns.
+- `joinPath` and `isWinPath` handle device paths as the agent reports them.
+
+## HTTP, for what cannot ride the socket
+
+Two gestures for the routes that stay HTTP because they serve binaries:
+
+- `httpGet(path, schema)`: the session cookie rides along, an expired access
+  token is renewed and the call replayed once.
+- `ensureFreshAccess()` before a raw `fetch` that bypasses the client (a
+  download).
+
+`APP_VERSION` is the DevEye version the interface was built from, what an
+agent's reported version is compared against.
+
+## The rest of the barrel
+
+Everything below comes from `deveye-sdk-client`, and nothing else of the app
+is API.
+
+**Dialogs and popups**
+
+- `Popup`, driven by `OpenPopup(id, input)`, which resolves with what
+  `ClosePopup(id, result)` passes: the app's imperative dialog layer.
+- `DialogCancelButton` for a Dialog footer, `openInfo` for an "i" explainer.
+
+**Cards and lists**
+
+- `CountWidget` + `useWorkspaceCount`: a home card showing a plain count from
+  one of your `.count` commands.
+- `useDragReorder`: the app's one reorder gesture (a handle per row, an
+  insertion bar the hook positions itself).
+
+**People**
+
+- `useWorkspaceMembers()`: the members of the active workspace as the session
+  lists them (empty before it answers, never `null`), to put a face on "who
+  did what" in a history list.
+- `Avatar`: one member's identity dot, their avatar or their initial on their
+  account colour. `user` may be `undefined`: a deleted account must not break
+  a row.
+- `userColorVar(color)`: the CSS variable of an account colour, to paint
+  something else in it (a dot in a legend, a point on a chart). The same one
+  live presence uses.
+- `useCurrentUser()`: who is signed in (`null` before the session answers; in
+  practice it has answered before any feature mounts), for a thread that must
+  not list its own author among the people typing.
+
+**Images**
+
+- `fileToSquareDataUrl(file, { size, maxLength })` turns an image input into a
+  bounded square data URL, stored inside the row like its title (a project's
+  icon). `ACCEPTED_TYPES` and `MAX_INPUT_BYTES` say what it takes.
 
 ## Offering components to the host: `providers`
 
