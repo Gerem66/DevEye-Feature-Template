@@ -111,7 +111,7 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* The ciphertext cell: one line, ellipsized — the title shows it whole. */
+/* The ciphertext cell: one line, ellipsized; the title shows it whole. */
 .sealed {
     display: block;
     max-width: 340px;

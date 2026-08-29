@@ -20,7 +20,7 @@ import {
  *
  * Storage here is the KV store: no table, no migration. The twist this example
  * exists for: each click's value is stored ONCE, as a ciphertext produced by
- * `ctx.cipher()` — the plain column the client shows is recomputed by
+ * `ctx.cipher()`; the plain column the client shows is recomputed by
  * DECRYPTING at read time. That is exactly how a sensitive column in your own
  * tables works: the handler seals before writing, unseals after reading, and
  * storage only ever sees blobs.
@@ -43,7 +43,7 @@ async function readState(ctx: SdkFeatureContext): Promise<CounterState> {
     const clicks = [];
     for (const row of stored) {
         // `tryDecrypt`, not `decrypt`: a blob sealed under a previous server
-        // key reads as null — that row is dropped, the screen never breaks.
+        // key reads as null, that row is dropped and the screen never breaks.
         const plain = await ctx.cipher().tryDecrypt(row.sealed);
         if (plain !== null) clicks.push({ at: row.at, value: Number(plain), sealed: row.sealed });
     }

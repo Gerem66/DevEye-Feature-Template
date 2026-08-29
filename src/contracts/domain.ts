@@ -21,7 +21,7 @@ export type CounterStep = z.infer<typeof counterStepSchema>;
 /**
  * One click, as the CLIENT sees it: the counter value it produced, twice.
  * `value` is decrypted server-side at read time; `sealed` is the very blob
- * sitting in storage — shown as-is, so the example makes encryption tangible.
+ * sitting in storage, shown as-is so the example makes encryption tangible.
  */
 export const counterClickSchema = z.object({
     /** Unix milliseconds. */
@@ -33,7 +33,7 @@ export type CounterClick = z.infer<typeof counterClickSchema>;
 
 /**
  * One click, as the KV store persists it: the ciphertext ONLY. The plain
- * column never touches storage — it is recomputed by decrypting on read,
+ * column never touches storage; it is recomputed by decrypting on read,
  * which is exactly the pattern for a column you encrypt in your own tables.
  */
 export const storedClicksSchema = z.array(counterClickSchema.omit({ value: true }));

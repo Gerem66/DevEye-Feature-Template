@@ -18,7 +18,7 @@ const api = featureApi(manifest);
  * The data hook, shared by the card and the full view: one cache key, three
  * refresh triggers (mount, socket reconnect, invalidation). No polling: when
  * anyone in the workspace clicks, the server broadcasts your feature's topic
- * and every declared resource re-fetches — the counter moves on their screen
+ * and every declared resource re-fetches: the counter moves on their screen
  * AND on yours.
  */
 function useCounter() {
@@ -48,7 +48,7 @@ function whenLabel(at: number): string {
 export default function CounterFull() {
     const { data, error } = useCounter();
     // UI hides, the server authorizes: without `write` the button is not
-    // rendered — and had it been, the dispatcher would refuse the command.
+    // rendered, and had it been, the dispatcher would refuse the command.
     const canWrite = useWorkspacePermissions().canFeature('x-counter', 'write');
     const [busy, setBusy] = useState(false);
     const [clickError, setClickError] = useState<string | null>(null);
@@ -100,7 +100,7 @@ export default function CounterFull() {
                 {clickError && <p className={styles.clickError}>{clickError}</p>}
             </div>
 
-            {/* The journal this example exists for: the same value twice —
+            {/* The journal this example exists for: the same value twice,
                 decrypted server-side on the left, and on the right the very
                 blob sitting in storage. */}
             {data && data.clicks.length > 0 && (
