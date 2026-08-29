@@ -10,7 +10,9 @@ commands). `read` lets them see; `write` implies read. Declare the level per
 command:
 
 ```ts
-access: { level: 'write' }        // 'read' is the default
+access: {
+    level: 'write';
+} // 'read' is the default
 ```
 
 ## 2. Channels (if you notify)
@@ -27,10 +29,19 @@ row in every role editor, rendered by DevEye:
 ```ts
 extraPermissions: [
     { key: 'reset', label: '...', description: '...', type: 'toggle' },
-    { key: 'exportScope', label: '...', description: '...', type: 'choice',
-      options: [{ value: 'own', label: '...' }, { value: 'all', label: '...' }],
-      default: 'own', ownerValue: 'all' }
-]
+    {
+        key: 'exportScope',
+        label: '...',
+        description: '...',
+        type: 'choice',
+        options: [
+            { value: 'own', label: '...' },
+            { value: 'all', label: '...' }
+        ],
+        default: 'own',
+        ownerValue: 'all'
+    }
+];
 ```
 
 Two bounded types only. The semantics are fail-closed and non-negotiable:

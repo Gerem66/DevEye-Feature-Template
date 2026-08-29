@@ -16,7 +16,8 @@ export const manifest = {
     /** `x-<slug>`: the prefix guarantees no collision with built-in features. */
     id: 'x-counter',
     label: 'Counter',
-    description: 'A shared counter: one big button, the increment done server-side, every click journaled plain AND encrypted.',
+    description:
+        'A shared counter: one big button, the increment done server-side, every click journaled plain AND encrypted.',
     /** Ships as assets/icons/tally.svg; DevEye copies and namespaces it. */
     icon: 'tally',
     category: 'daily',

@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Button, featureApi, invalidate, SegmentedControl, settingsStyles as shell, useWorkspacePermissions } from 'deveye-sdk-client';
+import {
+    Button,
+    featureApi,
+    invalidate,
+    SegmentedControl,
+    settingsStyles as shell,
+    useWorkspacePermissions
+} from 'deveye-sdk-client';
 import type { SettingsPanelProps } from '@deveye/types/sdk/client';
 
 import { manifest } from '../manifest';
@@ -54,8 +61,7 @@ export default function GeneralPanel({ canWrite }: SettingsPanelProps) {
                 <>
                     <span className={shell.sectionLabel}>Remise à zéro</span>
                     <p className={shell.sectionHint}>
-                        Efface la valeur et le journal, pour tout le monde. L’action est tracée dans le journal
-                        d’audit.
+                        Efface la valeur et le journal, pour tout le monde. L’action est tracée dans le journal d’audit.
                     </p>
                     <div className={shell.sectionActions}>
                         <Button variant='danger' onClick={reset}>

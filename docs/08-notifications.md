@@ -22,7 +22,7 @@ generic tab: you write no UI.
 // in a handler
 await ctx.deveye.notify.send(
     { subject: 'Compteur : 100 atteint', body: 'Le compteur vient de passer 100.', payload: { value } },
-    { itemId }                      // optional, when routes are per item
+    { itemId } // optional, when routes are per item
 );
 
 // in the background service

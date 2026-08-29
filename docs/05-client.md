@@ -21,11 +21,11 @@ standalone typecheck via one `include` entry in `tsconfig.json`.
 ## Data: declare, mutate, it refreshes
 
 ```ts
-const api = featureApi(manifest);       // typed by your manifest's commands
+const api = featureApi(manifest); // typed by your manifest's commands
 
 function useCounter() {
     return useResource(
-        'x-counter.state',                                    // your resource key
+        'x-counter.state', // your resource key
         () => api.send('x-counter.state', {}),
         'Le compteur est injoignable.'
     );

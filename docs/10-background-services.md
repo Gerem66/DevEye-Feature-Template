@@ -231,7 +231,7 @@ service publishes the same key and nothing changes for you).
 
 ```ts
 const databases = deps.providers.get<DatabaseBackupProvider>(DATABASE_BACKUP_PROVIDER);
-if (!databases) throw new Error('Source indisponible.');   // a clean failure, not a crash
+if (!databases) throw new Error('Source indisponible.'); // a clean failure, not a crash
 const access = await databases.openAccess(sourceId, workspaceId);
 ```
 

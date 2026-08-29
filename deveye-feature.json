@@ -1,6 +1,6 @@
 {
-    "id": "x-counter",
-    "tables": [],
-    "icons": ["tally"],
-    "minTypesVersion": "0.15.0"
+  "id": "x-counter",
+  "tables": [],
+  "icons": ["tally"],
+  "minTypesVersion": "0.15.0"
 }

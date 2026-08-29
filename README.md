@@ -10,24 +10,24 @@ be renamed into yours.
 
 1. Click **Use this template** on GitHub and clone your copy.
 2. Pick your feature's slug and rename the example:
-   ```bash
-   npx tsx scripts/rename.ts myfeature     # id becomes x-myfeature
-   ```
+    ```bash
+    npx tsx scripts/rename.ts myfeature     # id becomes x-myfeature
+    ```
 3. Install and check:
-   ```bash
-   npm install
-   npm run ci        # lint + typecheck + manifest validation + handler tests
-   ```
+    ```bash
+    npm install
+    npm run ci        # lint + typecheck + manifest validation + handler tests
+    ```
 4. Install it into a DevEye instance (you need a checkout of the app):
-   ```bash
-   # in the DevEye repo
-   npm install <path-or-name-of-your-package>
-   #   add { "package": "deveye-feature-myfeature" } to features.config.json
-   npm run gen:features
-   npm run dev
-   ```
-   Your card appears in the home grid's add market. That is the whole
-   integration: one config entry, one generated-glue run.
+    ```bash
+    # in the DevEye repo
+    npm install <path-or-name-of-your-package>
+    #   add { "package": "deveye-feature-myfeature" } to features.config.json
+    npm run gen:features
+    npm run dev
+    ```
+    Your card appears in the home grid's add market. That is the whole
+    integration: one config entry, one generated-glue run.
 
 ## Anatomy
 
@@ -72,20 +72,20 @@ src/
 
 ## Documentation
 
-| Doc | What |
-|---|---|
-| [01-concepts](docs/01-concepts.md) | the one-page map: workspaces, roles, commands, topics |
-| [02-manifest](docs/02-manifest.md) | every manifest field, annotated |
-| [03-server-handlers](docs/03-server-handlers.md) | handlers, context, errors, testing |
-| [04-storage-and-encryption](docs/04-storage-and-encryption.md) | KV store, own tables, the three modes |
-| [05-client](docs/05-client.md) | widget, view, data hook, typed commands |
-| [06-settings-panels](docs/06-settings-panels.md) | tabs and panels in the shared shell |
-| [07-permissions](docs/07-permissions.md) | read/write, channels, your own extras |
-| [08-notifications](docs/08-notifications.md) | sending through the workspace's channels |
-| [09-live](docs/09-live.md) | presence, outlines, teleport |
-| [10-background-services](docs/10-background-services.md) | the ticker and its limits, devices, key wrapping, providers, what is reserved |
-| [11-cookbook](docs/11-cookbook.md) | task-shaped recipes |
-| [REFERENCE](docs/REFERENCE.md) | the API surface, type by type |
+| Doc                                                            | What                                                                          |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [01-concepts](docs/01-concepts.md)                             | the one-page map: workspaces, roles, commands, topics                         |
+| [02-manifest](docs/02-manifest.md)                             | every manifest field, annotated                                               |
+| [03-server-handlers](docs/03-server-handlers.md)               | handlers, context, errors, testing                                            |
+| [04-storage-and-encryption](docs/04-storage-and-encryption.md) | KV store, own tables, the three modes                                         |
+| [05-client](docs/05-client.md)                                 | widget, view, data hook, typed commands                                       |
+| [06-settings-panels](docs/06-settings-panels.md)               | tabs and panels in the shared shell                                           |
+| [07-permissions](docs/07-permissions.md)                       | read/write, channels, your own extras                                         |
+| [08-notifications](docs/08-notifications.md)                   | sending through the workspace's channels                                      |
+| [09-live](docs/09-live.md)                                     | presence, outlines, teleport                                                  |
+| [10-background-services](docs/10-background-services.md)       | the ticker and its limits, devices, key wrapping, providers, what is reserved |
+| [11-cookbook](docs/11-cookbook.md)                             | task-shaped recipes                                                           |
+| [REFERENCE](docs/REFERENCE.md)                                 | the API surface, type by type                                                 |
 
 ## The living native examples
 

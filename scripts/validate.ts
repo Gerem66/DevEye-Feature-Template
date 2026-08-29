@@ -38,7 +38,9 @@ for (const icon of meta.icons ?? []) {
     if (!fs.existsSync(file)) fail(`declared icon missing: assets/icons/${icon}.svg`);
 }
 if (!(meta.icons ?? []).includes(manifest.icon)) {
-    console.warn(`validate: manifest.icon "${manifest.icon}" is not shipped; it must then match an existing DevEye icon class.`);
+    console.warn(
+        `validate: manifest.icon "${manifest.icon}" is not shipped; it must then match an existing DevEye icon class.`
+    );
 }
 
 const slug = manifest.id.replace(/^x-/, '');

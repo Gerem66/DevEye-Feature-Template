@@ -40,7 +40,7 @@ Two contracts to respect:
   view's current position; call them once per kind, never per row. Rows use
   `useLiveOutlines`.
 - **An item's segment is its bare id.** Declare `useLiveSegment('l1',
-  String(id))` for the open item, nothing else: `view:<your id>` already says
+String(id))` for the open item, nothing else: `view:<your id>` already says
   what kind of item it is, and that bare id is how "open the settings of item
   42 from another workspace" and "join Alice" find your view.
 

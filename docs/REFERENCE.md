@@ -11,8 +11,8 @@ and the app-provided `deveye-sdk-client` module.
 - `ExtraPermissionSpec`: `toggle` or `choice` (2..5 options, least-privileged
   `default`, explicit `ownerValue`). `MAX_EXTRA_PERMISSIONS = 4`.
 - `NativeCapability`: `'notify' | 'mail.accounts' | 'members.read' |
-  'workspaces.read' | 'devices.read' | 'telemetry.read' | 'agents' |
-  'routes.public'`; `'telemetry.read'` and `'agents'` are reserved to
+'workspaces.read' | 'devices.read' | 'telemetry.read' | 'agents' |
+'routes.public'`; `'telemetry.read'` and `'agents'` are reserved to
   native-id modules (`validateManifest` refuses them on an `x-` id).
   `'workspaces.read'` lists every workspace of this DevEye and refuses anyone
   but a global administrator. `'routes.public'` opens sessionless HTTP routes
@@ -60,7 +60,7 @@ and the app-provided `deveye-sdk-client` module.
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
   `migrationsDir`, `createService(deps)`, `items` (`FeatureItemsEntry`:
   `homeOf(repo, itemId, workspaceId)`, `labelOf(repo, cipher, itemId,
-  workspaceId)`, optional `shareable(repo, itemId, workspaceId)` answering
+workspaceId)`, optional `shareable(repo, itemId, workspaceId)` answering
   `false` for an item its tier forbids to project, required by a `shareTier`
   other than `'never'`). A module
   with migrations also ships `src/server/migrations/`' destructive mirror
@@ -77,7 +77,7 @@ and the app-provided `deveye-sdk-client` module.
 - `SdkFeatureContext<Repo>`: see [03-server-handlers](03-server-handlers.md).
   Carries `isAdmin` (the caller is a global administrator: what a fleet-wide
   view keys on; a command that must require it declares `access: { admin:
-  true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
+true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
   throws `forbidden` otherwise), `secrecy: SdkSecrecy` (`isUnlocked()`, and
   `ticket(payload, { ttlSeconds? })`: a short-lived ticket signed by the host
   and bound to the caller, their session, this workspace and your module, that
@@ -100,7 +100,7 @@ and the app-provided `deveye-sdk-client` module.
 - `SdkQueryable`: `query<T>(sql, params): Promise<T[]>`,
   `execute(sql, params): Promise<{ affectedRows, insertId }>`.
 - `DevEyeFacade`: `notify.hasRoute(itemId?)`, `notify.send(alert, { itemId?,
-  except? })` (an `SdkAlert`: `subject`, `body`, `payload?`, `embeds?`;
+except? })` (an `SdkAlert`: `subject`, `body`, `payload?`, `embeds?`;
   `except` skips channel ids a live message already concluded on),
   `notify.liveChannels({ itemId? })` (the routed `SdkLiveChannel`s able to
   carry a live message), `notify.postLive(channelId, message, messageId?)`
@@ -114,7 +114,7 @@ and the app-provided `deveye-sdk-client` module.
   `pinInstant(deviceId, ts)`), `agents` (an `AgentsFacade`); each gated by
   the manifest's `nativeCapabilities`.
 - `SdkDevice`: `{ id, name, online, status, ownerUserId, workspaceId,
-  metricIntervalSeconds, report }`, what the devices facade reveals.
+metricIntervalSeconds, report }`, what the devices facade reveals.
 - `FeatureService`: `start` (may be async; awaited at boot, before the agent
   sockets open), `stop`, `agentHooks?: FeatureAgentHooks`,
   `providers?: Readonly<Record<string, unknown>>` (keyed by a published
@@ -124,13 +124,13 @@ and the app-provided `deveye-sdk-client` module.
 - `SdkPublicApp`: `get(path, opts, handler)` / `post(path, opts, handler)`;
   paths are absolute (`/t.js`, `/api/t/b`) and a path the host already serves
   is refused at boot. `SdkPublicRouteOptions`: `rateLimit?: { max,
-  timeWindow }` (a per-address ceiling on top of the host's own),
+timeWindow }` (a per-address ceiling on top of the host's own),
   `exposure?: 'everywhere' | 'app'` (`'everywhere'`, the default, mounts the
   route on the app and the public surface; `'app'` on the app's own origin
   only, for a ticketed download or an OAuth callback).
   `SdkPublicHandler(req: SdkPublicRequest, reply: SdkPublicReply)`: the request
   is `{ headers, body (JSON, already decoded, `undefined` when absent or
-  unreadable), ip }`, nothing of a session; the reply is the chainable
+unreadable), ip }`, nothing of a session; the reply is the chainable
   `header(name, value)`, `code(status)`, `send(payload?)`.
 - `FeatureServiceDeps<Repo>`: `repo`, `listWorkspaceIds`, `storeFor`,
   `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
@@ -140,7 +140,7 @@ and the app-provided `deveye-sdk-client` module.
   feature's), `audit` (system
   source, optional `userId`), `agents`, `keys`, `secrecy`
   (`redeem(ticket)`: an `SdkRedeemedTicket` `{ userId, workspaceId, payload,
-  cipher: { server, private } }`, the private cipher `null` while the caller's
+cipher: { server, private } }`, the private cipher `null` while the caller's
   session is sealed; `null` as a whole for a ticket invalid, expired or minted
   by another module), `origins` (`{ app, public }`, as on the context),
   `providers` (`SdkProviders`, same as on the context),
@@ -265,7 +265,7 @@ authority when the two differ.
   `isSocketOpen()`.
 - Shared helpers: `formatBytesFr`, `DeviceFolderPicker`, `useDevices()` (the
   workspace's devices through the Devices module's provider, `{ devices,
-  loading, error }`; empty, loaded and error-free without the module),
+loading, error }`; empty, loaded and error-free without the module),
   `acquireMetrics(deviceId)` (a counted live metrics subscription; call the
   returned release), `joinPath(base, name)` and `isWinPath(p)` (device paths
   as the agent reports them).

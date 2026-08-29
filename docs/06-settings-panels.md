@@ -16,9 +16,9 @@ settings: {
 
 - `'general'` and `'sources'` (and any custom tab) need a **panel component**
   from your client entry, keyed by the tab id:
-  ```ts
-  settingsPanels: { general: GeneralPanel, sources: SourcesPanel, advanced: AdvancedPanel }
-  ```
+    ```ts
+    settingsPanels: { general: GeneralPanel, sources: SourcesPanel, advanced: AdvancedPanel }
+    ```
 - `'notifications'` is **fully generic**: if your manifest says
   `notifies: true`, DevEye renders the whole channels-and-routing tab for you.
   You write nothing.

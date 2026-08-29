@@ -5,7 +5,7 @@
 One argument decides how a value is protected:
 
 ```ts
-await ctx.store.put('token', value);                            // 'server' (default)
+await ctx.store.put('token', value); // 'server' (default)
 await ctx.store.put('secret', value, { encryption: 'private' });
 await ctx.store.put('color', value, { encryption: 'none' });
 ```
@@ -50,7 +50,7 @@ For relational data, declare tables and a repo:
 
 ```ts
 // handler side
-const sealed = await ctx.cipher().encrypt(apiKey);      // 'server' tier
+const sealed = await ctx.cipher().encrypt(apiKey); // 'server' tier
 await ctx.repo.saveKey(ctx.workspaceId, sealed);
 // reads: tryDecrypt returns null instead of throwing, for lists that degrade
 ```
@@ -66,7 +66,7 @@ Migrations run at boot without a transaction: make every statement replayable
   (files, streams) owns a raw symmetric key. `ctx.keys` (the same
   `SdkServerKeys` a service gets as `deps.keys`) wraps it under the server key
   (`sealBytes` / `openBytes`) or derives one from it (`derive(salt, info,
-  length)`: HKDF over the server key, never stored anywhere, for material
+length)`: HKDF over the server key, never stored anywhere, for material
   that must survive the database). Details and the unwrap-at-start pattern in
   [10-background-services](10-background-services.md#wrapping-key-material-of-your-own-depskeys).
 - **A browser request without a session.** A download the browser must open
