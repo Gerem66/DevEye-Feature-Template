@@ -47,8 +47,8 @@ and the app-provided `deveye-sdk-client` module.
   `SentinelAgentConfig`, `SentinelAgentConfigProvider` (`configFor(deviceId)`);
   `DATABASE_BACKUP_PROVIDER` (`'database.backup'`), `DatabaseBackupProvider`
   (`listDatabases`, `findDatabase`, `openAccess`), `DatabaseBackupCandidate`,
-  `DatabaseBackupAccess` (an open access, `close()` releases the tunnel):
-  offered by the app while Databases is native, by its module afterwards;
+  `DatabaseBackupAccess` (an open access, `close()` releases the tunnel),
+  published by the Databases module's service;
   `DEVICES_CLIENT_PROVIDER` (`'devices.client'`, contract
   `DevicesClientProvider` in `sdk/client`): what the Devices module offers the
   app's own home and topbar, `useDevices()`, `refreshDevices()`,
@@ -199,7 +199,8 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
 ## `@deveye/types/sdk/testing`
 
 - `createTestContext(overrides?)`: in-memory `SdkFeatureContext` plus
-  `recorded` (notifications, audits, agentRequests, pinnedInstants),
+  `recorded` (notifications, liveMessages, audits, agentRequests,
+  pinnedInstants),
   `forgotten` (the item ids passed to `items.forget`) and an inspectable
   `store.rows`. Its facade answers by default: `devices.authorize` resolves
   `testDevice({ id })` (active, online, unreported), `devices.list` is empty,
@@ -207,14 +208,18 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   every request and answers true, `transport` is a no-op, `secrecy` is
   unlocked, `items.restrictions()` is empty and `sharing.scope()` has no
   projection. Overrides: `repo`, `userId`, `workspaceId`, `kind`, `isOwner`,
-  `canWrite`, `extras`, `manifest`, `hasRoute`, `notifyAccepted` (what
-  `notify.send` resolves; recorded either way), `devices`, `snapshots`,
-  `deveye` (a partial facade), `unlocked` (false also seals the `'private'`
-  cipher: `decrypt` throws `locked`, `tryDecrypt` answers null, like the
-  app's guarded tier in a locked session), `itemRestrictions`, `shares`.
+  `isAdmin`, `canWrite`, `extras`, `manifest`, `hasRoute`, `notifyAccepted`
+  (what `notify.send` resolves; recorded either way), `liveChannels`,
+  `devices`, `snapshots`, `workspaces` (what `workspaces.list()` answers),
+  `origins`, `providers`, `deveye` (a partial facade), `unlocked` (false also
+  seals the `'private'` cipher: `decrypt` throws `locked`, `tryDecrypt`
+  answers null, like the app's guarded tier in a locked session),
+  `itemRestrictions`, `shares`.
 - `createTestServiceDeps(overrides?)`: the service twin; `recorded` adds
-  `tickers` and `liveChanges`. Overrides: `repo`, `workspaceIds`, `devices`,
-  `hasRoute`, `notifyAccepted`, `snapshots`.
+  `tickers`, `liveChanges` and `liveTopicChanges` (which topics a
+  `live.changed(ws, [...])` beat). Overrides: `repo`, `workspaceIds`,
+  `devices`, `hasRoute`, `notifyAccepted`, `liveChannels`, `origins`,
+  `snapshots`, `providers`.
 - `testDevice(over)`: an `SdkDevice` with sensible defaults.
 
 ## `deveye-sdk-client` (provided by the app)

@@ -89,13 +89,17 @@ src/
 
 ## The living native examples
 
-DevEye's own features are being migrated onto this exact contract, inside the
-main repo, and the app's CI keeps them current. When a doc here feels
-abstract, read them:
+Every DevEye feature is a module on this exact contract, inside the main
+repo, and the app's CI keeps them current. When a doc here feels abstract,
+read them:
 
 - `features/weather/` — the simple shape: one screen, a shared store, a
   topbar mini-widget, provider API keys in a Sources panel.
 - `features/osint/` — the richer shape: several client components, a 30s
-  command timeout (`featureApi` third argument), password-based encryption on
+  command timeout (`api.send`'s third argument), password-based encryption on
   reads (`useSecrecy` / `withSecrecy`), and handler tests on the in-memory
   harness (`src/server/handlers.test.ts`).
+- `features/projects/` — the largest: a secondary live topic for its chat, a
+  provider it publishes and five it consumes, per-item sharing.
+- `features/mail/` — a background service, session tickets for two HTTP
+  routes, and two encryption tiers chosen per item.

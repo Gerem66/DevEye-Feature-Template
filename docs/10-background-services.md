@@ -224,10 +224,9 @@ it means for you:
 The same registry works the other way: a module that needs what another
 feature owns reads the published contract through `deps.providers.get<T>(key)`
 (service) or `ctx.providers.get<T>(key)` (handler), and degrades cleanly on
-`undefined`. Who offers the key is none of your business: a module's service,
-or the app itself for a feature still native (`DATABASE_BACKUP_PROVIDER` is
-offered by DevEye while Databases is native; the day it becomes a module, its
-service publishes the same key and nothing changes for you).
+`undefined`. Who offers the key is none of your business: every native
+feature is a module today, so a key comes from a module's service, but a
+future one could just as well come from the app itself.
 
 ```ts
 const databases = deps.providers.get<DatabaseBackupProvider>(DATABASE_BACKUP_PROVIDER);
