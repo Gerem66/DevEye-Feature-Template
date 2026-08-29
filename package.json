@@ -31,7 +31,7 @@
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "@types/react": "^19.0.0",
-    "@deveye/types": "^0.15.0",
+    "@deveye/types": "^0.16.0",
     "eslint": "^9.0.0",
     "prettier": "^3.4.0",
     "react": "^19.1.0",
