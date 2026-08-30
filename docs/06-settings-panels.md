@@ -32,14 +32,19 @@ settings: {
 
 ## Writing a panel
 
-A panel receives `{ scope, canWrite }` and renders inside the shell (which
-owns the title, nav and sizing):
+A panel receives `{ scope, canWrite, close }` and renders inside the shell
+(which owns the title, nav and sizing):
 
 ```tsx
 export default function GeneralPanel({ scope, canWrite }: SettingsPanelProps) {
     ...
 }
 ```
+
+`close()` dismisses the dialog. Reach for it in one case only: a panel that
+deletes the very item it configures. The scope it was opened on no longer
+exists, and the shell would otherwise fall back to the feature's own tabs,
+still titled with the deleted item's name. Everything else applies in place.
 
 `scope` is `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`.
 The item id is a **number** for every row-keyed feature (the default); a

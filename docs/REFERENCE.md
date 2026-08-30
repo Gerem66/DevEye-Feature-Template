@@ -209,7 +209,9 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   `Linked...` block rendered in full inside a project's tab, and the
   feature's own dialog, with their `...LinkedCandidate` rows, are the ones
   published).
-- `SettingsPanelProps<Id = number>`: `{ scope, canWrite }`; `SdkSettingsScope<Id>`
+- `SettingsPanelProps<Id = number>`: `{ scope, canWrite, close }`; `close()`
+  dismisses the settings dialog, for the panel that deletes the very item it
+  configures; `SdkSettingsScope<Id>`
   is `{ kind: 'feature' }` or `{ kind: 'item', itemId: Id, itemLabel, shareable? }`
   (`shareable: false` hides the Sharing tab for an item the server would
   refuse to project). `Id` is `number` for a row-keyed feature, `string` for
