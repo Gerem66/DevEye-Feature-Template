@@ -47,14 +47,14 @@ exists, and the shell would otherwise fall back to the feature's own tabs,
 still titled with the deleted item's name. Everything else applies in place.
 
 `scope` is `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`.
-The item id is a **number** for every row-keyed feature (the default); a
-feature whose items are strings (DevEye's own Devices module: a device is a
-UUID) types its panels `SettingsPanelProps<string>`. One component may serve
-both scales of the same tab (the Devices `general` panel shows the terminal
-preferences at feature scale and a device's collection config at item scale):
-branch on `scope.kind`. The shell's own sections (sharing, permissions,
-notifications) key their tables on the number and are never offered for a
-string-keyed feature.
+The item id is **text**, whatever key your own table uses: a row-keyed feature
+reads it back with `Number(scope.itemId)`, a UUID-keyed one (DevEye's own
+Devices module) takes it as it stands. One component may serve both scales of
+the same tab (the Devices panels show the terminal preferences at feature scale
+and a device's collection config at item scale): branch on `scope.kind`. The
+shell's own sections (sharing, permissions) follow the same text id;
+notification routes keep a numeric key of their own, so they are only offered
+to a feature whose items are numbered.
 
 Use `settingsStyles` (from `deveye-sdk-client`) for the canonical rows:
 `section`, `sectionLabel`, `sectionHint`, `field`, `fieldLabel`, `channelRow`,

@@ -105,8 +105,10 @@ true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
   a public route of your service redeems with `deps.secrecy.redeem`; two
   minutes by default), `keys: SdkServerKeys` (the same object a service gets),
   `items: SdkItems` (`restrictions()`, `assert(itemId, level?)`,
-  `forget(itemId)`), `sharing: SdkSharing` (`scope()` returning an
-  `SdkShareScope`: `foreignIds`, `homeOf`, `cipherFor`) and
+  `forget(itemId)`, all on text ids: pass `String(row.id)` from a row-keyed
+  table), `sharing: SdkSharing` (`scope()` returning an `SdkShareScope`:
+  `foreignIds`, `homeOf`, `cipherFor`, `orderOf` — the rank a projected item
+  holds in the active workspace — plus `setOrder(itemId, order)`) and
   `providers: SdkProviders` (`get<T>(key)`: a published contract, whoever
   offers it; `undefined` when nobody does) and `origins: { app, public }`
   (where DevEye lives, as URLs without a trailing slash: `app` is the origin
@@ -209,13 +211,13 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   `Linked...` block rendered in full inside a project's tab, and the
   feature's own dialog, with their `...LinkedCandidate` rows, are the ones
   published).
-- `SettingsPanelProps<Id = number>`: `{ scope, canWrite, close }`; `close()`
+- `SettingsPanelProps`: `{ scope, canWrite, close }`; `close()`
   dismisses the settings dialog, for the panel that deletes the very item it
-  configures; `SdkSettingsScope<Id>`
-  is `{ kind: 'feature' }` or `{ kind: 'item', itemId: Id, itemLabel, shareable? }`
+  configures; `SdkSettingsScope`
+  is `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel, shareable? }`
   (`shareable: false` hides the Sharing tab for an item the server would
-  refuse to project). `Id` is `number` for a row-keyed feature, `string` for
-  one whose items are UUIDs (Devices): a panel declares the one it takes.
+  refuse to project). The item id is text, whatever key your table uses: a
+  row-keyed feature reads it back with `Number(...)`.
 - `DevicesClientProvider` and `SdkDeviceSummary`: the Devices module's
   client contract (see `DEVICES_CLIENT_PROVIDER` above).
 
