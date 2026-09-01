@@ -78,6 +78,14 @@ reimplements a reduced form of it.
 
 ## `@deveye/types/sdk/server`
 
+- `isSafePublicUrl(url)` / `isPublicIp(address)`: the SSRF guard, as plain
+  functions. Call the first on any URL a member typed before your server
+  fetches it, clones it or resolves it: it accepts only public http(s), and
+  refuses `localhost`, private and link-local ranges, CGNAT, `.local` /
+  `.internal` suffixes, and every other protocol (a git `ext::` runs a command,
+  a `file://` reads the server's disk). It does NOT resolve a hostname: DNS
+  would change between the check and the connection anyway, so bound the
+  address you finally connect to if that matters to you.
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
   `migrationsDir`, `createService(deps)`, `items` (`FeatureItemsEntry`:
   `homeOf(repo, itemId, workspaceId)`, `labelOf(repo, cipher, itemId,

@@ -18,16 +18,34 @@ be renamed into yours.
     npm install
     npm run ci        # lint + typecheck + manifest validation + handler tests
     ```
-4. Install it into a DevEye instance (you need a checkout of the app):
+4. Install it into a DevEye instance (you need a checkout of the app).
+   Your module lives in its own repository, beside the app rather than inside
+   it, so it goes through the **local overlay** — `features.local.json`, which
+   resolves a module BY PATH and is gitignored, so your private module leaves
+   no trace in the app's repository:
+
     ```bash
-    # in the DevEye repo
-    npm install <path-or-name-of-your-package>
-    #   add { "package": "deveye-feature-myfeature" } to features.config.json
+    # in the DevEye repo, create or edit features.local.json
+    {
+      "features": [
+        { "package": "deveye-feature-myfeature", "path": "../MyFeature" }
+      ]
+    }
     npm run gen:features
     npm run dev
     ```
+
     Your card appears in the home grid's add market. That is the whole
-    integration: one config entry, one generated-glue run.
+    integration: one overlay entry, one generated-glue run.
+
+    `features.config.json` is the other list, for modules published to npm and
+    installed as dependencies (`npm install deveye-feature-myfeature`, then one
+    `{ "package": ... }` entry). Its generated outputs are committed; the
+    overlay's are not. Use the overlay while you build, whichever one you end
+    up shipping through.
+
+    A module with runtime dependencies of its own needs them installed where it
+    sits: `npm install` in YOUR repository, not in the app's.
 
 ## Anatomy
 
@@ -41,7 +59,10 @@ src/
 ├── server/
 │   ├── index.ts         serverEntry: handlers (+ optional repo, migrations, service)
 │   ├── handlers.ts      one handler per command, SDK context
-│   └── handlers.test.ts node:test against the in-memory harness
+│   ├── handlers.test.ts node:test against the in-memory harness
+│   ├── repo.ts          starter for your own tables — inert until wired
+│   ├── migrations/      starter DDL, numbered locally, ft_<slug>_ prefixed
+│   └── uninstall.sql    its destructive mirror, shipped with it
 └── client/
     ├── index.tsx        clientEntry: Widget, Full view, settings panels
     ├── Counter.tsx      the components, on `deveye-sdk-client`
@@ -69,6 +90,10 @@ src/
 - **No polling.** Declare `mutates: true` on writing commands and list your
   resource keys in the manifest: every member's client re-fetches when anyone
   writes. See [docs/05-client.md](docs/05-client.md).
+- **A URL a member typed is an input.** Before your server fetches it, clone it
+  or resolve it, pass it through `isSafePublicUrl` from
+  `@deveye/types/sdk/server`: it refuses anything but public http(s), so a
+  pasted address cannot turn the server into a probe of the network it sits in.
 
 ## Documentation
 
