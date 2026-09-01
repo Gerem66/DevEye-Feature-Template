@@ -9,7 +9,7 @@ and the app-provided `deveye-sdk-client` module.
 - `FeatureManifest`: the declaration; see [02-manifest](02-manifest.md).
 - `ManifestCommand`: `{ command, input, output }`, zod both ways.
 - `ExtraPermissionSpec`: `toggle` or `choice` (2..5 options, least-privileged
-  `default`, explicit `ownerValue`). `MAX_EXTRA_PERMISSIONS = 4`.
+  `default`, explicit `ownerValue`). `MAX_EXTRA_PERMISSIONS = 10`.
 - `NativeCapability`: `'notify' | 'mail.accounts' | 'members.read' |
 'workspaces.read' | 'devices.read' | 'telemetry.read' | 'agents' |
 'routes.public'`; `'telemetry.read'` and `'agents'` are reserved to
