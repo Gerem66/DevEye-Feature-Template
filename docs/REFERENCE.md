@@ -83,16 +83,25 @@ reimplements a reduced form of it.
   `homeOf(repo, itemId, workspaceId)`, `labelOf(repo, cipher, itemId,
 workspaceId)`, optional `shareable(repo, itemId, workspaceId)` answering
   `false` for an item its tier forbids to project, required by a `shareTier`
-  other than `'never'`; optional `move` (`FeatureItemsMove`: `plan(repo, itemId,
-from, to)` returning `SdkMovePlan` `{ blockers, drops, rows }`, and
+  other than `'never'`; optional `move` (`FeatureItemsMove`: `plan(ctx)`
+  returning `SdkMovePlan` `{ blockers, drops, rows }` from a read-only `q`, and
   `apply(ctx)` given a TRANSACTIONAL `q`, your `repo` for reads only, and the
-  two workspaces' open ciphers) which lets an item change workspace: read and
-  re-seal every encrypted cell BEFORE the first write, or a failure leaves a
-  tree half converted and unreadable forever. Omit `move` and your items simply
-  cannot be moved, which is the safe default). A module
+  two workspaces' open ciphers) which lets an item change workspace. Omit
+  `move` and your items simply cannot be moved, which is the safe default and a
+  valid answer when an item depends on a workspace source that cannot follow
+  it). A module
   with migrations also ships `src/server/migrations/`' destructive mirror
   `src/server/uninstall.sql` (`DROP TABLE IF EXISTS` on its own `ft_<slug>_`
   tables only; see 04-storage-and-encryption).
+- `MovableCell` + `resealCells(q, cells, ownerId, ciphers)` +
+  `countMovableCells(q, cells, ownerId)`: the two halves of a `move`. Declare
+  one cell per encrypted column hanging off your item (`ownerScope` for a row
+  that hangs off it indirectly, a literal subquery of yours taking the item id).
+  `resealCells` reads and converts EVERYTHING before its first write and throws
+  before writing anything if one cell resists: half a converted tree is
+  unreadable forever and nothing can detect it, one encrypted blob being
+  indistinguishable from another. The cell list is held BY HAND: revisit it
+  whenever you add an encrypted column.
 - `SdkFeatureDefinition` / `defineSdkFeature`: one command:
   `access?: { level?: 'read' | 'write'; extras?: string[]; admin?: boolean }`
   (`admin: true` requires a global administrator on top of the feature check:
