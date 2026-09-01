@@ -83,7 +83,13 @@ reimplements a reduced form of it.
   `homeOf(repo, itemId, workspaceId)`, `labelOf(repo, cipher, itemId,
 workspaceId)`, optional `shareable(repo, itemId, workspaceId)` answering
   `false` for an item its tier forbids to project, required by a `shareTier`
-  other than `'never'`). A module
+  other than `'never'`; optional `move` (`FeatureItemsMove`: `plan(repo, itemId,
+from, to)` returning `SdkMovePlan` `{ blockers, drops, rows }`, and
+  `apply(ctx)` given a TRANSACTIONAL `q`, your `repo` for reads only, and the
+  two workspaces' open ciphers) which lets an item change workspace: read and
+  re-seal every encrypted cell BEFORE the first write, or a failure leaves a
+  tree half converted and unreadable forever. Omit `move` and your items simply
+  cannot be moved, which is the safe default). A module
   with migrations also ships `src/server/migrations/`' destructive mirror
   `src/server/uninstall.sql` (`DROP TABLE IF EXISTS` on its own `ft_<slug>_`
   tables only; see 04-storage-and-encryption).
