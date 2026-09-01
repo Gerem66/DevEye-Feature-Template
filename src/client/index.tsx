@@ -1,5 +1,6 @@
 import type { FeatureClient } from '@deveye/types/sdk/client';
 
+import CounterArt from './Art';
 import CounterFull, { CounterWidget } from './Counter';
 import GeneralPanel from './GeneralPanel';
 
@@ -11,6 +12,7 @@ import GeneralPanel from './GeneralPanel';
 export const clientEntry: FeatureClient = {
     Widget: CounterWidget,
     Full: CounterFull,
+    Art: CounterArt,
     settingsPanels: { general: GeneralPanel },
     cacheDurationMinutes: 10
 };
