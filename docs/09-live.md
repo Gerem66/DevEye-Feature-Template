@@ -56,6 +56,41 @@ beats the topics named instead of your id: one of your secondary topics
 (`manifest.topics`), or another feature's topic whose screens mirror what you
 just wrote.
 
+## Pushing your own frames (`live.publish`)
+
+Invalidation says "something changed, ask again". Some state has to be seen AS
+it changes: a cell someone just drew on a shared board, a token moved on a map.
+Declare `'live.publish'` in `nativeCapabilities` and push the CHANGE itself:
+
+```ts
+// in a handler: the workspace is the caller's, already authorized
+ctx.live.publish('x-myfeature.moved', { id, x, y });
+
+// in a service, which has no caller: name the workspace
+deps.live.publish(workspaceId, 'x-myfeature.moved', { id, x, y });
+```
+
+```tsx
+// client side, while your view is mounted
+useEffect(() => onServerEvent('x-myfeature.moved', movedSchema, apply), [apply]);
+```
+
+The frame reaches every member of that workspace connected right now and
+holding `read` on your feature, and nobody else. `event` must start with your
+feature id, like a command; it never carries a `requestId`, so it can never be
+mistaken for a reply.
+
+Three rules that come with the lane:
+
+- **Push the change, never the state.** A full snapshot on every frame is what
+  invalidation already does, more cheaply.
+- **A frame can be missed** (a socket in backpressure drops it, a tab was
+  asleep). Your client must be able to recover on its own — re-read your state
+  on `onSocketOpen`, and on a frame that no longer makes sense — rather than
+  assume every frame lands.
+- **The rate is yours to hold.** Unlike `changed`, nothing throttles this lane:
+  what bounds it is the cadence of the command that emits it.
+
 ## Typing indicator
 
 For chat-like surfaces: `useTypingSignal().onInput()` while the user types,

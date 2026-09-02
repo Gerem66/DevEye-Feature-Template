@@ -12,12 +12,16 @@ and the app-provided `deveye-sdk-client` module.
   `default`, explicit `ownerValue`). `MAX_EXTRA_PERMISSIONS = 10`.
 - `NativeCapability`: `'notify' | 'mail.accounts' | 'members.read' |
 'workspaces.read' | 'devices.read' | 'telemetry.read' | 'agents' |
-'routes.public'`; `'telemetry.read'` and `'agents'` are reserved to
-  native-id modules (`validateManifest` refuses them on an `x-` id).
+'routes.public' | 'live.publish'`; `'telemetry.read'` and `'agents'` are
+  reserved to native-id modules (`validateManifest` refuses them on an `x-`
+  id).
   `'workspaces.read'` lists every workspace of this DevEye and refuses anyone
   but a global administrator. `'routes.public'` opens sessionless HTTP routes
   (`FeatureService.publicRoutes`, see
   [10-background-services](10-background-services.md#public-http-routes-publicroutes)).
+  `'live.publish'` pushes frames of your own to the workspace's connected
+  members (`ctx.live.publish`, `deps.live.publish`, see
+  [09-live](09-live.md#pushing-your-own-frames-livepublish)).
 - `CrossTopicInvalidation`: `{ topic, keys }`, the element of the manifest's
   `alsoInvalidatedBy` (a native topic, a subset of `resources`; at most 4).
 - `FeatureManifest.topics`: `{ id, keys }[]`, secondary live topics of your
@@ -127,6 +131,9 @@ true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
   and bound to the caller, their session, this workspace and your module, that
   a public route of your service redeems with `deps.secrecy.redeem`; two
   minutes by default), `keys: SdkServerKeys` (the same object a service gets),
+  `live: SdkContextLive` (`publish(event, payload)`: capability
+  `'live.publish'`, the frame goes to the members of THIS workspace who hold
+  `read` on your feature; `event` must start with your feature id),
   `items: SdkItems` (`restrictions()`, `assert(itemId, level?)`,
   `forget(itemId)`, all on text ids: pass `String(row.id)` from a row-keyed
   table), `sharing: SdkSharing` (`scope()` returning an `SdkShareScope`:
@@ -183,7 +190,8 @@ unreadable), ip }`, nothing of a session; the reply is the chainable
   `isOnline`), `devices` (`SdkFleetDevices`: `find`, `isOnline`),
   `telemetry`, `live` (`SdkLive`: `changed(workspaceId, topics?)`: your
   topic by default, or the topics named, your own secondary ones or another
-  feature's), `audit` (system
+  feature's; `publish(workspaceId, event, payload)`: capability
+  `'live.publish'`, one frame to that workspace's connected readers), `audit` (system
   source, optional `userId`), `agents`, `keys`, `secrecy`
   (`redeem(ticket)`: an `SdkRedeemedTicket` `{ userId, workspaceId, payload,
 cipher: { server, private } }`, the private cipher `null` while the caller's
@@ -248,7 +256,7 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
 
 - `createTestContext(overrides?)`: in-memory `SdkFeatureContext` plus
   `recorded` (notifications, liveMessages, audits, agentRequests,
-  pinnedInstants),
+  pinnedInstants, livePublishes),
   `forgotten` (the item ids passed to `items.forget`) and an inspectable
   `store.rows`. Its facade answers by default: `devices.authorize` resolves
   `testDevice({ id })` (active, online, unreported), `devices.list` is empty,
@@ -265,7 +273,8 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   `itemRestrictions`, `shares`.
 - `createTestServiceDeps(overrides?)`: the service twin; `recorded` adds
   `tickers`, `liveChanges` and `liveTopicChanges` (which topics a
-  `live.changed(ws, [...])` beat). Overrides: `repo`, `workspaceIds`,
+  `live.changed(ws, [...])` beat), and shares `livePublishes` with the
+  context harness. Overrides: `repo`, `workspaceIds`,
   `devices`, `hasRoute`, `notifyAccepted`, `liveChannels`, `origins`,
   `snapshots`, `providers`.
 - `testDevice(over)`: an `SdkDevice` with sensible defaults.
