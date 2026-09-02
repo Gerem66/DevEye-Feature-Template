@@ -3,6 +3,7 @@ import {
     Button,
     featureApi,
     invalidate,
+    ReadOnlyNotice,
     SegmentedControl,
     settingsStyles as shell,
     useWorkspacePermissions
@@ -56,6 +57,11 @@ export default function GeneralPanel({ canWrite }: SettingsPanelProps) {
                 options={[...STEP_OPTIONS]}
                 onChange={canWrite ? save : () => undefined}
             />
+            {!canWrite && (
+                <ReadOnlyNotice>
+                    Votre rôle ne permet pas de modifier ces réglages : ils relèvent de l’écriture sur le compteur.
+                </ReadOnlyNotice>
+            )}
 
             {canReset && (
                 <>

@@ -14,6 +14,10 @@ settings: {
 }
 ```
 
+A custom tab may add `requiresWrite: true`. See "Without write access" below:
+it is for a tab holding nothing but gestures, and it removes the tab rather
+than rendering it inert.
+
 - `'general'` and `'sources'` (and any custom tab) need a **panel component**
   from your client entry, keyed by the tab id:
     ```ts
@@ -59,8 +63,36 @@ to a feature whose items are numbered.
 Use `settingsStyles` (from `deveye-sdk-client`) for the canonical rows:
 `section`, `sectionLabel`, `sectionHint`, `field`, `fieldLabel`, `channelRow`,
 `channelText`, `rowAction`... They are what makes every feature's settings
-look like the same product. Render read-only when `canWrite` is false; never
-hide the information itself.
+look like the same product.
+
+## Without write access
+
+Render read-only when `canWrite` is false; never hide the information itself.
+Disable the inputs, drop the save button, and say why with `ReadOnlyNotice`
+(from `deveye-sdk-client`) in its place:
+
+```tsx
+canWrite ? (
+    <div className={shell.sectionActions}>
+        <SaveButton onSave={save} />
+    </div>
+) : (
+    <ReadOnlyNotice>
+        Votre rôle ne permet pas de modifier ces réglages : ils relèvent de l’écriture sur X-Counter.
+    </ReadOnlyNotice>
+);
+```
+
+One component rather than a class, so the refusal reads the same in every
+feature, lock glyph included. Anything blocked for another reason (an archived
+device, an item that cannot be projected) keeps its own wording: the lock means
+"your role", nothing else.
+
+The exception is a tab holding **nothing but gestures**: read-only, it would be
+an empty tab carrying an apology. Declare it `requiresWrite: true` in the
+manifest and the shell drops it entirely, so your panel has no read-only case
+to write. A tab that shows values is never in that case; the values are worth
+reading.
 
 ## The button
 

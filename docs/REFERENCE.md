@@ -30,7 +30,9 @@ and the app-provided `deveye-sdk-client` module.
   `live.changed(ws, ['<topic>'])`; see
   [02-manifest](02-manifest.md#secondary-topics-of-your-own).
 - `SettingsTab` (`'general' | 'sources' | 'notifications' | 'permissions' | 'sync' | 'encryption'`;
-  `'sync'` and `'encryption'` are item-scope tabs), `CustomTabRef`,
+  `'sync'` and `'encryption'` are item-scope tabs), `CustomTabRef`
+  (`{ id, label, icon?, requiresWrite? }`; `requiresWrite` drops the tab
+  without write access, for one holding nothing but gestures),
   `FeatureCategory`, `FeatureLink` (`{ to, what }`, `MAX_FEATURE_LINKS = 6`).
 - `validateManifest(manifest)`: throws with a named reason.
 - Ids: `externalFeatureIdSchema` (`/^x-[a-z][a-z0-9]{1,24}$/`), `featureIdSchema`,
@@ -290,7 +292,8 @@ authority when the two differ.
   `SegmentedControl`, `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
   `ClosePopup` (the imperative dialog layer), `openInfo`, `StatusBadge`,
   `ConfirmDialog`, `FeatureSettingsButton`, `settingsStyles` (the canonical
-  settings rows), `CountWidget` + `useWorkspaceCount` (+ `CountState`),
+  settings rows), `ReadOnlyNotice` (the one shape of a read-only refusal in a
+  settings panel), `CountWidget` + `useWorkspaceCount` (+ `CountState`),
   `useDragReorder`, `Avatar` (a member's identity dot; `user` may be
   `undefined`), `userColorVar(color)` (the CSS variable of an account colour,
   the one the live presence paints with).
