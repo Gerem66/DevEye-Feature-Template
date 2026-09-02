@@ -26,12 +26,12 @@
     "ci": "npm run format:check && npm run lint && npm run typecheck && npm run validate && npm run test"
   },
   "peerDependencies": {
-    "@deveye/types": ">=0.16.0"
+    "@deveye/types": ">=0.18.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "@types/react": "^19.0.0",
-    "@deveye/types": "^0.17.0",
+    "@deveye/types": "^0.18.0",
     "eslint": "^9.0.0",
     "prettier": "^3.4.0",
     "react": "^19.1.0",
