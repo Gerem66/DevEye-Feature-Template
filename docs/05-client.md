@@ -111,9 +111,9 @@ is API.
 - `useWorkspaceMembers()`: the members of the active workspace as the session
   lists them (empty before it answers, never `null`), to put a face on "who
   did what" in a history list.
-- `Avatar`: one member's identity dot, their avatar or their initial on their
-  account colour. `user` may be `undefined`: a deleted account must not break
-  a row.
+- `Avatar`: one member's identity dot, their avatar or the default picture
+  until they upload one. `user` may be `undefined`: a deleted account must not
+  break a row.
 - `userColorVar(color)`: the CSS variable of an account colour, to paint
   something else in it (a dot in a legend, a point on a chart). The same one
   live presence uses.
