@@ -244,9 +244,10 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   `Linked...` block rendered in full inside a project's tab, and the
   feature's own dialog, with their `...LinkedCandidate` rows, are the ones
   published).
-- `SettingsPanelProps`: `{ scope, canWrite, close }`; `close()`
-  dismisses the settings dialog, for the panel that deletes the very item it
-  configures; `SdkSettingsScope`
+- `SettingsPanelProps`: `{ scope, canWrite, close, gone }`; `close()`
+  dismisses the settings dialog and nothing more; `gone()` says the item
+  being configured no longer exists here (deleted, moved), closes the
+  dialog and makes the view that opened it leave the item; `SdkSettingsScope`
   is `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel, shareable? }`
   (`shareable: false` hides the Sharing tab for an item the server would
   refuse to project). The item id is text, whatever key your table uses: a
@@ -291,7 +292,9 @@ authority when the two differ.
 - UI kit: `Button`, `TextInput`, `SelectInput`, `Checkbox`, `Switch`,
   `SegmentedControl`, `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
   `ClosePopup` (the imperative dialog layer), `openInfo`, `StatusBadge`,
-  `ConfirmDialog`, `FeatureSettingsButton`, `settingsStyles` (the canonical
+  `ConfirmDialog`, `FeatureSettingsButton` (`scope`, `initialSection?`,
+  `onOpenChange?`, `onGone?`: the item was deleted or moved from inside the
+  settings, the detail view leaves it), `settingsStyles` (the canonical
   settings rows), `ReadOnlyNotice` (the one shape of a read-only refusal in a
   settings panel), `CountWidget` + `useWorkspaceCount` (+ `CountState`),
   `useDragReorder`, `Avatar` (a member's identity dot; `user` may be

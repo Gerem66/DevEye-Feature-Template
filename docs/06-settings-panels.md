@@ -36,8 +36,8 @@ than rendering it inert.
 
 ## Writing a panel
 
-A panel receives `{ scope, canWrite, close }` and renders inside the shell
-(which owns the title, nav and sizing):
+A panel receives `{ scope, canWrite, close, gone }` and renders inside the
+shell (which owns the title, nav and sizing):
 
 ```tsx
 export default function GeneralPanel({ scope, canWrite }: SettingsPanelProps) {
@@ -45,10 +45,23 @@ export default function GeneralPanel({ scope, canWrite }: SettingsPanelProps) {
 }
 ```
 
-`close()` dismisses the dialog. Reach for it in one case only: a panel that
-deletes the very item it configures. The scope it was opened on no longer
-exists, and the shell would otherwise fall back to the feature's own tabs,
-still titled with the deleted item's name. Everything else applies in place.
+`close()` dismisses the dialog and nothing more, for a gesture best followed
+on the screen underneath (a full resync whose progress the item's view draws).
+`gone()` says the item being configured no longer exists here: it was deleted,
+or moved to another workspace. The shell closes, then the view that opened it
+leaves the item. Call it right after the delete command succeeds, and only
+then invalidate your resources: a detail view reloaded before it leaves would
+look for an item that is no longer there. Everything else applies in place.
+
+## An item is edited in its General tab
+
+There is no "Edit" dialog next to the settings button of an item. What a
+creation dialog asks for lives, once the item exists, in its General settings
+tab: the same fields, a `SaveButton`, and the delete action at the bottom
+behind a `ConfirmDialog`, calling `gone()`. The creation dialog only creates.
+An identity that cannot change afterwards (a repository's `owner/repo`) is
+shown, not edited, with a line saying why. One door to change a thing, and the
+same door in every feature.
 
 `scope` is `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`.
 The item id is **text**, whatever key your own table uses: a row-keyed feature
@@ -104,3 +117,14 @@ Inside your full view, mount the standard button where actions live:
 
 It renders nothing when no tab is readable for the caller; that rule lives in
 the shell, not in your code.
+
+On an item's detail view, pass `onGone` too, the same handler as its back
+button: the shell calls it once the item was deleted or moved away from inside
+the settings, and the view returns to its list.
+
+```tsx
+<FeatureSettingsButton
+    scope={{ kind: 'item', feature: 'x-counter', itemId: String(id), itemLabel: name }}
+    onGone={onBack}
+/>
+```
