@@ -60,10 +60,13 @@ and the app-provided `deveye-sdk-client` module.
 | `'audience.items'`       | `AudienceItemsProvider`       | `exists`, `labelOf`                                                                                                                              |
 
 The five `*.items` contracts share one shape: `exists(itemId, workspaceId)`,
-asked before linking an id a client sent (a foreign id can neither be linked
-nor leak its existence), and `labelOf(itemId, workspaceId)`, the item's name
-under its home's open cipher, `null` when it is gone. Projects consumes all
-five and publishes `'projects.usage'` in return.
+asked before linking an id a client sent: true for an item visible from that
+workspace, its home or one it is projected into (an id visible nowhere here
+can neither be linked nor leak its existence); and `labelOf(itemId,
+workspaceId)`, the item's name, resolved by the provider under its home's
+open cipher, `null` when it is gone. Projects consumes all five and publishes
+`'projects.usage'` in return; the app calls its `detach` whenever an item
+stops being visible from a workspace (deleted, moved, projection withdrawn).
 
 ### Client contracts (`sdk/client.ts`)
 
