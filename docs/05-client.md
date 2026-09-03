@@ -149,8 +149,8 @@ The app itself consumes one this way: `DEVICES_CLIENT_PROVIDER`
 the home and the topbar, `useDevices()` (the workspace's devices as a live
 store, `{ devices, loading, error }`, each device an `SdkDeviceSummary`:
 `id`, `name`, `online`, `status`, `platform`), `refreshDevices()`,
-`resetDevices()`, `DevicePanel` (the view a device tile opens) and
-`DeviceWidget` (the tile). Without the module the home places no device. The
+`resetDevices()` and `DeviceWidget` (the tile). Without the module the home
+places no device. The
 barrel's `useDevices()` is that provider's hook with an empty, loaded,
 error-free fallback: what a module lists to pick a machine (Backup,
 CloudSync).
