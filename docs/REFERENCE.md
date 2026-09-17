@@ -71,15 +71,15 @@ stops being visible from a workspace (deleted, moved, projection withdrawn).
 
 ### Client contracts (`sdk/client.ts`)
 
-| Key                 | Contract                 | What it hands over                                                                                                                                |
-| ------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `'devices.client'`  | `DevicesClientProvider`  | `useDevices()`, `refreshDevices()`, `resetDevices()`, `DeviceWidget`, over `SdkDeviceSummary` rows (`id`, `name`, `online`, `status`, `platform`) |
-| `'uptime.client'`   | `UptimeClientProvider`   | `listServices`, `useServiceHistory`, `StatusBars`, `Ratios`, `ServiceDialog`; `UptimeLinkedService`, `UptimeHistoryPoint`                         |
-| `'mail.client'`     | `MailClientProvider`     | `listSenders()` (the ready senders an email channel picks from) and `AccountDialog`, the feature's own account form                               |
-| `'git.client'`      | `GitClientProvider`      | `listRepos`, `LinkedRepo` (the whole linked-item block, rendered inside a project's tab), `RepoDialog`; `GitLinkedCandidate`                      |
-| `'deploy.client'`   | `DeployClientProvider`   | `listTargets`, `LinkedTarget`, `TargetDialog`; `DeployLinkedCandidate`                                                                            |
-| `'database.client'` | `DatabaseClientProvider` | `listDatabases`, `LinkedDatabase`, `DatabaseDialog`; `DatabaseLinkedCandidate`                                                                    |
-| `'audience.client'` | `AudienceClientProvider` | `listSites`, `LinkedSite`, `SiteDialog`; `AudienceLinkedCandidate`                                                                                |
+| Key                 | Contract                 | What it hands over                                                                                                                                                                                                                                                         |
+| ------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'devices.client'`  | `DevicesClientProvider`  | `useDevices()`, `refreshDevices()`, `resetDevices()`, `DeviceWidget`, over `SdkDeviceSummary` rows (`id`, `name`, `online`, `status`, `platform`)                                                                                                                          |
+| `'uptime.client'`   | `UptimeClientProvider`   | `listServices`, `useServiceHistory`, `StatusBars`, `Ratios`, `ServiceDialog`; `UptimeLinkedService`, `UptimeHistoryPoint`                                                                                                                                                  |
+| `'mail.client'`     | `MailClientProvider`     | `listSenders()` (the ready senders an email channel picks from), `findByAddress(address)` (the account already holding a mailbox, or null) and `AccountDialog`, the feature's own account form, which a `prefill` (`MailAccountPrefill`) opens filled in and ready to save |
+| `'git.client'`      | `GitClientProvider`      | `listRepos`, `LinkedRepo` (the whole linked-item block, rendered inside a project's tab), `RepoDialog`; `GitLinkedCandidate`                                                                                                                                               |
+| `'deploy.client'`   | `DeployClientProvider`   | `listTargets`, `LinkedTarget`, `TargetDialog`; `DeployLinkedCandidate`                                                                                                                                                                                                     |
+| `'database.client'` | `DatabaseClientProvider` | `listDatabases`, `LinkedDatabase`, `DatabaseDialog`; `DatabaseLinkedCandidate`                                                                                                                                                                                             |
+| `'audience.client'` | `AudienceClientProvider` | `listSites`, `LinkedSite`, `SiteDialog`; `AudienceLinkedCandidate`                                                                                                                                                                                                         |
 
 The four `*.client` contracts of linkable features share one shape too: the
 workspace's items to pick from, the block that renders one in full inside a
@@ -252,7 +252,7 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   `cacheDurationMinutes?`, `preload?`, `holdSecrecy?`, `providers?` (named
   contracts offered to the host's screens; `UptimeClientProvider` with
   `UptimeLinkedService`, `UptimeHistoryPoint`, `UptimeHistoryResolution`,
-  `MailClientProvider` with `listSenders` and `AccountDialog`, and the four
+  `MailClientProvider` with `listSenders`, `findByAddress` and `AccountDialog`, and the four
   Projects composes, `GitClientProvider`, `DeployClientProvider`,
   `DatabaseClientProvider`, `AudienceClientProvider`, each a `list...`, a
   `Linked...` block rendered in full inside a project's tab, and the
