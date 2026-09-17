@@ -79,6 +79,24 @@ serverEntry: { createRepo, features, migrationsDir: new URL('./migrations', impo
 Guard every statement for replay (INFORMATION_SCHEMA probe + no-op branch);
 DevEye's own migrations are the pattern to copy.
 
+## Serve something on the customer's own domain
+
+Declare `domains` in the manifest and on the server entry
+([06-settings-panels](06-settings-panels.md#domains)), add the
+`'routes.public'` capability, then route by host:
+
+```ts
+app.get('/page/:slug', {}, async (req, reply) => {
+    const domain = await deps.domains.findByHost(req.host ?? '');
+    if (!domain?.verified) return reply.code(404).send();
+    const row = await deps.repo.findBySlug(domain.id, String((req.params as { slug: string }).slug));
+    // ...
+});
+```
+
+Test the hooks with `createTestDomainsContext({ dns: { mx: async () => [...] } })`
+and the routing with `createTestServiceDeps({ domains: [testDomain({ id: 1, host: 'a.example.com' })] })`.
+
 ## Test a handler's permission gate
 
 ```ts

@@ -29,8 +29,9 @@ and the app-provided `deveye-sdk-client` module.
   subset of `resources`), beaten by `mutates: ['<topic>']` or
   `live.changed(ws, ['<topic>'])`; see
   [02-manifest](02-manifest.md#secondary-topics-of-your-own).
-- `SettingsTab` (`'general' | 'sources' | 'notifications' | 'permissions' | 'sync' | 'encryption'`;
-  `'sync'` and `'encryption'` are item-scope tabs), `CustomTabRef`
+- `SettingsTab` (`'general' | 'sources' | 'domains' | 'notifications' | 'permissions' | 'sync' | 'encryption'`;
+  `'sync'` and `'encryption'` are item-scope tabs, `'domains'` a feature-scope
+  one that requires the manifest's `domains: { hint, service, placeholder?, removal? }`), `CustomTabRef`
   (`{ id, label, icon?, requiresWrite? }`; `requiresWrite` drops the tab
   without write access, for one holding nothing but gestures),
   `FeatureCategory`, `FeatureLink` (`{ to, what }`, `MAX_FEATURE_LINKS = 6`).
@@ -96,7 +97,12 @@ reimplements a reduced form of it.
   would change between the check and the connection anyway, so bound the
   address you finally connect to if that matters to you.
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
-  `migrationsDir`, `createService(deps)`, `items` (`FeatureItemsEntry`:
+  `migrationsDir`, `createService(deps)`, `domains` (`FeatureDomainsEntry`:
+  `records(ctx, domain)`, `probe(ctx, domain)` returning `SdkDomainProbe`,
+  optional `useCount(ctx, workspaceId)` and `onRemoved(ctx, domain)`, all given
+  a sessionless `FeatureDomainsContext` `{ repo, origins, cipherFor, storeFor,
+keys, dns, logger }`; required with the manifest's `domains`, refused
+  without), `items` (`FeatureItemsEntry`:
   `homeOf(repo, itemId, workspaceId)`, `labelOf(repo, cipher, itemId,
 workspaceId)`, optional `shareable(repo, itemId, workspaceId)` answering
   `false` for an item its tier forbids to project, required by a `shareTier`
@@ -144,6 +150,9 @@ true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
   table), `sharing: SdkSharing` (`scope()` returning an `SdkShareScope`:
   `foreignIds`, `homeOf`, `cipherFor`, `orderOf` — the rank a projected item
   holds in the active workspace — plus `setOrder(itemId, order)`) and
+  `domains: SdkDomains` (`list()`, `get(id)`, `verified()` returning
+  `SdkDomain` `{ id, workspaceId, host, token, verified, verifiedAt }`; throws
+  `forbidden` unless the manifest declares `domains`),
   `providers: SdkProviders` (`get<T>(key)`: a published contract, whoever
   offers it; `undefined` when nobody does) and `origins: { app, public }`
   (where DevEye lives, as URLs without a trailing slash: `app` is the origin
@@ -202,6 +211,8 @@ unreadable), ip }`, nothing of a session; the reply is the chainable
 cipher: { server, private } }`, the private cipher `null` while the caller's
   session is sealed; `null` as a whole for a ticket invalid, expired or minted
   by another module), `origins` (`{ app, public }`, as on the context),
+  `domains` (`SdkFleetDomains`: `findByHost(host)` whatever the workspace, given
+  the raw `Host` header, `get(workspaceId, id)`, `listVerified(workspaceId)`),
   `providers` (`SdkProviders`, same as on the context),
   `createTicker({ intervalMs, tick })`, `logger`.
 - `SdkServerKeys`: `sealBytes(Uint8Array): string`,
@@ -277,6 +288,10 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   seals the `'private'` cipher: `decrypt` throws `locked`, `tryDecrypt`
   answers null, like the app's guarded tier in a locked session),
   `itemRestrictions`, `shares`.
+- `testDomain({ id, host, ... })` builds an `SdkDomain` (verified by default)
+  for the `domains` override of both harnesses, and
+  `createTestDomainsContext({ repo?, dns?, origins? })` builds what the
+  `domains` hooks receive, with lookups that find nothing unless `dns` says so.
 - `createTestServiceDeps(overrides?)`: the service twin; `recorded` adds
   `tickers`, `liveChanges` and `liveTopicChanges` (which topics a
   `live.changed(ws, [...])` beat), and shares `livePublishes` with the
@@ -344,7 +359,8 @@ loading, error }`; empty, loaded and error-free without the module),
   `extraValue`), `useActiveWorkspace()` (`.kind`), `useWorkspaceMembers()`
   (the active workspace's members as the session lists them, empty before it
   answers), `useCurrentUser()` (the signed-in user, `null` before the session
-  answers), `useFeatureLifecycle`.
+  answers), `useFeatureLifecycle`, `useDomains(feature)` (`{ domains, loading,
+error }`, the feature's domains kept live, for a form that designates one).
 - Composing another module: `moduleClientProvider<T>(key)` (the client
   contract another module offers under a key of `@deveye/types/sdk`,
   `undefined` when that module is not installed: degrade, never assume).

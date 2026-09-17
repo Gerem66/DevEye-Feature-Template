@@ -26,6 +26,9 @@ than rendering it inert.
 - `'notifications'` is **fully generic**: if your manifest says
   `notifies: true`, DevEye renders the whole channels-and-routing tab for you.
   You write nothing.
+- `'domains'` (feature scope only) is **fully generic** too, see
+  [Domains](#domains) below. It needs `domains` in the manifest and a
+  `domains` entry on your server side, and no component.
 - `'sync'` (item scope only) is the cadence and maintenance of an item your
   feature keeps fresh in the background (Mail: how often a mailbox is polled,
   pausing it, rebuilding a folder's cache). You provide `settingsPanels.sync`.
@@ -33,6 +36,47 @@ than rendering it inert.
   own data when your feature leaves the choice (Backup: sealed or plain
   archives, per job; Mail: the open or guarded tier of a mailbox). The shell
   names and places the tab; you provide `settingsPanels.encryption`.
+
+## Domains
+
+A feature that serves something under the workspace's own domain names (a
+public page, a mailbox) declares it, and DevEye does the rest: the list, the
+add dialog, the three-step records dialog, the background re-verification.
+
+```ts
+// manifest
+domains: {
+    hint: 'The domains your booking pages are served on.',
+    service: 'Point the domain at DevEye, then declare it in the reverse proxy.',
+    placeholder: 'booking.example.com',
+    removal: 'Pages served on it fall back to the DevEye address.'
+},
+settings: { feature: ['general', 'domains'] }
+```
+
+```ts
+// server entry
+domains: {
+    records: async (ctx, domain) => [{ type: 'CNAME', name: domain.host, value: new URL(ctx.origins.public).host }],
+    probe: async (ctx, domain) => (await reaches(domain)) ? { ok: true } : { ok: false, error: 'No answer.' },
+    useCount: (ctx, workspaceId) => ctx.repo.domainUse(workspaceId),
+    onRemoved: (ctx, domain) => ctx.repo.clearDomain(domain.id, domain.workspaceId)
+}
+```
+
+Verification has two stages. **Ownership** is DevEye's: a TXT record on
+`_deveye.<host>` holding `deveye-<slug>=<token>`. **Service** is yours:
+`probe` runs only once ownership holds, and answers with a sentence instead
+of throwing. A verified domain only drops after three failures in a row.
+
+You read domains, you never write them: `ctx.domains` (`list`, `get`,
+`verified`) in a handler, `deps.domains` (`findByHost`, `get`,
+`listVerified`) in a service or a public route, where `findByHost` takes the
+raw `Host` header. On the client, a form that designates a domain reads
+`useDomains(feature)` and opens the tab with
+`<FeatureSettingsButton initialSection='domains' />`. To refresh your own keys
+when a domain changes state, declare
+`alsoInvalidatedBy: [{ topic: 'domain', keys: [...] }]`.
 
 ## Writing a panel
 
