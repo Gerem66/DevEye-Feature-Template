@@ -75,6 +75,9 @@ under the workspace's `devices` right.
   consumers on one socket never unsubscribe each other. Release what it
   returns.
 - `joinPath` and `isWinPath` handle device paths as the agent reports them.
+- `safeHref(url)` is what goes into an `<a href>` fed by data: it returns the URL
+  only when it is http(s) or mailto, `undefined` otherwise (a `javascript:` URL
+  from a remote feed must not become a clickable link).
 
 ## HTTP, for what cannot ride the socket
 
