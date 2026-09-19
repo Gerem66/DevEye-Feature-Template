@@ -309,7 +309,8 @@ authority when the two differ.
 
 - UI kit: `Button`, `TextInput`, `SelectInput`, `Checkbox`, `Switch`,
   `SegmentedControl`, `ChoiceCards`, `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
-  `ClosePopup` (the imperative dialog layer), `openInfo`, `StatusBadge`,
+  `ClosePopup` (the imperative dialog layer), `openInfo`, `Term` (a glossary
+  term that opens its definition), `StatusBadge`,
   `ConfirmDialog`, `FeatureSettingsButton` (`scope`, `initialSection?`,
   `onOpenChange?`, `onGone?`: the item was deleted or moved from inside the
   settings, the detail view leaves it), `settingsStyles` (the canonical
