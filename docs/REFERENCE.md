@@ -308,7 +308,7 @@ maintained separately from the server sections above, and that file is the
 authority when the two differ.
 
 - UI kit: `Button`, `TextInput`, `SelectInput`, `Checkbox`, `Switch`,
-  `SegmentedControl`, `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
+  `SegmentedControl`, `ChoiceCards`, `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
   `ClosePopup` (the imperative dialog layer), `openInfo`, `StatusBadge`,
   `ConfirmDialog`, `FeatureSettingsButton` (`scope`, `initialSection?`,
   `onOpenChange?`, `onGone?`: the item was deleted or moved from inside the
