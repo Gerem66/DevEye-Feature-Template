@@ -30,7 +30,13 @@ await ctx.repo.create(input);
 - `ctx.quota.limit(key)` reads the limit (`null` = unlimited) if you want to
   show "3 of 5".
 
-In tests: `createTestContext({ quotaLimits: { monitors: 5 }, ownerWorkspaceIds: [1, 2] })`.
+A quota may measure bytes instead of things: `{ key: 'storage', label: 'of
+storage', unit: 'bytes' }`. The plan's limit is then in bytes and the refusal
+reads as a size. For what is created outside any command (bytes an agent
+uploads), a service asks the same way with `deps.quotaFor(workspaceId)`.
+
+In tests: `createTestContext({ quotaLimits: { monitors: 5 }, ownerWorkspaceIds: [1, 2] })`,
+and `createTestServiceDeps({ quotaLimits: { storage: 1024 } })` for `quotaFor`.
 
 ## An entry in the user menu
 
