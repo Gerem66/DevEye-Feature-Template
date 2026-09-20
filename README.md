@@ -110,6 +110,7 @@ src/
 | [09-live](docs/09-live.md)                                     | presence, outlines, teleport                                                  |
 | [10-background-services](docs/10-background-services.md)       | the ticker and its limits, devices, key wrapping, providers, what is reserved |
 | [11-cookbook](docs/11-cookbook.md)                             | task-shaped recipes                                                           |
+| [12-quotas-and-account](docs/12-quotas-and-account.md)         | plan quotas, an entry in the user menu, webhook bodies                        |
 | [REFERENCE](docs/REFERENCE.md)                                 | the API surface, type by type                                                 |
 
 ## The living native examples
