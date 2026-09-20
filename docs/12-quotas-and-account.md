@@ -38,7 +38,7 @@ For what belongs to an account rather than to a workspace:
 
 ```ts
 // manifest.ts
-accountEntry: { label: 'Subscription', icon: 'card' },
+accountEntry: { label: 'Subscription' }, // drawn with your manifest icon
 accountOnly: true, // no card, no row in the roles screen
 ```
 
