@@ -78,6 +78,12 @@ under the workspace's `devices` right.
 - `safeHref(url)` is what goes into an `<a href>` fed by data: it returns the URL
   only when it is http(s) or mailto, `undefined` otherwise (a `javascript:` URL
   from a remote feed must not become a clickable link).
+- `randomUuid()` is how you get an id (an `opId`, a React key): call it instead
+  of `crypto.randomUUID`, which only exists over HTTPS or on localhost and is
+  missing on an instance served in the clear on a LAN address.
+- `copyText(value)` writes to the clipboard and answers whether it worked, so a
+  refusal is shown rather than swallowed. Same reason: `navigator.clipboard` is
+  secure-context only, and the helper carries the fallback.
 
 ## HTTP, for what cannot ride the socket
 
