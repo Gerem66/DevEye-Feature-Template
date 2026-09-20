@@ -97,6 +97,44 @@ app.get('/page/:slug', {}, async (req, reply) => {
 Test the hooks with `createTestDomainsContext({ dns: { mx: async () => [...] } })`
 and the routing with `createTestServiceDeps({ domains: [testDomain({ id: 1, host: 'a.example.com' })] })`.
 
+## Let your items be copied to another workspace
+
+Describe what an item is made of, once; the host copies it, to another workspace
+of this DevEye or of ANOTHER one (the user's browser carries it, the two servers
+never talk). The same tree gives your `move` its cells.
+
+```ts
+export const boardTree: ItemTree = [
+    {
+        table: 'ft_myfeature_boards',
+        idColumn: 'id',
+        ownerColumn: 'id', // the root owns itself
+        workspaceColumn: 'workspace_id',
+        orderColumn: 'sort_order', // the copy lands last
+        unique: { column: 'name_ref', message: 'A board of that name already exists there.' },
+        sealed: ['content'],
+        omit: ['credential_id', 'last_sync_at'] // means nothing elsewhere
+    },
+    { table: 'ft_myfeature_cards', idColumn: 'id', ownerColumn: 'board_id', sealed: ['content'] },
+    { table: 'ft_myfeature_history', idColumn: 'id', ownerColumn: 'board_id', sealed: ['content'], cache: true }
+];
+
+serverEntry: {
+    items: {
+        homeOf, labelOf,
+        copy: {
+            tree: boardTree,
+            plan: async () => ({ blockers: [], drops: ['Its history, which the copy rebuilds'] }),
+            admit: ({ repo, quota }) => quota.assert('boards', async (owned) => (await repo.countIn(owned)) + 1)
+        }
+    }
+}
+```
+
+List EVERY encrypted column under `sealed`: one left out is copied as a blob no
+key of the destination can open, and nothing can detect it. A table the
+destination rebuilds by itself is `cache: true`: moved, never copied.
+
 ## Test a handler's permission gate
 
 ```ts

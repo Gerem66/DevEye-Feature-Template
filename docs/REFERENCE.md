@@ -112,7 +112,11 @@ workspaceId)`, optional `shareable(repo, itemId, workspaceId)` answering
   two workspaces' open ciphers) which lets an item change workspace. Omit
   `move` and your items simply cannot be moved, which is the safe default and a
   valid answer when an item depends on a workspace source that cannot follow
-  it). A module
+  it; optional `copy` (`FeatureItemsCopy`: `tree`, an `ItemTree`, plus optional
+  `plan(ctx)` returning `SdkCopyPlan` `{ blockers, drops }` on the SOURCE, and
+  `admit(ctx)` / `settle(ctx)` on the DESTINATION, inside the transaction, before
+  and after the rows are written) which lets an item be copied to another
+  workspace, of this DevEye or of another one). A module
   with migrations also ships `src/server/migrations/`' destructive mirror
   `src/server/uninstall.sql` (`DROP TABLE IF EXISTS` on its own `ft_<slug>_`
   tables only; see 04-storage-and-encryption).
@@ -125,6 +129,23 @@ workspaceId)`, optional `shareable(repo, itemId, workspaceId)` answering
   unreadable forever and nothing can detect it, one encrypted blob being
   indistinguishable from another. The cell list is held BY HAND: revisit it
   whenever you add an encrypted column.
+- `ItemTree` (`ItemTreeTable[]`, root first, every table before the ones that
+  reference it): what an item is made of, the ONE hand-held list both gestures
+  use. Per table: `table`, `idColumn` (absent on a pure link table), `idKind`
+  (`'auto'` | `'uuid'`), `ownerColumn` / `ownerScope`, `sealed` (encrypted
+  columns), `refs` (column to table of the tree, rewritten to the new ids),
+  `workspaceColumn`, `userColumn` (rewritten to whoever copies), `omit` (left to
+  the column default: a source of the origin workspace, a sync state), `cache`
+  (rows the destination rebuilds: moved, never copied). On the root only:
+  `orderColumn` (the copy lands last), `unique` `{ column, message }` (refused
+  when the destination already holds one), `tier` `{ column, open, private }`.
+  You never write the copy: `exportItemTree` / `importItemTree` are the host's
+  business. Derive your `move` cells with `movableCellsOf(tree)`.
+  `itemTreeProblem(tree)` is what the host checks at boot. What is imported
+  comes from a browser, possibly from another DevEye: the engine validates it
+  against your tree, so keep the tree exact. `admit` receives the rows in the
+  clear and may amend them (a globally unique key to regenerate) or throw (a
+  quota: `ctx.quota.assert`, the destination owner's).
 - `SdkFeatureDefinition` / `defineSdkFeature`: one command:
   `access?: { level?: 'read' | 'write'; extras?: string[]; admin?: boolean }`
   (`admin: true` requires a global administrator on top of the feature check:
@@ -334,10 +355,10 @@ authority when the two differ.
   slow third party), `commandsApi(commands)` (the same over any list of
   contracts: `commandsApi(agentCommands)`, the native agent transport, with
   `agentCommands` from `@deveye/types`).
-- HTTP, for the routes that serve binaries: `httpGet(path, schema)` (session
-  cookie, one replay after an access refresh), `ensureFreshAccess()` (renew
-  the access cookie before a raw `fetch`); `APP_VERSION` (the DevEye version
-  the interface was built from).
+- HTTP, for the routes that serve binaries: `httpGet(path, schema)` (one replay
+  after an access refresh), `httpFetch(path, init)` (the same, returning the raw
+  `Response`), both routed to the instance of the active workspace;
+  `APP_VERSION` (the DevEye version the interface was built from).
 - Password-based encryption: `useSecrecy()` (live lock state), `withSecrecy(run)`
   (retry once after the unlock prompt on a `locked` error),
   `ensureSecrecyUnlocked()` (explicit unlock gesture), `touchSecrecy()` (keep

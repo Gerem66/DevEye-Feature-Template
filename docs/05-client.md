@@ -83,10 +83,14 @@ under the workspace's `devices` right.
 
 Two gestures for the routes that stay HTTP because they serve binaries:
 
-- `httpGet(path, schema)`: the session cookie rides along, an expired access
+- `httpGet(path, schema)`: authenticated as the session is, an expired access
   token is renewed and the call replayed once.
-- `ensureFreshAccess()` before a raw `fetch` that bypasses the client (a
-  download).
+- `httpFetch(path, init)`: the same, for a response that is not the JSON
+  envelope (a download). It returns the raw `Response`.
+
+Pass a path, never an absolute URL, and never a bare `fetch('/api/...')`: the
+active workspace may live on a remote DevEye instance, and only these two reach
+the right server with the right credentials.
 
 `APP_VERSION` is the DevEye version the interface was built from, what an
 agent's reported version is compared against.
