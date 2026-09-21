@@ -339,7 +339,7 @@ authority when the two differ.
 - UI kit: `Button`, `TextInput`, `SelectInput`, `Checkbox`, `Switch`,
   `NumberInput` (the number field with its ± buttons: `value: number | null`,
   `min`, `max`, `step`, `live`), `Slider` (a labelled range input: `valueLabel`,
-  `marks`), `SearchSelect` (a
+  `marks`, `indicator`), `SearchSelect` (a
   dropdown one can search in, for long lists: options carry `prefix`, `detail`,
   `keywords`), `SegmentedControl`, `ChoiceCards`, `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
   `ClosePopup` (the imperative dialog layer), `openInfo`, `Term` (a glossary
