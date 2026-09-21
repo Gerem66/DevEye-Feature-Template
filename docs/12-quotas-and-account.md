@@ -60,7 +60,9 @@ and, once, the `hint` a sign-up carried when you declare
 caller's personal workspace, whatever workspace is displayed.
 
 - `'accounts.read'` gives `ctx.deveye.accounts.me()` in a handler and
-  `deps.accounts.find / list` in a service.
+  `deps.accounts.find / findByEmail / list / search` in a service. `search`
+  matches a substring of the username or the email (an all-digit query also
+  matches that account id, listed first) and returns at most 50 accounts.
 - `ctx.live.accountChanged(userId)` (or `deps.live.accountChanged`) makes that
   account's open clients re-fetch your resources, wherever they sit.
 - `openAccountView()` and `useAccountPlan()` are exported by the client SDK.
