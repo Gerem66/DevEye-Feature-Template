@@ -337,7 +337,9 @@ maintained separately from the server sections above, and that file is the
 authority when the two differ.
 
 - UI kit: `Button`, `TextInput`, `SelectInput`, `Checkbox`, `Switch`,
-  `Slider` (a labelled range input: `valueLabel`, `marks`), `SegmentedControl`, `ChoiceCards`, `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
+  `Slider` (a labelled range input: `valueLabel`, `marks`), `SearchSelect` (a
+  dropdown one can search in, for long lists: options carry `prefix`, `detail`,
+  `keywords`), `SegmentedControl`, `ChoiceCards`, `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
   `ClosePopup` (the imperative dialog layer), `openInfo`, `Term` (a glossary
   term that opens its definition), `StatusBadge`,
   `ConfirmDialog`, `FeatureSettingsButton` (`scope`, `initialSection?`,
