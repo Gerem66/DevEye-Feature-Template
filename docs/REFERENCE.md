@@ -220,6 +220,14 @@ timeWindow }` (a per-address ceiling on top of the host's own),
   is `{ headers, body (JSON, already decoded, `undefined` when absent or
 unreadable), ip }`, nothing of a session; the reply is the chainable
   `header(name, value)`, `code(status)`, `send(payload?)`.
+  `postStream(path, opts, handler)`: a POST whose body is never decoded nor
+  buffered, for an uploaded file. `SdkPublicStreamRouteOptions`: `maxBytes`
+  (required, enforced by the host, which cuts the connection past it),
+  `exposure: 'app'` (required: never mounted on the public surface),
+  `rateLimit?`. The request carries `body.contentLength` (`null` when chunked)
+  and `body.bytes()`, an `AsyncIterable<Buffer>` consumable once; no path
+  parameter, and the route is kept out of the CORS-widened paths, so
+  authenticate it with a ticket.
 - `FeatureServiceDeps<Repo>`: `repo`, `listWorkspaceIds`, `storeFor`,
   `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
   `isOnline`), `devices` (`SdkFleetDevices`: `find`, `isOnline`),
@@ -329,7 +337,7 @@ maintained separately from the server sections above, and that file is the
 authority when the two differ.
 
 - UI kit: `Button`, `TextInput`, `SelectInput`, `Checkbox`, `Switch`,
-  `SegmentedControl`, `ChoiceCards`, `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
+  `Slider` (a labelled range input: `valueLabel`, `marks`), `SegmentedControl`, `ChoiceCards`, `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
   `ClosePopup` (the imperative dialog layer), `openInfo`, `Term` (a glossary
   term that opens its definition), `StatusBadge`,
   `ConfirmDialog`, `FeatureSettingsButton` (`scope`, `initialSection?`,
