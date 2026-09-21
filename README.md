@@ -129,3 +129,16 @@ read them:
   provider it publishes and five it consumes, per-item sharing.
 - `features/mail/` — a background service, session tickets for two HTTP
   routes, and two encryption tiers chosen per item.
+
+## License
+
+This template is [MIT-0](LICENSE): copy it, rename it, keep no notice.
+`scripts/rename.ts` removes the `LICENSE` file and the `license` field, because
+they describe the template and not your module.
+
+**Your module is yours to license, proprietary terms included.** `@deveye/types`
+is MIT. The DevEye app is AGPL-3.0, with an additional permission for modules
+(granted under section 7 of the AGPL): a module that reaches the app only
+through the SDK (`@deveye/types` and the `deveye-sdk-client` barrel) is not
+covered by the app's license. A module that imports the app's internal code is.
+The authoritative text is `LICENSING.md` in the app's repository.

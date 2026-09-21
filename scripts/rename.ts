@@ -80,8 +80,12 @@ fs.writeFileSync(
 );
 
 const pkgPath = path.join(ROOT, 'package.json');
-const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { description: string };
+const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { description: string; license?: string };
 pkg.description = `TODO: one sentence about ${label}.`;
+// MIT-0 is the template's license, not the module's: left in place, it would
+// publish a private module under permissive terms its author never chose.
+delete pkg.license;
+fs.rmSync(path.join(ROOT, 'LICENSE'), { force: true });
 fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 
 fs.writeFileSync(
@@ -90,5 +94,5 @@ fs.writeFileSync(
 );
 
 console.log(
-    `rename: ${touched} file(s) now carry x-${slug}. Rewrite the manifest description, the README and the example's screens.`
+    `rename: ${touched} file(s) now carry x-${slug}. Rewrite the manifest description, the README and the example's screens, and pick your own license (the template's MIT-0 was removed).`
 );
