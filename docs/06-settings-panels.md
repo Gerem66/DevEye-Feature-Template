@@ -130,15 +130,29 @@ Disable the inputs, drop the save button, and say why with `ReadOnlyNotice`
 
 ```tsx
 canWrite ? (
-    <div className={shell.sectionActions}>
-        <SaveButton onSave={save} />
-    </div>
+    <SaveButton onSave={save} />
 ) : (
     <ReadOnlyNotice>
         Votre rôle ne permet pas de modifier ces réglages : ils relèvent de l’écriture sur X-Counter.
     </ReadOnlyNotice>
 );
 ```
+
+## Where the save button goes
+
+A `SaveButton` that saves the **whole tab** does not sit at the bottom of the
+content: as soon as the tab scrolls it is out of sight, and it is the one
+action that matters. The shell offers it the dialog footer, pinned bottom
+right, outside what scrolls: that is where it goes by default
+(`placement='footer'`), through a portal, without leaving its panel's React
+tree. Write it where you would have written the button, with no wrapper: an
+empty `sectionActions` would leave its gap at the bottom of the panel.
+
+A button that saves **one part only** (a field next to its own button, the
+entry being edited in a list) stays where it is written, with
+`placement='inline'`: its place says what it applies to. The other actions of
+a tab (test the connection, delete the item) stay in the panel, in their own
+`sectionActions`.
 
 One component rather than a class, so the refusal reads the same in every
 feature, lock glyph included. Anything blocked for another reason (an archived
