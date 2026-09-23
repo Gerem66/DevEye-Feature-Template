@@ -24,6 +24,8 @@ export const manifest = {
 
     /** Opens the Notifications settings tab and the channels grant in roles. */
     notifies: true,
+    /** Required with `notifies`: the lead sentence of the Notifications tab, saying WHEN you notify. */
+    notifications: { hint: 'Sent each time the counter crosses a milestone.' },
     hasItems: false,
     shareTier: 'never',
 

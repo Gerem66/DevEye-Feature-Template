@@ -10,11 +10,16 @@ webhook URL. It says "something happened"; the workspace decides who hears it.
 ```ts
 // manifest
 notifies: true,                     // opens the Notifications tab + the channels grant
+notifications: { hint: 'Sent each time the counter crosses a milestone.' },
 nativeCapabilities: ['notify']      // lets your server code call ctx.deveye.notify
 ```
 
 The whole settings surface (declaring channels, testing them, routing) is the
-generic tab: you write no UI.
+generic tab: you write no UI. What you write is its lead sentence,
+`notifications.hint`: WHEN you notify. It is required with `notifies`, and
+validation refuses the manifest without it, because a tab that lists channels
+without saying what reaches them leaves the user guessing why they would set
+one up.
 
 ## Send
 
