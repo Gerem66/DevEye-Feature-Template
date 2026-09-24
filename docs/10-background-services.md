@@ -19,11 +19,17 @@ export function createService(deps: FeatureServiceDeps): FeatureService {
 
 `createTicker` is the app's standard loop: an interval, a reentrancy guard (a
 slow tick is never overlapped by the next), errors logged and swallowed so one
-bad tick never kills the service. Use it instead of rolling your own; there is
-no cron, no queue, and that is a deliberate choice of the host.
+bad tick never kills the service, and a `stop()` that resolves once the tick in
+flight has finished. Use it instead of rolling your own; there is no cron, no
+queue, and that is a deliberate choice of the host.
 
 A service is `{ start, stop }`. `start()` may be async: DevEye awaits it during
-boot, before the agent sockets open, and calls `stop()` on shutdown. The
+boot, before the agent sockets open, and calls `stop()` on shutdown. An admin
+can also put your feature in full-stop maintenance: DevEye then calls `stop()`
+at runtime and, when the maintenance ends, `start()` again on the same object.
+So `stop()` must resolve once the work in flight is finished or interrupted,
+and leave nothing behind (a closed server kept, a subscription not released, a
+result memoized once) that would break the second `start()`. The
 service object is also what carries your `providers` (and, for DevEye's own
 modules, `agentHooks`); to offer those without any periodic work, return
 `{ start() {}, stop() {}, providers }`. To combine a ticker with them, keep the
