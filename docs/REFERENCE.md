@@ -346,8 +346,10 @@ authority when the two differ.
   `NumberInput` (the number field with its ± buttons: `value: number | null`,
   `min`, `max`, `step`, `live`), `Slider` (a labelled range input: `valueLabel`,
   `marks`, `indicator`), `SearchSelect` (a
-  dropdown one can search in, for long lists: options carry `prefix` (any node),
-  `detail`, `keywords`; `placeholder` reads when no option matches the value), `SegmentedControl`, `ChoiceCards`, `CountBadge` (a counter pill:
+  dropdown one can search in, for long or grouped lists: options carry `prefix`
+  (any node), `detail`, `keywords`, `group` (a heading shared by the options of
+  one category) and `disabled` (shown, not pickable); `placeholder` reads when no
+  option matches the value), `SegmentedControl`, `ChoiceCards`, `CountBadge` (a counter pill:
   `count`, `tone`, `max`), `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
   `ClosePopup` (the imperative dialog layer), `openInfo`, `Term` (a glossary
   term that opens its definition), `StatusBadge`,
