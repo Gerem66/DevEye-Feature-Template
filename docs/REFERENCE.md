@@ -177,8 +177,9 @@ true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
   `providers: SdkProviders` (`get<T>(key)`: a published contract, whoever
   offers it; `undefined` when nobody does) and `origins: { app, public }`
   (where DevEye lives, as URLs without a trailing slash: `app` is the origin
-  members use, `public` the one reachable without the VPN when the host has a
-  public surface, else the same; for what a module hands to the outside
+  members use, `public` the one anyone reaches the public routes by, which
+  differs when the host serves them on a domain of their own, the app itself
+  possibly staying private, else the same; for what a module hands to the outside
   world, an install snippet or a callback URL, never derived from the
   browser's location).
 - `FeatureStore`: `put/putJson/get/getJson/remove/keys`; `putJson`/`getJson`
