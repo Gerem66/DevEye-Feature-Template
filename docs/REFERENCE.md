@@ -97,7 +97,9 @@ reimplements a reduced form of it.
   would change between the check and the connection anyway, so bound the
   address you finally connect to if that matters to you.
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
-  `migrationsDir`, `createService(deps)`, `domains` (`FeatureDomainsEntry`:
+  `migrationsDir`, `createService(deps)`, `env` (the `ModuleEnvSpec` your
+  variables are read with, `defineModuleEnv` / `readModuleEnv`: the host warns
+  at boot about each one left to its default), `domains` (`FeatureDomainsEntry`:
   `records(ctx, domain)`, `probe(ctx, domain)` returning `SdkDomainProbe`,
   optional `useCount(ctx, workspaceId)` and `onRemoved(ctx, domain)`, all given
   a sessionless `FeatureDomainsContext` `{ repo, origins, cipherFor, storeFor,
@@ -209,10 +211,13 @@ metricIntervalSeconds, report }`, what the devices facade reveals.
   `providers?: Readonly<Record<string, unknown>>` (keyed by a published
   provider key), `publicRoutes?(app: SdkPublicApp)` (capability
   `'routes.public'`; called once per listener the host exposes, register the
-  same routes each time).
+  same routes each time), `domainRoot?(req, reply, domain: SdkDomain)` (the
+  page at `GET /` of one of your verified web domains; capability
+  `'routes.public'` and `domains.web` required).
 - `SdkPublicApp`: `get(path, opts, handler)` / `post(path, opts, handler)`;
   paths are absolute (`/t.js`, `/api/t/b`) and a path the host already serves
-  is refused at boot. `SdkPublicRouteOptions`: `rateLimit?: { max,
+  is refused at boot, `/` included: the root belongs to the host
+  (`domainRoot`). `SdkPublicRouteOptions`: `rateLimit?: { max,
 timeWindow }` (a per-address ceiling on top of the host's own),
   `exposure?: 'everywhere' | 'app'` (`'everywhere'`, the default, mounts the
   route on the app and the public surface; `'app'` on the app's own origin

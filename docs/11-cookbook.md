@@ -94,6 +94,29 @@ app.get('/page/:slug', {}, async (req, reply) => {
 });
 ```
 
+Outside a customer's domain (on `origins.public`), the same route serves the
+item by an unguessable reference instead; under a customer's domain, serve
+nothing but the workspace that owns it.
+
+When the name IS the page (`status.example.com`, not a prefix of your
+routes), answer at its root with `domainRoot` on the service. The host calls
+it for `GET /` once the request's host matched a verified domain of yours,
+and hands you that domain: route by it, never by the header.
+
+```ts
+createService(deps) {
+    return {
+        start() {},
+        stop() {},
+        async domainRoot(_req, reply, domain) {
+            const page = await deps.repo.pageForDomain(domain.id);
+            if (!page || page.workspace_id !== domain.workspaceId) return reply.code(404).send();
+            // ...
+        }
+    };
+}
+```
+
 Test the hooks with `createTestDomainsContext({ dns: { mx: async () => [...] } })`
 and the routing with `createTestServiceDeps({ domains: [testDomain({ id: 1, host: 'a.example.com' })] })`.
 

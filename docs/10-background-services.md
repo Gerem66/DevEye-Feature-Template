@@ -66,6 +66,43 @@ is the platform's encryption promise, not a missing feature.
 - Log with `deps.logger` and let the ticker swallow: a service that throws its
   way out of existence takes your feature's freshness with it.
 
+## Environment variables: `env`
+
+A module reads its own environment variables, never through the host, and
+each one has a default that works: an install without a single line of yours
+must run. Declare them once as data and read them from that declaration:
+
+```ts
+// src/server/env.ts
+import { defineModuleEnv, readModuleEnv } from '@deveye/types/sdk/server';
+
+export const MY_ENV = defineModuleEnv({
+    MY_TICK_SECONDS: { kind: 'int', default: 60 },
+    MY_STORAGE_DIR: { kind: 'path', default: '/data/my-feature' },
+    MY_SITE_URL: { kind: 'url', default: 'https://example.com' },
+    MY_API_KEY: { kind: 'secret', optional: true }
+});
+
+export const env = readModuleEnv(MY_ENV).values; // { MY_TICK_SECONDS: number, ... }
+```
+
+Then hand the same spec to the host, `env: MY_ENV` on your `serverEntry`. At
+boot the host reads it again and writes one warning per module naming every
+variable left to its default, with the value applied. A default that guesses
+at the operator's world (a site address, a storage path) is then read in the
+boot log instead of discovered in production.
+
+- Kinds: `int` (`min`, 1 when omitted), `text`, `path`, `url` (http(s)),
+  `flag` (`true`/`1`, `false`/`0`), `choice` (`choices`), `secret` (never
+  printed, empty by default).
+- A variable set to an empty string counts as set: it falls back to its
+  default without a word, except a `url`, where empty means "none".
+- A value that cannot be read as its kind falls back and is reported as
+  invalid.
+- `optional` silences a variable an install may well not use (an OAuth
+  client, a certificate supplied by the operator).
+- A malformed spec stops the host at boot.
+
 ## Devices, from a service
 
 `deps.devicesFor(workspaceId)` is the sessionless subset of the devices facade:
@@ -169,6 +206,13 @@ createService(deps) {
   (`{ app, public }`, no trailing slash), never from the browser's location:
   the app members use and the surface the outside reaches may be two
   different addresses.
+- `/` is the host's, refused at boot. A page served at the root of a
+  customer's domain goes through `domainRoot(req, reply, domain)` on the
+  service ([cookbook](11-cookbook.md#serve-something-on-the-customers-own-domain)).
+- A page you render sets its own `content-security-policy`: the public
+  surface answers `default-src 'none'` otherwise, which blocks an inline
+  `<style>`. A script is best served from a route of yours
+  (`script-src 'self'`) rather than inlined.
 
 ### Tickets: a public route acting for a session
 

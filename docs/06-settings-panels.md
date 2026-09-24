@@ -79,14 +79,18 @@ after your `service` sentence. Web names count against the `domains.hosts`
 plan limit. Your probe only proves the answer comes from this install (a
 token under `/.well-known/deveye-<slug>`), and your public routes must serve,
 under a customer's domain, nothing but the workspace that owns it: compare
-`deps.domains.findByHost(host)?.workspaceId` with the item's own.
+`deps.domains.findByHost(host)?.workspaceId` with the item's own. A page
+that is the whole name (`status.example.com`) answers at its root through
+`FeatureService.domainRoot` ([cookbook](11-cookbook.md#serve-something-on-the-customers-own-domain)).
 
 You read domains, you never write them: `ctx.domains` (`list`, `get`,
 `verified`) in a handler, `deps.domains` (`findByHost`, `get`,
 `listVerified`) in a service or a public route, where `findByHost` takes the
 raw `Host` header. On the client, a form that designates a domain reads
 `useDomains(feature)` and opens the tab with
-`<FeatureSettingsButton initialSection='domains' />`. To refresh your own keys
+`<FeatureSettingsButton initialSection='domains' />`, except from a panel of
+the same settings dialog, where the button would stack a second one: there, a
+sentence points to the Domains tab next to it. To refresh your own keys
 when a domain changes state, declare
 `alsoInvalidatedBy: [{ topic: 'domain', keys: [...] }]`.
 
