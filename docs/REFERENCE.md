@@ -241,7 +241,12 @@ unreadable), ip }`, nothing of a session; the reply is the chainable
   topic by default, or the topics named, your own secondary ones or another
   feature's; `publish(workspaceId, event, payload)`: capability
   `'live.publish'`, one frame to that workspace's connected readers), `audit` (system
-  source, optional `userId`), `agents`, `keys`, `secrecy`
+  source, optional `userId`), `agents`, `access` (what a member may do NOW,
+  without a session, for work that runs on their behalf: `feature(workspaceId,
+userId, { level?, extras?, itemId? })` for your feature,
+  `device(workspaceId, userId, deviceId, extras)` for the Devices permissions
+  on one device, capability `'devices.read'`; an `SdkAccessVerdict`, `{ ok:
+true }` or `{ ok: false, reason }`, read again on every call), `keys`, `secrecy`
   (`redeem(ticket)`: an `SdkRedeemedTicket` `{ userId, workspaceId, payload,
 cipher: { server, private } }`, the private cipher `null` while the caller's
   session is sealed; `null` as a whole for a ticket invalid, expired or minted
@@ -308,7 +313,7 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
 
 - `createTestContext(overrides?)`: in-memory `SdkFeatureContext` plus
   `recorded` (notifications, liveMessages, audits, agentRequests,
-  pinnedInstants, livePublishes),
+  archiveRequests, pinnedInstants, livePublishes),
   `forgotten` (the item ids passed to `items.forget`) and an inspectable
   `store.rows`. Its facade answers by default: `devices.authorize` resolves
   `testDevice({ id })` (active, online, unreported), `devices.list` is empty,
@@ -318,7 +323,11 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   projection. Overrides: `repo`, `userId`, `workspaceId`, `kind`, `isOwner`,
   `isAdmin`, `canWrite`, `extras`, `manifest`, `hasRoute`, `notifyAccepted`
   (what `notify.send` resolves; recorded either way), `liveChannels`,
-  `devices`, `snapshots`, `workspaces` (what `workspaces.list()` answers),
+  `devices`, `refuseDeviceExtras` (`devices.authorize` with `extras` throws
+  `forbidden`, on every device or on the ids listed), `archives` (what
+  `agents.archiveFolder` streams, by device id: `{ chunks, summary? }` or an
+  `Error`; a device without an entry throws), `snapshots`, `workspaces` (what
+  `workspaces.list()` answers),
   `origins`, `providers`, `deveye` (a partial facade), `unlocked` (false also
   seals the `'private'` cipher: `decrypt` throws `locked`, `tryDecrypt`
   answers null, like the app's guarded tier in a locked session),
@@ -331,8 +340,9 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   `tickers`, `liveChanges` and `liveTopicChanges` (which topics a
   `live.changed(ws, [...])` beat), and shares `livePublishes` with the
   context harness. Overrides: `repo`, `workspaceIds`,
-  `devices`, `hasRoute`, `notifyAccepted`, `liveChannels`, `origins`,
-  `snapshots`, `providers`.
+  `devices`, `archives`, `access` (a partial `deps.access`; every member
+  holds every right by default), `hasRoute`, `notifyAccepted`,
+  `liveChannels`, `origins`, `snapshots`, `providers`.
 - `testDevice(over)`: an `SdkDevice` with sensible defaults.
 
 ## `deveye-sdk-client` (provided by the app)
@@ -392,7 +402,11 @@ authority when the two differ.
 - Push events: `onServerEvent(event, schema, cb)` (typed server-push
   subscription), `onSocketOpen(cb)` (the resubscribe-on-reconnect primitive),
   `isSocketOpen()`.
-- Shared helpers: `formatBytesFr`, `DeviceFolderPicker`, `useDevices()` (the
+- Shared helpers: `formatBytesFr`, `DeviceFolderPicker` (`allowCreate: false`
+  to pick only what exists), `DeviceFolderField` (a path on a device, typed or
+  browsed; the label stays yours), `PathExclusionsEditor` (the exclusions of a
+  walked folder, validated with `pathExclusionProblem` from `@deveye/types`,
+  the way the agent runs them), `useDevices()` (the
   workspace's devices through the Devices module's provider, `{ devices,
 loading, error }`; empty, loaded and error-free without the module),
   `acquireMetrics(deviceId)` (a counted live metrics subscription; call the

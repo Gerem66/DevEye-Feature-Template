@@ -50,13 +50,34 @@ one user's data), `keys` (raw key wrapping and derivation,
 (`redeem(ticket)`, [below](#tickets-a-public-route-acting-for-a-session)),
 `origins` (`{ app, public }`, the same a handler gets as `ctx.origins`),
 `providers` (`get<T>(key)`, [below](#consuming-a-contract-providersget)),
-`agents` (reserved, [below](#the-agent-fleet-reserved)), `createTicker`,
-`logger`.
+`agents` (reserved, [below](#the-agent-fleet-reserved)), `access`
+([below](#acting-on-a-members-behalf-depsaccess)), `createTicker`, `logger`.
 
 No user, no session, no `'private'` tier: the sessionless store cannot write
 private values (the type refuses), and reading one throws `locked`. If your
 scheduler needs a value, store it with the default `'server'` encryption. This
 is the platform's encryption promise, not a missing feature.
+
+## Acting on a member's behalf: `deps.access`
+
+Work a member set up keeps running long after the command that created it (a
+nightly backup of their machine). Record who set it up, and ask on every run
+whether they still may, without a session:
+
+```ts
+const may = await deps.access.feature(workspaceId, authorUserId, {
+    level: 'write',
+    extras: ['deviceFolders'],
+    itemId: String(job.id)
+});
+if (!may.ok) throw new Error(`Its author can no longer run it (${may.reason}).`);
+const files = await deps.access.device(workspaceId, authorUserId, deviceId, ['files']);
+```
+
+The rules of a command apply: account not suspended, membership, role, the
+item's override, permissions. `feature` answers for your own feature only;
+`device` for the Devices permissions on one device (capability
+`'devices.read'`). Nothing is cached: a right withdrawn stops the next run.
 
 ## Discipline that keeps hosts happy
 

@@ -59,15 +59,17 @@ throws `forbidden`.
 - `mail.listAccounts()`: `{ id, label, address }` for the workspace's open-tier
   mail accounts; never credentials.
 - `members.list()`: `{ userId, name, isOwner, color }` per member.
-- `devices.list()`: the devices this workspace sees (its own, or the whole
-  fleet for a global administrator in their personal workspace, DevEye's own
-  rule for its device list), each as `{ id, name, online, status,
-ownerUserId, workspaceId, metricIntervalSeconds, report }`;
+- `devices.list()`: the devices this workspace sees (its own, and those
+  shared into it; a global administrator included), each as `{ id, name,
+online, status, ownerUserId, workspaceId, metricIntervalSeconds, report }`;
   `devices.isOnline(id)`: presence, synchronous; `devices.authorize(id)`: the
   device when it exists and belongs to this workspace, a throw otherwise
   (`not_found` for an unknown id). Call `authorize` before acting on a device
   id the client sent: the id is caller input, and this check is what ties it
-  to the request's workspace.
+  to the request's workspace. `devices.authorize(id, { extras })` also
+  requires the CALLER to hold these Devices permissions on this device
+  (`files`, `docker`…), item overrides included, and throws `forbidden`
+  otherwise: your `access` can only name your own feature's permissions.
 - `telemetry`: the devices' metric store, capability `'telemetry.read'`,
   reserved to DevEye's own modules.
 - `agents`: the agent-fleet transport, capability `'agents'`, reserved to
