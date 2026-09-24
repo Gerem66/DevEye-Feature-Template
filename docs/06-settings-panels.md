@@ -47,9 +47,10 @@ add dialog, the three-step records dialog, the background re-verification.
 // manifest
 domains: {
     hint: 'The domains your booking pages are served on.',
-    service: 'Point the domain at DevEye, then declare it in the reverse proxy.',
+    service: 'Point the domain at DevEye with the record below.',
     placeholder: 'booking.example.com',
-    removal: 'Pages served on it fall back to the DevEye address.'
+    removal: 'Pages served on it fall back to the DevEye address.',
+    web: true
 },
 settings: { feature: ['general', 'domains'] }
 ```
@@ -68,6 +69,17 @@ Verification has two stages. **Ownership** is DevEye's: a TXT record on
 `_deveye.<host>` holding `deveye-<slug>=<token>`. **Service** is yours:
 `probe` runs only once ownership holds, and answers with a sentence instead
 of throwing. A verified domain only drops after three failures in a row.
+
+`web: true` says the names serve your public routes over HTTPS. DevEye then
+checks by itself, before your probe, that a name points at `origins.public`
+and answers there with a valid certificate, and says which of the two is
+missing. On an instance wired to its proxy, the certificate comes on its own;
+otherwise the administrator adds each name, and the records dialog says so
+after your `service` sentence. Web names count against the `domains.hosts`
+plan limit. Your probe only proves the answer comes from this install (a
+token under `/.well-known/deveye-<slug>`), and your public routes must serve,
+under a customer's domain, nothing but the workspace that owns it: compare
+`deps.domains.findByHost(host)?.workspaceId` with the item's own.
 
 You read domains, you never write them: `ctx.domains` (`list`, `get`,
 `verified`) in a handler, `deps.domains` (`findByHost`, `get`,

@@ -31,7 +31,7 @@ and the app-provided `deveye-sdk-client` module.
   [02-manifest](02-manifest.md#secondary-topics-of-your-own).
 - `SettingsTab` (`'general' | 'sources' | 'domains' | 'notifications' | 'permissions' | 'sync' | 'encryption'`;
   `'sync'` and `'encryption'` are item-scope tabs, `'domains'` a feature-scope
-  one that requires the manifest's `domains: { hint, service, placeholder?, removal? }`), `CustomTabRef`
+  one that requires the manifest's `domains: { hint, service, placeholder?, removal?, web? }`), `CustomTabRef`
   (`{ id, label, icon?, requiresWrite? }`; `requiresWrite` drops the tab
   without write access, for one holding nothing but gestures),
   `FeatureCategory`, `FeatureLink` (`{ to, what }`, `MAX_FEATURE_LINKS = 6`).
