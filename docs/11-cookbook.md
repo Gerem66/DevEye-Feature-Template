@@ -120,6 +120,12 @@ createService(deps) {
 Test the hooks with `createTestDomainsContext({ dns: { mx: async () => [...] } })`
 and the routing with `createTestServiceDeps({ domains: [testDomain({ id: 1, host: 'a.example.com' })] })`.
 
+Give the page a tab icon: `<link rel="icon" href="${DEVEYE_ICON_PATH}">`
+(from `@deveye/types/sdk`) points at DevEye's icon, which the host serves on
+every listener and customer domain. Use an address, never a data URL: link
+previews and crawlers fetch the icon. If your page sets a policy, allow
+`img-src 'self'`.
+
 Let the owner choose how the page looks with the same control every public
 page uses: `PageLookFields` from `deveye-sdk-client` (theme and accent, your
 own miniature of the page under it), stored through `pageThemeChoiceSchema`
