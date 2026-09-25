@@ -418,7 +418,9 @@ authority when the two differ.
 loading, error }`; empty, loaded and error-free without the module),
   `acquireMetrics(deviceId)` (a counted live metrics subscription; call the
   returned release), `joinPath(base, name)` and `isWinPath(p)` (device paths
-  as the agent reports them).
+  as the agent reports them), `PageLookFields` (the theme and accent of a
+  public page you serve, your miniature under it; pairs with `pageLook` in
+  `@deveye/types/sdk`, see [11-cookbook](11-cookbook.md)).
 - Rights and workspace: `useWorkspacePermissions()` (incl. `canExtra`,
   `extraValue`), `useActiveWorkspace()` (`.kind`), `useWorkspaceMembers()`
   (the active workspace's members as the session lists them, empty before it

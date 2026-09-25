@@ -120,6 +120,25 @@ createService(deps) {
 Test the hooks with `createTestDomainsContext({ dns: { mx: async () => [...] } })`
 and the routing with `createTestServiceDeps({ domains: [testDomain({ id: 1, host: 'a.example.com' })] })`.
 
+Let the owner choose how the page looks with the same control every public
+page uses: `PageLookFields` from `deveye-sdk-client` (theme and accent, your
+own miniature of the page under it), stored through `pageThemeChoiceSchema`
+and `pageAccentSchema` from `@deveye/types/sdk`. The page, which has none of
+the app's tokens, writes its colours from `resolvePageAccent`, `accentInk` and
+`accentSoft`.
+
+```tsx
+<PageLookFields
+    theme={draft.theme}
+    accent={draft.accent}
+    themes={['auto', 'light', 'dark']}
+    ownAccent={{ light: '#3a6ad6', dark: '#6f9bff' }}
+    disabled={!canWrite}
+    onChange={(look) => setDraft({ ...draft, ...look })}
+    preview={<MyPagePreview theme={draft.theme} accent={draft.accent} />}
+/>
+```
+
 ## Let your items be copied to another workspace
 
 Describe what an item is made of, once; the host copies it, to another workspace
