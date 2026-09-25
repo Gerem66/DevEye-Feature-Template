@@ -242,7 +242,8 @@ unreadable), ip }`, nothing of a session; the reply is the chainable
   authenticate it with a ticket.
 - `FeatureServiceDeps<Repo>`: `repo`, `listWorkspaceIds`, `storeFor`,
   `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
-  `isOnline`), `devices` (`SdkFleetDevices`: `find`, `isOnline`),
+  `isOnline`), `membersFor` (`list`, capability `'members.read'`), `devices`
+  (`SdkFleetDevices`: `find`, `isOnline`),
   `telemetry`, `live` (`SdkLive`: `changed(workspaceId, topics?)`: your
   topic by default, or the topics named, your own secondary ones or another
   feature's; `publish(workspaceId, event, payload)`: capability

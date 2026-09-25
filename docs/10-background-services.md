@@ -39,7 +39,9 @@ ticker and delegate: `{ start: () => ticker.start(), stop: () => ticker.stop(), 
 
 `repo`, `listWorkspaceIds()`, `storeFor(workspaceId)`, `cipherFor(workspaceId)`,
 `deveyeFor(workspaceId)` (notify only), `devicesFor(workspaceId)` (`list` and
-`isOnline`, capability `'devices.read'`), `devices` (`find(id)` and
+`isOnline`, capability `'devices.read'`), `membersFor(workspaceId)` (`list`, the
+members owner included, capability `'members.read'`: the names a public page
+shows), `devices` (`find(id)` and
 `isOnline`, the whole fleet, same capability), `telemetry` (reserved,
 capability `'telemetry.read'`), `live.changed(workspaceId, topics?)` (your
 topic, or the topics named, from a service: see
