@@ -97,7 +97,10 @@ reimplements a reduced form of it.
   would change between the check and the connection anyway, so bound the
   address you finally connect to if that matters to you.
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
-  `migrationsDir`, `createService(deps)`, `env` (the `ModuleEnvSpec` your
+  `migrationsDir`, `createService(deps)`, `quotas` (one `FeatureStockEntry`
+  `{ list(repo, ownerWorkspaceIds) }` per `stock` quota of the manifest, and
+  none other: the `SdkStockItem`s `{ id, workspaceId }` it counts, oldest
+  first; see [12-quotas-and-account](12-quotas-and-account.md)), `env` (the `ModuleEnvSpec` your
   variables are read with, `defineModuleEnv` / `readModuleEnv`: the host warns
   at boot about each one left to its default), `domains` (`FeatureDomainsEntry`:
   `records(ctx, domain)`, `probe(ctx, domain)` returning `SdkDomainProbe`,
@@ -174,7 +177,8 @@ true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
   `foreignIds`, `homeOf`, `cipherFor`, `orderOf` — the rank a projected item
   holds in the active workspace — plus `setOrder(itemId, order)`) and
   `domains: SdkDomains` (`list()`, `get(id)`, `verified()` returning
-  `SdkDomain` `{ id, workspaceId, host, token, verified, verifiedAt }`; throws
+  `SdkDomain` `{ id, workspaceId, host, token, verified, verifiedAt, planPaused }`
+  (`verified` is false while the owner's plan holds the name paused); throws
   `forbidden` unless the manifest declares `domains`),
   `providers: SdkProviders` (`get<T>(key)`: a published contract, whoever
   offers it; `undefined` when nobody does) and `origins: { app, public }`
@@ -213,7 +217,9 @@ metricIntervalSeconds, report }`, what the devices facade reveals.
   `'routes.public'`; called once per listener the host exposes, register the
   same routes each time), `domainRoot?(req, reply, domain: SdkDomain)` (the
   page at `GET /` of one of your verified web domains; capability
-  `'routes.public'` and `domains.web` required).
+  `'routes.public'` and `domains.web` required), `onPlanPause?(change)` (the
+  `SdkPlanPauseChange` `{ key, paused, resumed }` of one of your `stock`
+  quotas, once written: for what you hold open).
 - `SdkPublicApp`: `get(path, opts, handler)` / `post(path, opts, handler)`;
   paths are absolute (`/t.js`, `/api/t/b`) and a path the host already serves
   is refused at boot, `/` included: the root belongs to the host

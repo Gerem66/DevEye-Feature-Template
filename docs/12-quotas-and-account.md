@@ -25,10 +25,47 @@ await ctx.repo.create(input);
   on an instance with no plan provider (a self-hosted DevEye).
 - Beyond the limit the host throws `quota_exceeded` and the client shows its own
   upgrade prompt: you handle nothing.
-- Only creation is bounded. Never hide, freeze or delete what exists when a
-  limit drops.
+- Nothing is ever deleted. When a limit drops, a flow quota refuses the next
+  use, and a stock quota pauses what goes beyond it (below).
 - `ctx.quota.limit(key)` reads the limit (`null` = unlimited) if you want to
   show "3 of 5".
+
+### Stock quotas: pausing what goes beyond
+
+A quota is a **flow** when you check it at each use (events per month, the size
+of one file): nothing more to do. It is a **stock** when what it counts exists
+and costs while it exists (a probed monitor, a paired agent). Mark it, and list
+what it counts, oldest first, under the very WHERE of your counter:
+
+```ts
+// manifest.ts
+quotas: [{ key: 'monitors', label: 'monitors', stock: true }],
+
+// server entry
+quotas: {
+    monitors: { list: (repo, ownerWorkspaceIds) => repo.stockIn(ownerWorkspaceIds) }
+},
+// repo: SELECT id, workspace_id FROM ... WHERE workspace_id IN (?) ORDER BY created, id
+```
+
+When the owner's plan drops below what exists, the host pauses the most recently
+created ones and resumes them once the limit rises or a slot frees. You never
+write that state, and never touch your own user switch (`enabled`...) for it:
+resuming gives the user back their own setting. A paused item stays readable,
+editable and deletable, and **nothing of it runs**:
+
+- exclude `ctx.quota.paused(key)` (or `deps.pauses.paused(key)`) **in the SQL**
+  of your due lists (`id NOT IN (?)`, guard the empty list). Filtering after a
+  `LIMIT` would let paused items, whose timestamps never advance, starve the
+  others;
+- call `await ctx.quota.assertActive(key, id)` before any on-demand run (check
+  now, sync now): it opens the plan prompt for a paused item;
+- `isPaused(key, id)` is a synchronous in-memory read: check it after any cache
+  of yours, and a public page of a paused item answers like an unpublished one;
+- `onPlanPause({ key, paused, resumed })` on your service is only for what you
+  hold open (a connection, a session, a timer);
+- show `PlanPausedBadge` on a paused item and `PlanPausedNotice` above its list
+  (`deveye-sdk-client`).
 
 A quota may measure bytes instead of things: `{ key: 'storage', label: 'of
 storage', unit: 'bytes' }`. The plan's limit is then in bytes and the refusal
@@ -37,6 +74,7 @@ uploads), a service asks the same way with `deps.quotaFor(workspaceId)`.
 
 In tests: `createTestContext({ quotaLimits: { monitors: 5 }, ownerWorkspaceIds: [1, 2] })`,
 and `createTestServiceDeps({ quotaLimits: { storage: 1024 } })` for `quotaFor`.
+Both take `pausedItems: { monitors: ['7'] }` for the plan pauses.
 
 ## An entry in the user menu
 
