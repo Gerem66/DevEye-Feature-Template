@@ -21,6 +21,12 @@ validation refuses the manifest without it, because a tab that lists channels
 without saying what reaches them leaves the user guessing why they would set
 one up.
 
+A feature with items routes per item too: each item's settings get their own
+Notifications tab, for the alerts sent with its `itemId`. When nothing is ever
+sent on behalf of an item (a reminder about the whole activity, say), declare
+`notifications: { hint, perItem: false }`: the items' settings then carry no
+tab that nothing would reach.
+
 ## Send
 
 ```ts
