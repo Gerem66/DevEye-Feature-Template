@@ -223,7 +223,7 @@ except? })` (an `SdkAlert`: `subject`, `body`, `payload?`, `embeds?`;
   `'workspaces.read'` and a global administrator as caller: every workspace,
   `{ id, name, kind, ownerUserId }`), `usage.of(userId)` / `usage.ofMany(userIds)`
   (capability `'accounts.usage'`: an `SdkAccountUsage` `{ userId, quotas }`,
-  `{ used, paused }` by full key; `of` answers the caller's own or anyone's for a
+  `{ kind, used, paused }` by full key; `of` answers the caller's own or anyone's for a
   global administrator, `ofMany` is the administrator's alone),
   `devices.authorize/list/isOnline`, `telemetry` (an `SdkTelemetry`:
   `snapshot(deviceId, ts)` returning an `SdkTelemetrySnapshot` or null,

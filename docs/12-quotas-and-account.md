@@ -121,7 +121,7 @@ caller's personal workspace, whatever workspace is displayed.
   returns every account, oldest first, for an administrator's screen you gate
   yourself. `SdkAccount.suspended` says an administrator suspended it.
 - `'accounts.usage'` reads what an account uses of every limit of the instance,
-  every feature included: `{ used, paused }` by `<featureId>.<quotaKey>`, over
+  every feature included: `{ kind, used, paused }` (`kind`: stock, flow or per-operation) by `<featureId>.<quotaKey>`, over
   the workspaces it owns (`used` is `null` for a per-operation limit). In a
   handler, `ctx.deveye.usage.of(userId)` answers the caller's own, or anyone's
   for a global administrator; `ofMany(userIds)` is an administrator's sweep,
