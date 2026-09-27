@@ -7,13 +7,20 @@ see the plan: you declare what you count, and you ask before creating.
 
 ```ts
 // manifest.ts
-quotas: [{ key: 'monitors', label: 'monitors' }],
+quotas: [{ key: 'reports', label: 'reports per month' }],
+```
+
+```ts
+// server entry: how the host counts it, for the screens
+quotas: {
+    reports: { count: (repo, ownerWorkspaceIds) => repo.countThisMonth(ownerWorkspaceIds) }
+},
 ```
 
 ```ts
 // the handler that creates
-await ctx.quota.assert('monitors', async (ownerWorkspaceIds) => {
-    return (await ctx.repo.countIn(ownerWorkspaceIds)) + 1;
+await ctx.quota.assert('reports', async (ownerWorkspaceIds) => {
+    return (await ctx.repo.countThisMonth(ownerWorkspaceIds)) + 1;
 });
 await ctx.repo.create(input);
 ```
@@ -27,15 +34,21 @@ await ctx.repo.create(input);
   upgrade prompt: you handle nothing.
 - Nothing is ever deleted. When a limit drops, a flow quota refuses the next
   use, and a stock quota pauses what goes beyond it (below).
-- `ctx.quota.limit(key)` reads the limit (`null` = unlimited) if you want to
-  show "3 of 5".
+- `ctx.quota.usage(key)` reads where the owner stands, `{ used, limit }` counted
+  by your `server.quotas[key]`, or `null` when unlimited (then nothing is
+  counted): what a screen says as "3 of 5" before the refusal. Count with the
+  same repo function in `assert`, so the screen and the refusal agree.
+- Every quota needs its counter: the boot refuses a module whose
+  `server.quotas` does not follow its manifest. A flow gives `count`, a stock
+  gives `list` (below), and a `perOperation` quota gives nothing.
 
 ### Stock quotas: pausing what goes beyond
 
-A quota is a **flow** when you check it at each use (events per month, the size
-of one file): nothing more to do. It is a **stock** when what it counts exists
-and costs while it exists (a probed monitor, a paired agent). Mark it, and list
-what it counts, oldest first, under the very WHERE of your counter:
+A quota is a **flow** when you check it at each use (events per month, the
+bytes held): its `count` is all it needs. It is a **stock** when what it counts
+exists and costs while it exists (a probed monitor, a paired agent). Mark it,
+and list what it counts, oldest first, under the very WHERE of your counter:
+that list is also its count, so a stock gives `list` and never `count`.
 
 ```ts
 // manifest.ts
@@ -72,9 +85,13 @@ storage', unit: 'bytes' }`. The plan's limit is then in bytes and the refusal
 reads as a size. For what is created outside any command (bytes an agent
 uploads), a service asks the same way with `deps.quotaFor(workspaceId)`.
 
-In tests: `createTestContext({ quotaLimits: { monitors: 5 }, ownerWorkspaceIds: [1, 2] })`,
-and `createTestServiceDeps({ quotaLimits: { storage: 1024 } })` for `quotaFor`.
-Both take `pausedItems: { monitors: ['7'] }` for the plan pauses.
+A limit that bounds ONE operation (the size of one file to convert) accumulates
+nothing: declare it `perOperation: true`, give it no `server.quotas` entry, and
+`ctx.quota.usage` refuses it. It is never a stock.
+
+In tests: `createTestContext({ quotaLimits: { monitors: 5 }, ownerWorkspaceIds: [1, 2], quotas: serverEntry.quotas })`,
+and `createTestServiceDeps({ quotaLimits: { storage: 1024 }, quotas: serverEntry.quotas })` for `quotaFor`.
+`quotas` is what `quota.usage` counts through. Both take `pausedItems: { monitors: ['7'] }` for the plan pauses.
 
 ## An entry in the user menu
 
@@ -98,9 +115,18 @@ and, once, the `hint` a sign-up carried when you declare
 caller's personal workspace, whatever workspace is displayed.
 
 - `'accounts.read'` gives `ctx.deveye.accounts.me()` in a handler and
-  `deps.accounts.find / findByEmail / list / search` in a service. `search`
+  `deps.accounts.find / findByEmail / list / search / all` in a service. `search`
   matches a substring of the username or the email (an all-digit query also
-  matches that account id, listed first) and returns at most 50 accounts.
+  matches that account id, listed first) and returns at most 50 accounts; `all`
+  returns every account, oldest first, for an administrator's screen you gate
+  yourself. `SdkAccount.suspended` says an administrator suspended it.
+- `'accounts.usage'` reads what an account uses of every limit of the instance,
+  every feature included: `{ used, paused }` by `<featureId>.<quotaKey>`, over
+  the workspaces it owns (`used` is `null` for a per-operation limit). In a
+  handler, `ctx.deveye.usage.of(userId)` answers the caller's own, or anyone's
+  for a global administrator; `ofMany(userIds)` is an administrator's sweep,
+  paced by the host. A service reads the same through `deps.usage`. What a plan
+  provider shows beside the limits it sets; tests pass `accountUsage`.
 - `'accounts.mail'` gives `deps.accountMail.send(userId, message)` in a
   service: one email to that account's own address (never another), from the
   server's sender. Give plain text (`subject`, `paragraphs`, an optional

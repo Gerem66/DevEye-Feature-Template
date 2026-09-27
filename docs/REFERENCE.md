@@ -12,11 +12,13 @@ and the app-provided `deveye-sdk-client` module.
   `default`, explicit `ownerValue`). `MAX_EXTRA_PERMISSIONS = 10`.
 - `NativeCapability`: `'notify' | 'mail.accounts' | 'members.read' |
 'workspaces.read' | 'devices.read' | 'telemetry.read' | 'agents' |
-'routes.public' | 'live.publish' | 'accounts.read' | 'accounts.mail'`; `'telemetry.read'` and `'agents'` are
+'routes.public' | 'live.publish' | 'accounts.read' | 'accounts.usage' | 'accounts.mail'`; `'telemetry.read'` and `'agents'` are
   reserved to native-id modules (`validateManifest` refuses them on an `x-`
   id).
   `'workspaces.read'` lists every workspace of this DevEye and refuses anyone
-  but a global administrator. `'accounts.mail'` emails an account at its own
+  but a global administrator. `'accounts.usage'` reads what an account uses of
+  every limit of the instance (its own, or anyone's for a global administrator).
+  `'accounts.mail'` emails an account at its own
   address (`deps.accountMail`, see
   [12-quotas-and-account](12-quotas-and-account.md)). `'routes.public'` opens sessionless HTTP routes
   (`FeatureService.publicRoutes`, see
@@ -112,10 +114,11 @@ reimplements a reduced form of it.
   `SdkE2eContext` `{ account, send, fetch, waitFor, defer, state, repo,
 origins, signal }`, throws to fail, may return a detail and set `timeoutMs`;
   register a `defer` right after creating anything that would survive the
-  account's deletion), `quotas` (one `FeatureStockEntry`
-  `{ list(repo, ownerWorkspaceIds) }` per `stock` quota of the manifest, and
-  none other: the `SdkStockItem`s `{ id, workspaceId }` it counts, oldest
-  first; see [12-quotas-and-account](12-quotas-and-account.md)), `env` (the `ModuleEnvSpec` your
+  account's deletion), `quotas` (one `FeatureQuotaEntry` per quota of the
+  manifest, `perOperation` ones excepted, and none other: a `stock` gives
+  `list(repo, ownerWorkspaceIds)`, the `SdkStockItem`s `{ id, workspaceId }` it
+  counts, oldest first; a flow gives `count(repo, ownerWorkspaceIds)`; see
+  [12-quotas-and-account](12-quotas-and-account.md)), `env` (the `ModuleEnvSpec` your
   variables are read with, `defineModuleEnv` / `readModuleEnv`: the host warns
   at boot about each one left to its default), `domains` (`FeatureDomainsEntry`:
   `records(ctx, domain)`, `probe(ctx, domain)` returning `SdkDomainProbe`,
@@ -218,7 +221,10 @@ except? })` (an `SdkAlert`: `subject`, `body`, `payload?`, `embeds?`;
   id to keep for the next edit, `null` when the channel refused: stop there),
   `mail.listAccounts`, `members.list`, `workspaces.list` (capability
   `'workspaces.read'` and a global administrator as caller: every workspace,
-  `{ id, name, kind, ownerUserId }`),
+  `{ id, name, kind, ownerUserId }`), `usage.of(userId)` / `usage.ofMany(userIds)`
+  (capability `'accounts.usage'`: an `SdkAccountUsage` `{ userId, quotas }`,
+  `{ used, paused }` by full key; `of` answers the caller's own or anyone's for a
+  global administrator, `ofMany` is the administrator's alone),
   `devices.authorize/list/isOnline`, `telemetry` (an `SdkTelemetry`:
   `snapshot(deviceId, ts)` returning an `SdkTelemetrySnapshot` or null,
   `pinInstant(deviceId, ts)`), `agents` (an `AgentsFacade`); each gated by
@@ -259,8 +265,10 @@ unreadable), ip }`, nothing of a session; the reply is the chainable
   `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
   `isOnline`), `membersFor` (`list`, capability `'members.read'`), `devices`
   (`SdkFleetDevices`: `find`, `isOnline`), `accounts` (`SdkAccounts`,
-  capability `'accounts.read'`; `SdkAccount.e2e` marks a throwaway account of
-  the end-to-end runner, never a person: check it, never the address),
+  capability `'accounts.read'`, `all()` included; `SdkAccount.e2e` marks a throwaway account of
+  the end-to-end runner, never a person: check it, never the address;
+  `suspended` an account an administrator suspended), `usage` (`SdkUsage`:
+  `of`, `ofMany`, capability `'accounts.usage'`, no caller to check),
   `accountMail` (`SdkAccountMail`: `configured`,
   `send(userId, SdkAccountMailMessage)`, capability `'accounts.mail'`),
   `telemetry`, `live` (`SdkLive`: `changed(workspaceId, topics?)`: your
