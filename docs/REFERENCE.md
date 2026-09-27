@@ -268,10 +268,10 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   server key, never stored: for material that must survive the database).
   Server key, module-owned key material only, never user data.
 - Reserved to native-id modules (capability `'agents'`): `AgentsFacade`
-  (`isOnline`, `requestScan`, `pushConfig`; the three orders a device's
-  lifecycle gives the hub, `requestDestroy` (the agent uninstalls itself),
-  `disconnectAgent` (its socket closes now), `resetAgentSession` (the hub
-  forgets what it remembered of it), each `false` when the agent is offline;
+  (`isOnline`, `requestScan`, `pushConfig`; the two orders a device's
+  lifecycle gives the hub, `requestDestroy` (the agent uninstalls itself) and
+  `disconnectAgent` (its socket closes now), each `false` when the agent is
+  offline;
   `requestSyncConfig`,
   `requestSyncScan`, `requestSyncPush`,
   `requestSyncApplyChunk`, `requestSyncApplyStart`, `requestSyncApplyDir`,
