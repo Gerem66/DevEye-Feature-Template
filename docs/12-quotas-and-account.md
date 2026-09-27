@@ -101,6 +101,15 @@ caller's personal workspace, whatever workspace is displayed.
   `deps.accounts.find / findByEmail / list / search` in a service. `search`
   matches a substring of the username or the email (an all-digit query also
   matches that account id, listed first) and returns at most 50 accounts.
+- `'accounts.mail'` gives `deps.accountMail.send(userId, message)` in a
+  service: one email to that account's own address (never another), from the
+  server's sender. Give plain text (`subject`, `paragraphs`, an optional
+  framed `notice`, `button` and `footnote`); DevEye lays it out and escapes it.
+  It resolves the address it went to, for your records, and retries nothing:
+  a refusal rejects, so record what went out and try the rest on your next
+  tick. `configured` is `false` on a server without SMTP, where `send` throws
+  `conflict`. Keep it to what the account must receive (a renewal notice, a
+  receipt): it never agreed to anything else.
 - `ctx.live.accountChanged(userId)` (or `deps.live.accountChanged`) makes that
   account's open clients re-fetch your resources, wherever they sit.
 - `openAccountView()` and `useAccountPlan()` are exported by the client SDK.

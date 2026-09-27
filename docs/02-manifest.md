@@ -49,6 +49,8 @@ the `NativeCapability` type in `@deveye/types/sdk`:
 | `'devices.read'`    | `ctx.deveye.devices` (`authorize`, `list`, `isOnline`) in handlers, `deps.devicesFor(id)` (`list`, `isOnline`) and `deps.devices` (`find`, `isOnline`, the whole fleet) in services ([03-server-handlers](03-server-handlers.md#native-features-through-ctxdeveye)) |
 | `'telemetry.read'`  | the devices' telemetry (`ctx.deveye.telemetry`, `deps.telemetry`); **reserved**, see below                                                                                                                                                                          |
 | `'agents'`          | the agent-fleet sync transport; **reserved**, see below                                                                                                                                                                                                             |
+| `'accounts.read'`   | the accounts of this DevEye: `ctx.deveye.accounts.me()` in a handler, `deps.accounts` (`find`, `findByEmail`, `list`, `search`) in services ([12-quotas-and-account](12-quotas-and-account.md))                                                                     |
+| `'accounts.mail'`   | `deps.accountMail.send(userId, message)`: an email to that account's own address, from the server's sender, for what the account must receive ([12-quotas-and-account](12-quotas-and-account.md))                                                                   |
 
 ## Secondary topics of your own
 

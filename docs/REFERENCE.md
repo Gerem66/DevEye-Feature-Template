@@ -12,11 +12,13 @@ and the app-provided `deveye-sdk-client` module.
   `default`, explicit `ownerValue`). `MAX_EXTRA_PERMISSIONS = 10`.
 - `NativeCapability`: `'notify' | 'mail.accounts' | 'members.read' |
 'workspaces.read' | 'devices.read' | 'telemetry.read' | 'agents' |
-'routes.public' | 'live.publish'`; `'telemetry.read'` and `'agents'` are
+'routes.public' | 'live.publish' | 'accounts.read' | 'accounts.mail'`; `'telemetry.read'` and `'agents'` are
   reserved to native-id modules (`validateManifest` refuses them on an `x-`
   id).
   `'workspaces.read'` lists every workspace of this DevEye and refuses anyone
-  but a global administrator. `'routes.public'` opens sessionless HTTP routes
+  but a global administrator. `'accounts.mail'` emails an account at its own
+  address (`deps.accountMail`, see
+  [12-quotas-and-account](12-quotas-and-account.md)). `'routes.public'` opens sessionless HTTP routes
   (`FeatureService.publicRoutes`, see
   [10-background-services](10-background-services.md#public-http-routes-publicroutes)).
   `'live.publish'` pushes frames of your own to the workspace's connected
@@ -243,7 +245,9 @@ unreadable), ip }`, nothing of a session; the reply is the chainable
 - `FeatureServiceDeps<Repo>`: `repo`, `listWorkspaceIds`, `storeFor`,
   `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
   `isOnline`), `membersFor` (`list`, capability `'members.read'`), `devices`
-  (`SdkFleetDevices`: `find`, `isOnline`),
+  (`SdkFleetDevices`: `find`, `isOnline`), `accounts` (`SdkAccounts`,
+  capability `'accounts.read'`), `accountMail` (`SdkAccountMail`: `configured`,
+  `send(userId, SdkAccountMailMessage)`, capability `'accounts.mail'`),
   `telemetry`, `live` (`SdkLive`: `changed(workspaceId, topics?)`: your
   topic by default, or the topics named, your own secondary ones or another
   feature's; `publish(workspaceId, event, payload)`: capability
@@ -346,9 +350,11 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
 - `createTestServiceDeps(overrides?)`: the service twin; `recorded` adds
   `tickers`, `liveChanges` and `liveTopicChanges` (which topics a
   `live.changed(ws, [...])` beat), and shares `livePublishes` with the
-  context harness. Overrides: `repo`, `workspaceIds`,
+  context harness, and `mails` (what `accountMail.send` accepted, with the
+  address). Overrides: `repo`, `workspaceIds`,
   `devices`, `archives`, `access` (a partial `deps.access`; every member
-  holds every right by default), `hasRoute`, `notifyAccepted`,
+  holds every right by default), `accounts` (also who `accountMail` can
+  write to), `mailConfigured`, `hasRoute`, `notifyAccepted`,
   `liveChannels`, `origins`, `snapshots`, `providers`.
 - `testDevice(over)`: an `SdkDevice` with sensible defaults.
 
