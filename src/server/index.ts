@@ -20,6 +20,9 @@ import { counterHandlers } from './handlers';
  *    docs/10-background-services.md.
  *  - **Items the app must name without opening you** (`items`), required as
  *    soon as `shareTier` is not `'never'`.
+ *  - **Your part of the holder's data export** (`accountExport`), required as
+ *    soon as you own a table: every table gets a fate, see
+ *    docs/13-account-export.md. The one for `ft_counter_notes` is below.
  *
  * Delete `repo.ts`, `migrations/` and `uninstall.sql` if your feature stores
  * nothing relational: an unused table is a schema everyone has to explain.
@@ -28,5 +31,16 @@ export const serverEntry: FeatureServer = {
     features: counterHandlers
     // createRepo: counterRepo,
     // migrationsDir: path.join(path.dirname(fileURLToPath(import.meta.url)), 'migrations'),
-    // createService: (deps) => deps.createTicker({ intervalMs: 60_000, tick: async () => {} })
+    // createService: (deps) => deps.createTicker({ intervalMs: 60_000, tick: async () => {} }),
+    // accountExport: {
+    //     tables: {
+    //         ft_counter_notes: {
+    //             file: 'notes.json',
+    //             where: 'workspace_id = ?',
+    //             key: ['id'],
+    //             sealed: ['content_enc'],
+    //             dates: { created: 's' }
+    //         }
+    //     }
+    // }
 };

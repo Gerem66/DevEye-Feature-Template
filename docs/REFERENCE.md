@@ -114,7 +114,10 @@ reimplements a reduced form of it.
   `SdkE2eContext` `{ account, send, fetch, waitFor, defer, state, repo,
 origins, signal }`, throws to fail, may return a detail and set `timeoutMs`;
   register a `defer` right after creating anything that would survive the
-  account's deletion), `quotas` (one `FeatureQuotaEntry` per quota of the
+  account's deletion), `accountExport` (a `FeatureAccountExport`: the fate
+  of every table you own in the holder's data export, `store.omit`, `files`
+  and the `account` / `workspace` hooks; see
+  [13-account-export](13-account-export.md)), `quotas` (one `FeatureQuotaEntry` per quota of the
   manifest, `perOperation` ones excepted, and none other: a `stock` gives
   `list(repo, ownerWorkspaceIds)`, the `SdkStockItem`s `{ id, workspaceId }` it
   counts, oldest first; a flow gives `count(repo, ownerWorkspaceIds)`; see
