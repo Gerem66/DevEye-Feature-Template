@@ -99,7 +99,20 @@ reimplements a reduced form of it.
   would change between the check and the connection anyway, so bound the
   address you finally connect to if that matters to you.
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
-  `migrationsDir`, `createService(deps)`, `quotas` (one `FeatureStockEntry`
+  `migrationsDir`, `createService(deps)`, `mailSamples` (every email you send,
+  on made-up data, for the administrator's mail tester: `SdkMailSample`
+  `{ key, label, sender, build(ctx) }` where `ctx` is `{ origins, now }`;
+  `sender: 'server'` builds an `SdkAccountMailMessage` and requires capability
+  `'accounts.mail'`, `sender: 'workspace'` builds an `SdkWorkspaceMail`, what
+  the Mail transport sends; build it with the SAME function as the real email,
+  or the tester proves nothing), `e2e` (`FeatureE2eEntry`: `scenarios`, each an
+  `SdkE2eScenario` `{ id, label, skip?, steps }` run by an administrator
+  against the live server with a throwaway account, and an optional `sweep()`
+  that removes what a crashed run left OUTSIDE your tables; a step receives an
+  `SdkE2eContext` `{ account, send, fetch, waitFor, defer, state, repo,
+origins, signal }`, throws to fail, may return a detail and set `timeoutMs`;
+  register a `defer` right after creating anything that would survive the
+  account's deletion), `quotas` (one `FeatureStockEntry`
   `{ list(repo, ownerWorkspaceIds) }` per `stock` quota of the manifest, and
   none other: the `SdkStockItem`s `{ id, workspaceId }` it counts, oldest
   first; see [12-quotas-and-account](12-quotas-and-account.md)), `env` (the `ModuleEnvSpec` your
@@ -246,7 +259,9 @@ unreadable), ip }`, nothing of a session; the reply is the chainable
   `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
   `isOnline`), `membersFor` (`list`, capability `'members.read'`), `devices`
   (`SdkFleetDevices`: `find`, `isOnline`), `accounts` (`SdkAccounts`,
-  capability `'accounts.read'`), `accountMail` (`SdkAccountMail`: `configured`,
+  capability `'accounts.read'`; `SdkAccount.e2e` marks a throwaway account of
+  the end-to-end runner, never a person: check it, never the address),
+  `accountMail` (`SdkAccountMail`: `configured`,
   `send(userId, SdkAccountMailMessage)`, capability `'accounts.mail'`),
   `telemetry`, `live` (`SdkLive`: `changed(workspaceId, topics?)`: your
   topic by default, or the topics named, your own secondary ones or another
@@ -391,6 +406,10 @@ authority when the two differ.
 - `useDismissLayer(open, onEscape | null)`: registers the topmost dismissible
   layer while `open`, so Escape closes overlays innermost first; `null`
   absorbs Escape without closing.
+- `useSubView(segment | null)`: names the screen shown inside your view
+  (`'site'`, `'site/traffic'`) for the instance's usage figures and bug
+  reports. Static segments only, never an id, a name or anything typed; counted
+  while your view is the one open, the deepest screen mounted winning.
 - Data: `useResource(key, load, fallback, deps?)`, `invalidate(...keys)`,
   `useResourceVersion(key)`, `onResourceChange(key, cb)`,
   `humanizeError(e, fallback)`, `WsError` (the class a command rejects with:

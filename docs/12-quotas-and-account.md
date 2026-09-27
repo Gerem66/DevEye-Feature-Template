@@ -110,6 +110,13 @@ caller's personal workspace, whatever workspace is displayed.
   tick. `configured` is `false` on a server without SMTP, where `send` throws
   `conflict`. Keep it to what the account must receive (a renewal notice, a
   receipt): it never agreed to anything else.
+- `onAccountDeleted(userId)` on your service runs before an account is
+  deleted with everything it owns: end what you hold for it elsewhere (a
+  subscription with a payment provider). It may return `{ paragraph }`, one
+  sentence of yours in the confirmation email the holder receives once the
+  account is gone. A throw aborts the deletion, so never throw for a
+  throwaway account of the end-to-end runner (`SdkAccount.e2e`): clean up and
+  log instead.
 - `ctx.live.accountChanged(userId)` (or `deps.live.accountChanged`) makes that
   account's open clients re-fetch your resources, wherever they sit.
 - `openAccountView()` and `useAccountPlan()` are exported by the client SDK.
