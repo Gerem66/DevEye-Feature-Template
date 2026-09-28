@@ -106,7 +106,15 @@ the same either way.
   everything in the background there (a periodic integrity scan), the
   provider checks its objects itself.
 - Encrypt before you store: the store keeps bytes as given. Wrap your own key
-  with `deps.keys` (above).
+  with `deps.keys` (above), or derive one with `keys.derive`. The `DEVB`
+  container of `@deveye/types/sdk/server` does the sealing: `sealStream` on
+  the way in, `openSealedStream` for the whole file, `openSealedRange` for an
+  HTTP range (it reads only the header and the chunks that hold it), and
+  `sealedSize` for the bytes it takes on the store.
+- Serving a file: `contentDisposition(name, 'attachment' | 'inline')` writes
+  the header safely for any name, and `parseByteRange(req.headers.range,
+size)` reads a `Range` request (`null`: a plain 200, `'unsatisfiable'`: a
+  416).
 
 In tests, `createTestServiceDeps` hands out a `memoryObjectStore()` from
 `@deveye/types/sdk/testing`; pass `{ objects }` to share one with your

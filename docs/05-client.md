@@ -118,6 +118,19 @@ is API.
   one of your `.count` commands.
 - `useDragReorder`: the app's one reorder gesture (a handle per row, an
   insertion bar the hook positions itself).
+- `UsageMeter`: the quiet gauge of a quota in your header (`used`, `limit`,
+  `label`), the same count as the refusal, leading the owner to the plans.
+
+**Files**
+
+- `Dropzone` (a button that opens the picker, dropping being a shortcut;
+  `multiple` takes several files and whole folders), `useFileDrop` to make
+  any element a drop target, `pickFiles({ multiple, folder, accept })` for
+  the system picker from your own button. Each gives `PickedFile`s: the file
+  and its relative path.
+- `uploadFile(url, file, onProgress)` POSTs the raw bytes to a `postStream`
+  route with progress and `abort()`; `saveFrom(url)` downloads an attachment
+  without leaving the page.
 
 **People**
 

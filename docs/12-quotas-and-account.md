@@ -146,6 +146,10 @@ caller's personal workspace, whatever workspace is displayed.
   tick. `configured` is `false` on a server without SMTP, where `send` throws
   `conflict`. Keep it to what the account must receive (a renewal notice, a
   receipt): it never agreed to anything else.
+- `deps.accountMail.sendToAdmins(message)` writes the same kind of email to
+  every active administrator of the DevEye, for what only the operator can
+  act on (a report of illicit content on a public page). It resolves the
+  addresses reached, empty without any administrator.
 - `onAccountDeleted(userId)` on your service runs before an account is
   deleted with everything it owns: end what you hold for it elsewhere (a
   subscription with a payment provider). It may return `{ paragraph }`, one
@@ -156,6 +160,15 @@ caller's personal workspace, whatever workspace is displayed.
 - `ctx.live.accountChanged(userId)` (or `deps.live.accountChanged`) makes that
   account's open clients re-fetch your resources, wherever they sit.
 - `openAccountView()` and `useAccountPlan()` are exported by the client SDK.
+
+## A system page for administrators
+
+For what the operator handles for the whole instance (reports to moderate),
+`adminEntry: { label, icon? }` adds a page among the system pages of the
+account menu, shown and opened for a global administrator only. It renders
+`FeatureClient.AdminView` (`close()`), and every command it sends declares
+`access: { scope: 'account', admin: true }`. `/?admin=<your module id>` opens
+it on arrival: the button of a mail sent with `accountMail.sendToAdmins`.
 
 ## Webhooks
 

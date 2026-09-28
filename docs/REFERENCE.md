@@ -279,7 +279,8 @@ unreadable), ip }`, nothing of a session; the reply is the chainable
   `suspended` an account an administrator suspended), `usage` (`SdkUsage`:
   `of`, `ofMany`, capability `'accounts.usage'`, no caller to check),
   `accountMail` (`SdkAccountMail`: `configured`,
-  `send(userId, SdkAccountMailMessage)`, capability `'accounts.mail'`),
+  `send(userId, SdkAccountMailMessage)`, `sendToAdmins(message)`, capability
+  `'accounts.mail'`),
   `telemetry`, `live` (`SdkLive`: `changed(workspaceId, topics?)`: your
   topic by default, or the topics named, your own secondary ones or another
   feature's; `publish(workspaceId, event, payload)`: capability
@@ -293,7 +294,9 @@ true }` or `{ ok: false, reason }`, read again on every call), `keys`,
   `objects(localDir)` (`SdkObjectStore`, capability `'objects'`: `kind`,
   `describe`, `put`, `putFile`, `get` with an inclusive `range`, `head`, `list`,
   `delete`, `deletePrefix`, `spoolDir`, `ephemeralRoot`; the host's disk under
-  `localDir`, or its S3 bucket), `secrecy`
+  `localDir`, or its S3 bucket; seal with `sealStream`, read back with
+  `openSealedStream` or `openSealedRange`, serve with `contentDisposition` and
+  `parseByteRange`), `secrecy`
   (`redeem(ticket)`: an `SdkRedeemedTicket` `{ userId, workspaceId, payload,
 cipher: { server, private } }`, the private cipher `null` while the caller's
   session is sealed; `null` as a whole for a ticket invalid, expired or minted
@@ -336,6 +339,8 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   that needs one: `general`, `sources`, `sync`, `encryption`, custom ids),
   `TopbarWidget?` (no props: it may only show what your own commands return,
   which the server authorizes against the caller's grants),
+  `AccountView?` (`manifest.accountEntry`), `AdminView?` (`manifest.adminEntry`,
+  `{ close }`, for a global administrator only),
   `cacheDurationMinutes?`, `preload?`, `holdSecrecy?`, `providers?` (named
   contracts offered to the host's screens; `UptimeClientProvider` with
   `UptimeLinkedService`, `UptimeHistoryPoint`, `UptimeHistoryResolution`,
@@ -417,7 +422,10 @@ authority when the two differ.
   settings, the detail view leaves it), `settingsStyles` (the canonical
   settings rows), `ReadOnlyNotice` (the one shape of a read-only refusal in a
   settings panel), `CountWidget` + `useWorkspaceCount` (+ `CountState`),
-  `useDragReorder`, `Avatar` (a member's identity dot; `user` may be
+  `useDragReorder`, `UsageMeter` (a quota's gauge), `Dropzone`,
+  `useFileDrop`, `pickFiles`, `filesOfDrop` (files picked or dropped, folders
+  included, as `PickedFile`), `uploadFile` + `UploadError`, `saveFrom`,
+  `Avatar` (a member's identity dot; `user` may be
   `undefined`), `userColorVar(color)` (the CSS variable of an account colour,
   the one the live presence paints with).
 - `useDialogClose()`: the enclosing `Dialog`'s guarded close (unsaved-changes
