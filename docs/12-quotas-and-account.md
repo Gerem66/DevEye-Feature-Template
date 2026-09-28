@@ -34,6 +34,10 @@ await ctx.repo.create(input);
   upgrade prompt: you handle nothing.
 - Nothing is ever deleted. When a limit drops, a flow quota refuses the next
   use, and a stock quota pauses what goes beyond it (below).
+- Under heavy load, the administrator may serve paying accounts first: every
+  limit of the others then reads 0, so their stock pauses and their creations
+  are refused until the mode ends. Nothing to do on your side, the same paths
+  apply.
 - `ctx.quota.usage(key)` reads where the owner stands, `{ used, limit }` counted
   by your `server.quotas[key]`, or `null` when unlimited (then nothing is
   counted): what a screen says as "3 of 5" before the refusal. Count with the
