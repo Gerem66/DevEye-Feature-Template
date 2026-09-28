@@ -25,7 +25,9 @@ and the app-provided `deveye-sdk-client` module.
   [10-background-services](10-background-services.md#public-http-routes-publicroutes)).
   `'live.publish'` pushes frames of your own to the workspace's connected
   members (`ctx.live.publish`, `deps.live.publish`, see
-  [09-live](09-live.md#pushing-your-own-frames-livepublish)).
+  [09-live](09-live.md#pushing-your-own-frames-livepublish)). `'objects'`
+  opens the host's object store (`deps.objects`, see
+  [04-storage-and-encryption](04-storage-and-encryption.md#files-the-object-store)).
 - `CrossTopicInvalidation`: `{ topic, keys }`, the element of the manifest's
   `alsoInvalidatedBy` (a native topic, a subset of `resources`; at most 4).
 - `FeatureManifest.topics`: `{ id, keys }[]`, secondary live topics of your
@@ -283,7 +285,11 @@ unreadable), ip }`, nothing of a session; the reply is the chainable
 userId, { level?, extras?, itemId? })` for your feature,
   `device(workspaceId, userId, deviceId, extras)` for the Devices permissions
   on one device, capability `'devices.read'`; an `SdkAccessVerdict`, `{ ok:
-true }` or `{ ok: false, reason }`, read again on every call), `keys`, `secrecy`
+true }` or `{ ok: false, reason }`, read again on every call), `keys`,
+  `objects(localDir)` (`SdkObjectStore`, capability `'objects'`: `kind`,
+  `describe`, `put`, `putFile`, `get` with an inclusive `range`, `head`, `list`,
+  `delete`, `deletePrefix`, `spoolDir`; the host's disk under `localDir`, or its
+  S3 bucket), `secrecy`
   (`redeem(ticket)`: an `SdkRedeemedTicket` `{ userId, workspaceId, payload,
 cipher: { server, private } }`, the private cipher `null` while the caller's
   session is sealed; `null` as a whole for a ticket invalid, expired or minted

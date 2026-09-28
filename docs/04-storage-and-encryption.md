@@ -79,6 +79,35 @@ length)`: HKDF over the server key, never stored anywhere, for material
   never sees a session id nor a key. See
   [10-background-services](10-background-services.md#tickets-a-public-route-acting-for-a-session).
 
+## Files: the object store
+
+Bytes too big for a table (a synced file, a backup archive) go to the host's
+object store: `deps.objects(localDir)`, capability `'objects'`. The host decides
+where they live: under `localDir` on its disk, or in the S3 bucket its operator
+configured (`STORAGE_S3_*`), under a prefix of your module's own. Your code is
+the same either way.
+
+- A key is a relative path (`share-1/blobs/ab/cd/<hash>`): no leading `/`, no
+  `..`. Store only the key in your tables, never where it resolves: the host
+  can then move the whole tree to another disk or bucket without a row to
+  rewrite.
+- `put(key, bytes | stream)` and `putFile(key, localPath)` are atomic: a
+  reader sees the whole object or none. `get(key, range?)` streams it back,
+  `head` gives its size or `null`, `list(prefix)` walks a prefix,
+  `delete` is idempotent, `deletePrefix('share-1/')` removes a whole tree.
+- What cannot be written in one go (a partial upload resumed later, which is
+  read back, truncated and extended) belongs in `spoolDir()`, a directory on
+  the host's disk whatever the store, then `putFile` once finished.
+- `kind` says `'s3'` when every byte read costs egress: skip what rereads
+  everything in the background there (a periodic integrity scan), the
+  provider checks its objects itself.
+- Encrypt before you store: the store keeps bytes as given. Wrap your own key
+  with `deps.keys` (above).
+
+In tests, `createTestServiceDeps` hands out a `memoryObjectStore()` from
+`@deveye/types/sdk/testing`; pass `{ objects }` to share one with your
+assertions.
+
 ## Uninstall
 
 A module that declares migrations must also ship their destructive mirror:

@@ -42,6 +42,12 @@ await ctx.repo.create(input);
   by your `server.quotas[key]`, or `null` when unlimited (then nothing is
   counted): what a screen says as "3 of 5" before the refusal. Count with the
   same repo function in `assert`, so the screen and the refusal agree.
+- `ctx.quota.paid()` (and `deps.quotaFor(ws).paid()`) tells whether the owner
+  pays: a paid or trial plan, a plan granted on the paid tier, an
+  administrator, or no plan provider at all (a self-hosted instance). Key a
+  default that costs the host on it (a probe cadence: every minute when paid,
+  every five otherwise), never a refusal: refusals go through `limit` and
+  `assert`.
 - Every quota needs its counter: the boot refuses a module whose
   `server.quotas` does not follow its manifest. A flow gives `count`, a stock
   gives `list` (below), and a `perOperation` quota gives nothing.
