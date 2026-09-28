@@ -102,6 +102,10 @@ reimplements a reduced form of it.
   a `file://` reads the server's disk). It does NOT resolve a hostname: DNS
   would change between the check and the connection anyway, so bound the
   address you finally connect to if that matters to you.
+- `mapLimit(items, limit, fn)`: runs `fn` on every item, at most `limit` at
+  once, results in the items' order. A pool, not waves: a slow item holds one
+  slot only, so a background loop that probes many targets keeps its pace when
+  a few of them hang until their timeout.
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
   `migrationsDir`, `createService(deps)`, `mailSamples` (every email you send,
   on made-up data, for the administrator's mail tester: `SdkMailSample`
