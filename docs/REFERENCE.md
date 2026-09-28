@@ -292,8 +292,8 @@ userId, { level?, extras?, itemId? })` for your feature,
 true }` or `{ ok: false, reason }`, read again on every call), `keys`,
   `objects(localDir)` (`SdkObjectStore`, capability `'objects'`: `kind`,
   `describe`, `put`, `putFile`, `get` with an inclusive `range`, `head`, `list`,
-  `delete`, `deletePrefix`, `spoolDir`; the host's disk under `localDir`, or its
-  S3 bucket), `secrecy`
+  `delete`, `deletePrefix`, `spoolDir`, `ephemeralRoot`; the host's disk under
+  `localDir`, or its S3 bucket), `secrecy`
   (`redeem(ticket)`: an `SdkRedeemedTicket` `{ userId, workspaceId, payload,
 cipher: { server, private } }`, the private cipher `null` while the caller's
   session is sealed; `null` as a whole for a ticket invalid, expired or minted

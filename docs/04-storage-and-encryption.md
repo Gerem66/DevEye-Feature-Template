@@ -98,6 +98,10 @@ the same either way.
 - What cannot be written in one go (a partial upload resumed later, which is
   read back, truncated and extended) belongs in `spoolDir()`, a directory on
   the host's disk whatever the store, then `putFile` once finished.
+- `ephemeralRoot()` gives the store's root when files written there would
+  not last (inside a container, a directory on no mounted volume, wiped at
+  the next redeploy), `null` otherwise. Refuse to write then, naming the
+  variable that sets your `localDir`: the files would vanish without a word.
 - `kind` says `'s3'` when every byte read costs egress: skip what rereads
   everything in the background there (a periodic integrity scan), the
   provider checks its objects itself.
