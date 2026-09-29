@@ -283,7 +283,10 @@ it means for you:
   `UPTIME_ITEMS_PROVIDER` (`'uptime.items'`, `UptimeItemsProvider`, what the
   Projects feature asks before linking a service), `SENTINEL_AGENT_CONFIG_PROVIDER`
   (`'sentinel.agentConfig'`, `SentinelAgentConfigProvider`, what Sentinel
-  contributes to the config pushed to an agent). Proposing a new one is a
+  contributes to the config pushed to an agent), `HOSTING_ITEMS_PROVIDER`
+  (`'hosting.items'`, `HostingItemsProvider`, what Projects asks before
+  linking a Hosting folder: the one link family owned by an external module,
+  which is why `PROJECT_LINKED_FEATURES` takes any `FeatureId`). Proposing a new one is a
   change to `@deveye/types`, hence a pull request against DevEye. The client
   twin (`FeatureClient.providers`, `UPTIME_CLIENT_PROVIDER`) lets an app
   screen compose a module's components the same way ([05-client](05-client.md#offering-components-to-the-host-providers)).
