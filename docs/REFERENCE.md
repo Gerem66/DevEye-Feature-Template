@@ -249,7 +249,11 @@ metricIntervalSeconds, report }`, what the devices facade reveals.
   page at `GET /` of one of your verified web domains; capability
   `'routes.public'` and `domains.web` required), `onPlanPause?(change)` (the
   `SdkPlanPauseChange` `{ key, paused, resumed }` of one of your `stock`
-  quotas, once written: for what you hold open).
+  quotas, once written: for what you hold open), `health?()` (an
+  `SdkServiceHealth` `{ state: 'up' | 'degraded' | 'down', reason? }` read by
+  the public status page about once a minute: answer from memory, no network
+  call nor write, 2 s at most; `reason` is shown publicly. Omit it when the
+  process and the database are all you rely on).
 - `SdkPublicApp`: `get(path, opts, handler)` / `post(path, opts, handler)`;
   paths are absolute (`/t.js`, `/api/t/b`) and a path the host already serves
   is refused at boot, `/` included: the root belongs to the host
