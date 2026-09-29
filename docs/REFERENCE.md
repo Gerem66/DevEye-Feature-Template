@@ -382,7 +382,9 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   `devices`, `refuseDeviceExtras` (`devices.authorize` with `extras` throws
   `forbidden`, on every device or on the ids listed), `archives` (what
   `agents.archiveFolder` streams, by device id: `{ chunks, summary? }` or an
-  `Error`; a device without an entry throws), `snapshots`, `workspaces` (what
+  `Error`; a device without an entry throws), `openTcp` (what
+  `agents.openTcp` resolves; default a rejection, as for an offline device),
+  `snapshots`, `workspaces` (what
   `workspaces.list()` answers),
   `origins`, `providers`, `deveye` (a partial facade), `unlocked` (false also
   seals the `'private'` cipher: `decrypt` throws `locked`, `tryDecrypt`
