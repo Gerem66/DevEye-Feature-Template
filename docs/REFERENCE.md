@@ -106,6 +106,19 @@ reimplements a reduced form of it.
   once, results in the items' order. A pool, not waves: a slow item holds one
   slot only, so a background loop that probes many targets keeps its pace when
   a few of them hang until their timeout.
+- The device relay, for a service only a device can reach (a database on its
+  loopback, a Dokploy on a LAN) through `agents.openTcp`: `relayDeviceOptions(ctx,
+what)` (the workspace's devices, each with what keeps the caller from
+  choosing it: `DeviceRelayOption[]`, the schema `deviceRelayOptionSchema` in
+  `@deveye/types/sdk`), `authorizeRelayDevice(ctx, deviceId, what)` (the
+  caller's `network` right on it; store `ctx.userId` as the author),
+  `relayOf(agents, device, online, what)` (a `DeviceRelay`, after the offline
+  and agent-version refusals), `relayForAuthor(deps, workspaceId, { deviceId,
+authorUserId }, what)` (the same for a background job, the author's right
+  re-checked), and `openDeviceTunnel(relay, { host, port }, what)` (a
+  `LocalTunnel` on `127.0.0.1` your driver or HTTP client connects to; close it
+  in a `finally`). `what` is the thing reached, in the messages (`'cette
+base'`).
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
   `migrationsDir`, `createService(deps)`, `mailSamples` (every email you send,
   on made-up data, for the administrator's mail tester: `SdkMailSample`
@@ -471,7 +484,10 @@ authority when the two differ.
   `isSocketOpen()`.
 - Shared helpers: `formatBytesFr`, `DeviceFolderPicker` (`allowCreate: false`
   to pick only what exists), `DeviceFolderField` (a path on a device, typed or
-  browsed; the label stays yours), `PathExclusionsEditor` (the exclusions of a
+  browsed; the label stays yours), `DeviceRelayField` (the device a service is
+  reached through, fed by your command that returns `relayDeviceOptions`; a
+  blocked device stays listed with its reason; the label and hint stay yours),
+  `PathExclusionsEditor` (the exclusions of a
   walked folder, validated with `pathExclusionProblem` from `@deveye/types`,
   the way the agent runs them), `useDevices()` (the
   workspace's devices through the Devices module's provider, `{ devices,
