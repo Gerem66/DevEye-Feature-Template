@@ -235,8 +235,11 @@ true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
 - `SdkQueryable`: `query<T>(sql, params): Promise<T[]>`,
   `execute(sql, params): Promise<{ affectedRows, insertId }>`.
 - `DevEyeFacade`: `notify.hasRoute(itemId?)`, `notify.send(alert, { itemId?,
-except? })` (an `SdkAlert`: `subject`, `body`, `payload?`, `embeds?`;
-  `except` skips channel ids a live message already concluded on),
+itemIds?, except? })` (an `SdkAlert`: `subject`, `body`, `payload?`, `embeds?`;
+  `except` skips channel ids a live message already concluded on; `itemIds`
+  delivers once to every channel routed to any of these items, for news that
+  concerns several of them at a time when your feature's own route, `hasRoute()`
+  with no item, has nothing checked),
   `notify.liveChannels({ itemId? })` (the routed `SdkLiveChannel`s able to
   carry a live message), `notify.postLive(channelId, message, messageId?)`
   (posts or edits an `SdkRichMessage` `{ content?, embeds? }`; resolves the
