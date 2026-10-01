@@ -427,14 +427,19 @@ portrait of the barrel that DevEye's own CI checks against the real one; it is
 maintained separately from the server sections above, and that file is the
 authority when the two differ.
 
-- UI kit: `Button`, `TextInput`, `SelectInput`, `Checkbox`, `Switch`,
+- UI kit: `Button`, `TextInput`, `Checkbox`, `Switch`,
   `NumberInput` (the number field with its ± buttons: `value: number | null`,
   `min`, `max`, `step`, `live`), `Slider` (a labelled range input: `valueLabel`,
-  `marks`, `indicator`), `SearchSelect` (a
-  dropdown one can search in, for long or grouped lists: options carry `prefix`
+  `marks`, `indicator`), `SearchSelect` (the dropdown: options carry `prefix`
   (any node), `detail`, `keywords`, `group` (a heading shared by the options of
   one category) and `disabled` (shown, not pickable); `placeholder` reads when no
-  option matches the value), `SegmentedControl`, `ChoiceCards`, `CountBadge` (a counter pill:
+  option matches the value; the search field appears from eight options on, or
+  with `searchable`; `filters` adds a row of chips, `exclusive` ones acting as a
+  radio; `id` serves a label's `htmlFor`), `SegmentedControl`, `ChoiceCards`,
+  `CopyButton` (copies `value`, confirms by its icon), `LoadingVeil` (the veil
+  of a re-read: a sibling of the scrolling area inside a positioned parent),
+  `LogOutput` (a raw log made readable: ANSI stripped, lines coloured by what
+  they say, filter and copy), `CountBadge` (a counter pill:
   `count`, `tone`, `max`), `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
   `ClosePopup` (the imperative dialog layer), `openInfo`, `Term` (a glossary
   term that opens its definition), `StatusBadge`,
