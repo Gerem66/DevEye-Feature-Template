@@ -238,8 +238,7 @@ true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
 itemIds?, except? })` (an `SdkAlert`: `subject`, `body`, `payload?`, `embeds?`;
   `except` skips channel ids a live message already concluded on; `itemIds`
   delivers once to every channel routed to any of these items, for news that
-  concerns several of them at a time when your feature's own route, `hasRoute()`
-  with no item, has nothing checked),
+  concerns several of them at a time),
   `notify.liveChannels({ itemId? })` (the routed `SdkLiveChannel`s able to
   carry a live message), `notify.postLive(channelId, message, messageId?)`
   (posts or edits an `SdkRichMessage` `{ content?, embeds? }`; resolves the
