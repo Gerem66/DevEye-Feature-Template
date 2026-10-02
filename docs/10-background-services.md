@@ -340,7 +340,7 @@ cannot depend on them. What a module may know about devices is
   persisted it (`onReport`, `onMetricsBatch`, `onIntegrity`, `onAuthEvents`;
   only for active devices, and whether a device is watched by your feature
   is your decision), `onSyncChanged`, `onSyncIndex`, `onSyncChunk`,
-  `onSyncAck`, `onSyncOpResult`. Every hook is optional; an
+  `onSyncAck`, `onSyncBusy`, `onSyncOpResult`. Every hook is optional; an
   absent one is a no-op. The app aggregates the hooks of every module that
   declares `'agents'` and calls each in isolation: a throw or a rejection in
   one module is logged by the host (`{ err, module, hook }`) and reaches

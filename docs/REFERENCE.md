@@ -346,7 +346,7 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   `syncChunkBuffered`), `FeatureAgentHooks` (`onAgentConnect`,
   `onAgentOffline`, `onReport`, `onMetricsBatch`, `onIntegrity`,
   `onAuthEvents`, `onSyncChanged`, `onSyncIndex`, `onSyncChunk`,
-  `onSyncAck`, `onSyncOpResult`, all optional). Their payload types come from
+  `onSyncAck`, `onSyncBusy`, `onSyncOpResult`, all optional). Their payload types come from
   `@deveye/types` itself, outside the SDK's stability promise.
 - `FeatureError(code, message, details?)`: codes `validation`, `forbidden`,
   `not_found`, `conflict`, `locked`, `internal`.
