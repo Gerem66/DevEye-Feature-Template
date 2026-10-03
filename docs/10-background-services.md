@@ -88,6 +88,9 @@ item's override, permissions. `feature` answers for your own feature only;
   than skipping (a crashed tick must not re-send yesterday's alerts).
 - Log with `deps.logger` and let the ticker swallow: a service that throws its
   way out of existence takes your feature's freshness with it.
+- Keep `warn` and `error` for what the operator must fix. A member's host that
+  does not answer or a token they revoked is theirs: `logFailure` writes it as
+  `info` with `cause: 'user'` (see the [reference](./REFERENCE.md)).
 
 ## Environment variables: `env`
 

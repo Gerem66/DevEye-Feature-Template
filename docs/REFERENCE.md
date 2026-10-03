@@ -106,6 +106,13 @@ reimplements a reduced form of it.
   once, results in the items' order. A pool, not waves: a slow item holds one
   slot only, so a background loop that probes many targets keeps its pace when
   a few of them hang until their timeout.
+- `logFailure(logger, userSide, fields, msg, level?)`: logs a failure where
+  its cause puts it. `warn` and `error` are the operator's ladder (a bug, the
+  instance's configuration, one of its dependencies); a failure the user's own
+  side explains goes out as `info` tagged `cause: 'user'`, still searchable.
+  `isRemoteFailure(error)` says whether the far end is to blame (a name that
+  does not resolve, a refused or silent connection, a bad certificate, a
+  `NetRefused`); anything it does not recognise stays the instance's.
 - The device relay, for a service only a device can reach (a database on its
   loopback, a Dokploy on a LAN) through `agents.openTcp`: `relayDeviceOptions(ctx,
 what)` (the workspace's devices, each with what keeps the caller from
