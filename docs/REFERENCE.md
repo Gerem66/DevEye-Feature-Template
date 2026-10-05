@@ -622,7 +622,8 @@ portrait of the barrel that DevEye's own CI checks against the real one; it is
 maintained separately from the server sections above, and that file is the
 authority when the two differ.
 
-- UI kit: `Button`, `TextInput`, `Checkbox`, `Switch`,
+- UI kit: `Button`, `TextInput` (`onClear` puts a clear button in the field
+  while it holds a value; touch screens only on a date field), `Checkbox`, `Switch`,
   `NumberInput` (the number field with its ± buttons: `value: number | null`,
   `min`, `max`, `step`, `live`), `Slider` (a labelled range input: `valueLabel`,
   `marks`, `indicator`), `SearchSelect` (the dropdown: options
