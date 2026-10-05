@@ -144,6 +144,9 @@ is API.
 - `userColorVar(color)`: the CSS variable of an account colour, to paint
   something else in it (a dot in a legend, a point on a chart). The same one
   live presence uses.
+- `useColorScheme()`: `'dark'` or `'light'`, the theme on screen. CSS follows it
+  by itself; code that reads tokens from JS (a canvas, a third-party library
+  given colours once) re-reads them when it changes.
 - `useCurrentUser()`: who is signed in (`null` before the session answers; in
   practice it has answered before any feature mounts), for a thread that must
   not list its own author among the people typing.
@@ -234,5 +237,6 @@ When two sticky bands stack (a detail header, then a period bar under it),
 ## Styles
 
 CSS modules, with DevEye's design tokens (`var(--accent)`, `var(--space-sm)`,
-`var(--text-secondary)`...): your feature follows the user's theme for free.
-Never hard-code colors. Commit the `.d.ts` next to your `.module.css`.
+`var(--text-secondary)`...): your feature follows the user's theme for free,
+light or dark. Never hard-code colors: a literal is only right in one of the
+two. Commit the `.d.ts` next to your `.module.css`.

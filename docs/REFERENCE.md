@@ -669,7 +669,8 @@ danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   `uploadFile` (an `UploadHandle`: `done`, `abort()`) + `UploadError`,
   `saveFrom`, `Avatar` (a member's identity dot; `user` may be `undefined`),
   `userColorVar(color)` (the CSS variable of an account colour, the one the
-  live presence paints with).
+  live presence paints with), `useColorScheme()` (`'dark'` or `'light'`, to
+  re-read tokens from JS when the theme changes).
 - `useDialogClose()`: the enclosing `Dialog`'s guarded close (unsaved-changes
   prompt included).
 - `useDialogSubmit(fn | null)`: `fn` becomes the enclosing `Dialog`'s primary
