@@ -521,7 +521,9 @@ timeoutMs?)`; `archiveFolder(deviceId, request, options?)` (an
   dismisses the settings dialog and nothing more; `gone()` says the item
   being configured no longer exists here (deleted, moved), closes the
   dialog and makes the view that opened it leave the item; `SdkSettingsScope`
-  is `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`. The item
+  is `{ kind: 'feature' }`, `{ kind: 'item', itemId, itemLabel }` or
+  `{ kind: 'record', recordId, recordLabel }` (a row with its own sheet that is
+  not an item, its tabs in `manifest.settings.record`). The item
   id is text, whatever key your table uses: a row-keyed feature reads it back
   with `Number(...)`. (`shareable: false`, which hides the Sharing tab for an
   item the server would refuse to project, is a field of the `scope` prop of
@@ -681,7 +683,8 @@ danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   `humanizeError(e, fallback)`, `WsError` (the class a command rejects with:
   `code`, `message`, `details`; `instanceof` works), `featureApi(manifest)`
   (typed `send`, with an optional `{ timeoutMs }` for commands that query a
-  slow third party), `commandsApi(commands)` (the same over any list of
+  slow third party, and `{ workspaceId }` to run the command in another of the
+  caller's workspaces, one of `useWorkspaces()`), `commandsApi(commands)` (the same over any list of
   contracts: `commandsApi(agentCommands)`, the agent transport, with
   `agentCommands` from `@deveye/types`).
 - HTTP, for the routes that serve binaries: `httpGet(path, schema)` (one replay
@@ -733,7 +736,9 @@ loading, error }`; empty, loaded and error-free without the module),
   `extraValue`; `canFeature` and `canExtra` take an `itemId` to answer for
   that item, override included), `useActiveWorkspace()` (`.kind`),
   `useWorkspaceMembers()` (the active workspace's members as the session
-  lists them, empty before it answers), `useCurrentUser()` (the signed-in
+  lists them, empty before it answers), `useWorkspaces()` (the caller's
+  workspaces on this instance, the active one included, with the features each
+  has on), `useCurrentUser()` (the signed-in
   user, `null` before the session answers), `useFeatureLifecycle`,
   `useDomains(feature)` (`{ domains, loading, error }`, the feature's domains
   kept live, for a form that designates one).

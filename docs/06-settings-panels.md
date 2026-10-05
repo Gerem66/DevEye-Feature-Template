@@ -10,9 +10,15 @@ popup; it declares tabs and provides panels.
 // manifest
 settings: {
     feature: ['general', 'sources', { id: 'advanced', label: 'Advanced', icon: 'settings' }],
-    item: ['general', 'sync', 'encryption']        // only if hasItems
+    item: ['general', 'sync', 'encryption'],       // only if hasItems
+    record: ['general', { id: 'move', label: 'Move', icon: 'move-to-right' }]
 }
 ```
+
+`record` is for a row your view opens on its own sheet without it being an
+item: Invoicing's item is the client, and an invoice still has gestures of its
+own (duplicate, archive, send to another workspace). A record takes `general`
+and custom tabs only; sharing, permissions and notifications belong to items.
 
 A custom tab may add `requiresWrite: true`. See "Without write access" below:
 it is for a tab holding nothing but gestures, and it removes the tab rather
@@ -123,7 +129,8 @@ An identity that cannot change afterwards (a repository's `owner/repo`) is
 shown, not edited, with a line saying why. One door to change a thing, and the
 same door in every feature.
 
-`scope` is `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`.
+`scope` is `{ kind: 'feature' }`, `{ kind: 'item', itemId, itemLabel }` or
+`{ kind: 'record', recordId, recordLabel }`.
 The item id is **text**, whatever key your own table uses: a row-keyed feature
 reads it back with `Number(scope.itemId)`, a UUID-keyed one (DevEye's own
 Devices module) takes it as it stands. One component may serve both scales of
@@ -199,6 +206,22 @@ the settings, and the view returns to its list.
 ```tsx
 <FeatureSettingsButton
     scope={{ kind: 'item', feature: 'x-counter', itemId: String(id), itemLabel: name }}
+    onGone={onBack}
+/>
+```
+
+A record's sheet mounts the same button, with the sentence the dialog shows
+under its title:
+
+```tsx
+<FeatureSettingsButton
+    scope={{
+        kind: 'record',
+        feature: 'x-counter',
+        recordId: String(id),
+        recordLabel: name,
+        description: 'Duplicate this entry or remove it.'
+    }}
     onGone={onBack}
 />
 ```
