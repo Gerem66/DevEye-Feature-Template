@@ -17,6 +17,7 @@ command names, which is what makes `featureApi(manifest)` fully typed.
 | `notifies`                                 | the Notifications settings tab and the channels grant; required for the `notify` capability                                                                                                                                                                                                               |
 | `notifications`                            | required with `notifies`: `hint` is the lead sentence of the Notifications tab, saying WHEN you notify                                                                                                                                                                                                    |
 | `hasItems`, `itemNoun`                     | per-item settings screens ("Settings of this service")                                                                                                                                                                                                                                                    |
+| `itemNounGender`                           | `'m'` or `'f'`: the noun's gender, for the French screen titles that precede it with a determiner; masculine by default                                                                                                                                                                                   |
 | `sources`                                  | the feature-scope Sources tab (API keys, destinations); `hint` is its lead sentence                                                                                                                                                                                                                       |
 | `domains`                                  | the feature-scope Domains tab, which DevEye renders: custom domain names, the DNS records to publish, verification. `hint` and `service` are required, `web: true` for names that serve pages over HTTPS; commits the server entry to `domains` (see [06-settings-panels](06-settings-panels.md#domains)) |
 | `shareTier`                                | `'never'`, or `'open'` / `'perItem'` with `hasItems`, which commits you to the sharing contract: a server `items` entry, listings that read `ctx.sharing.scope()` and pick the cipher row by row (see [03-server-handlers](03-server-handlers.md))                                                        |
@@ -30,6 +31,8 @@ command names, which is what makes `featureApi(manifest)` fully typed.
 | `alsoInvalidatedBy`                        | keys of yours ALSO refreshed when a native topic fires; see [below](#refreshing-on-another-features-topic)                                                                                                                                                                                                |
 | `settings`                                 | which tabs exist, per scope; see [06-settings-panels](06-settings-panels.md)                                                                                                                                                                                                                              |
 | `extraPermissions`                         | your own permissions in the role editor; see [07-permissions](07-permissions.md)                                                                                                                                                                                                                          |
+| `quotas`                                   | what your feature creates that an account plan may bound: `{ key, label, unit?, stock?, perOperation? }`, at most 8, each with its counter on the server entry; see [12-quotas-and-account](12-quotas-and-account.md)                                                                                     |
+| `accountEntry`, `accountOnly`              | an entry of the user menu (`label`, `signupHint`), rendered by `FeatureClient.AccountView`; `accountOnly` drops the card and the roles row, and every command then declares `access.scope: 'account'`; see [12-quotas-and-account](12-quotas-and-account.md#an-entry-in-the-user-menu)                    |
 | `nativeCapabilities`                       | which `ctx.deveye` facades you may call; undeclared calls throw; the full list is [below](#native-capabilities)                                                                                                                                                                                           |
 | `commandPrefix`                            | reserved for DevEye's own modules; never set it (see [below](#reserved-for-deveyes-own-modules))                                                                                                                                                                                                          |
 | `commands`                                 | your zod contracts; every name must start with `<id>.`                                                                                                                                                                                                                                                    |
@@ -41,17 +44,21 @@ module: every facade your server code can reach, and nothing else. A call
 through a facade you did not declare throws `forbidden`. The full list, as
 the `NativeCapability` type in `@deveye/types/sdk`:
 
-| Capability          | What it opens                                                                                                                                                                                                                                                       |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `'notify'`          | `ctx.deveye.notify` and `deps.deveyeFor(id).notify`: send through the channels the workspace routed to you; pair it with `notifies: true`, which gives the workspace the tab to route them ([08-notifications](08-notifications.md))                                |
-| `'mail.accounts'`   | `ctx.deveye.mail.listAccounts()`: the workspace's open-tier mail accounts, metadata only (`id`, `label`, `address`), never credentials                                                                                                                              |
-| `'members.read'`    | `ctx.deveye.members.list()`: `{ userId, name, isOwner, color }` per member (`color` is the account colour its live presence wears, `null` when never set), and `deps.membersFor(id).list()` in services                                                             |
-| `'workspaces.read'` | `ctx.deveye.workspaces.list()`: every workspace of this DevEye (`{ id, name, kind, ownerUserId }`); a global administrator's surface only, the call throws `forbidden` for anyone else (what a fleet needs to attach a device to workspaces)                        |
-| `'devices.read'`    | `ctx.deveye.devices` (`authorize`, `list`, `isOnline`) in handlers, `deps.devicesFor(id)` (`list`, `isOnline`) and `deps.devices` (`find`, `isOnline`, the whole fleet) in services ([03-server-handlers](03-server-handlers.md#native-features-through-ctxdeveye)) |
-| `'telemetry.read'`  | the devices' telemetry (`ctx.deveye.telemetry`, `deps.telemetry`); **reserved**, see below                                                                                                                                                                          |
-| `'agents'`          | the agent-fleet sync transport; **reserved**, see below                                                                                                                                                                                                             |
-| `'accounts.read'`   | the accounts of this DevEye: `ctx.deveye.accounts.me()` in a handler, `deps.accounts` (`find`, `findByEmail`, `list`, `search`) in services ([12-quotas-and-account](12-quotas-and-account.md))                                                                     |
-| `'accounts.mail'`   | `deps.accountMail.send(userId, message)`: an email to that account's own address, from the server's sender, for what the account must receive ([12-quotas-and-account](12-quotas-and-account.md))                                                                   |
+| Capability          | What it opens                                                                                                                                                                                                                                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'notify'`          | `ctx.deveye.notify` and `deps.deveyeFor(id).notify`: send through the channels the workspace routed to you; pair it with `notifies: true`, which gives the workspace the tab to route them ([08-notifications](08-notifications.md))                                                                  |
+| `'mail.accounts'`   | `ctx.deveye.mail.listAccounts()`: the workspace's open-tier mail accounts, metadata only (`id`, `label`, `address`), never credentials                                                                                                                                                                |
+| `'members.read'`    | `ctx.deveye.members.list()`: `{ userId, name, isOwner, color }` per member (`color` is the account colour its live presence wears, `null` when never set), and `deps.membersFor(id).list()` in services                                                                                               |
+| `'workspaces.read'` | `ctx.deveye.workspaces.list()`: every workspace of this DevEye (`{ id, name, kind, ownerUserId }`); a global administrator's surface only, the call throws `forbidden` for anyone else (what a fleet needs to attach a device to workspaces)                                                          |
+| `'devices.read'`    | `ctx.deveye.devices` (`authorize`, `list`, `isOnline`) in handlers, `deps.devicesFor(id)` (`list`, `isOnline`) and `deps.devices` (`find`, `isOnline`, the whole fleet) in services ([03-server-handlers](03-server-handlers.md#native-features-through-ctxdeveye))                                   |
+| `'telemetry.read'`  | the devices' telemetry (`ctx.deveye.telemetry`, `deps.telemetry`); **reserved**, see below                                                                                                                                                                                                            |
+| `'agents'`          | the agent-fleet sync transport; **reserved**, see below                                                                                                                                                                                                                                               |
+| `'accounts.read'`   | the accounts of this DevEye: `ctx.deveye.accounts.me()` in a handler, `deps.accounts` (`find`, `findByEmail`, `list`, `search`) in services ([12-quotas-and-account](12-quotas-and-account.md))                                                                                                       |
+| `'accounts.mail'`   | `deps.accountMail.send(userId, message)`: an email to that account's own address, from the server's sender, for what the account must receive ([12-quotas-and-account](12-quotas-and-account.md))                                                                                                     |
+| `'accounts.usage'`  | `ctx.deveye.usage` and `deps.usage`: what an account uses of every limit of the instance, every feature included; the caller's own, or anyone's for a global administrator ([12-quotas-and-account](12-quotas-and-account.md))                                                                        |
+| `'routes.public'`   | sessionless HTTP routes, mounted on every listener the host exposes with open CORS (`FeatureService.publicRoutes`, `domainRoot`); declared because opening a door is the one thing a module must not do quietly ([10-background-services](10-background-services.md#public-http-routes-publicroutes)) |
+| `'live.publish'`    | `ctx.live.publish` and `deps.live.publish`: push frames of your own to the workspace's connected members, for state that must be seen as it changes ([09-live](09-live.md#pushing-your-own-frames-livepublish))                                                                                       |
+| `'objects'`         | `deps.objects(localDir)`: the host's object store, its disk or its S3 bucket, for the files a module keeps on behalf of its members; declared because what lands there is billed to the host ([04-storage-and-encryption](04-storage-and-encryption.md#files-the-object-store))                       |
 
 ## Secondary topics of your own
 
@@ -92,8 +99,9 @@ feature owns, declare the coupling instead of polling:
 alsoInvalidatedBy: [{ topic: 'devices', keys: ['x-myfeature.list'] }];
 ```
 
-`topic` is a native live topic (a native feature's id such as `devices`, or
-`workspace` for members, roles and the workspace's name); `keys` is the subset
+`topic` is a native live topic (a native feature's id such as `devices`,
+`workspace` for members, roles and the workspace's name, or `domain` for the
+state of the domains declared in the workspace); `keys` is the subset
 of your `resources` to re-fetch when it beats. Native topics only, never your
 own (a secondary topic of yours is `topics`, above), at most 4 entries: it is
 the escape hatch for real data coupling (a share list that shows device names
@@ -101,8 +109,8 @@ must refresh when a device is renamed), not a general subscription mechanism.
 
 ## Reserved for DevEye's own modules
 
-Three declarations exist for DevEye's native features migrated onto this same
-contract, and `validateManifest` refuses them on an `x-` id:
+Three declarations exist for DevEye's own modules, and `validateManifest`
+refuses them on an `x-` id:
 
 - **`nativeCapabilities: ['agents']`**: the agent-fleet sync transport
   (outbound requests to the agent installed on the workspace's devices, the
@@ -120,8 +128,8 @@ contract, and `validateManifest` refuses them on an `x-` id:
   agent protocol, and reserved for the same reason.
 - **`commandPrefix`**: overrides the `<id>.` prefix checked on commands and
   resources, and must still equal `<id>.` case-insensitively. It exists
-  because one native id (`cloudsync`) has always owned `cloudSync.*`
-  commands. Your prefix is `x-<slug>.`, and nothing else.
+  because one of DevEye's own module ids (`cloudsync`) differs in case from
+  its `cloudSync.*` commands. Your prefix is `x-<slug>.`, and nothing else.
 
 ## Validation
 

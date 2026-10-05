@@ -10,9 +10,11 @@ commands). `read` lets them see; `write` implies read. Declare the level per
 command:
 
 ```ts
-access: {
-    level: 'write';
-} // 'read' is the default
+defineSdkFeature({
+    ...counterReset,
+    access: { level: 'write' }, // 'read' is the default
+    handler
+});
 ```
 
 ## 2. Channels (if you notify)
@@ -23,8 +25,8 @@ checkbox. You never check it yourself: the generic notifications tab and the
 
 ## 3. Your own extras
 
-Declare up to 4 permissions in the manifest; they appear under your feature's
-row in every role editor, rendered by DevEye:
+Declare up to 10 permissions in the manifest (`MAX_EXTRA_PERMISSIONS`); they
+appear under your feature's row in every role editor, rendered by DevEye:
 
 ```ts
 extraPermissions: [

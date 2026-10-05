@@ -16,11 +16,11 @@ be renamed into yours.
 3. Install and check:
     ```bash
     npm install
-    npm run ci        # lint + typecheck + manifest validation + handler tests
+    npm run ci        # format check + lint + typecheck + manifest validation + handler tests
     ```
 4. Install it into a DevEye instance (you need a checkout of the app).
    Your module lives in its own repository, beside the app rather than inside
-   it, so it goes through the **local overlay** — `features.local.json`, which
+   it, so it goes through the **local overlay**, `features.local.json`, which
    resolves a module BY PATH and is gitignored, so your private module leaves
    no trace in the app's repository:
 
@@ -50,8 +50,11 @@ be renamed into yours.
 ## Anatomy
 
 ```
-deveye-feature.json      build metadata: id, table allowlist, shipped icons
+deveye-feature.json      build metadata: id, table allowlist, shipped icons, minTypesVersion
 assets/icons/            monochrome SVGs; DevEye namespaces and serves them
+scripts/
+├── rename.ts            one shot after "Use this template": the example's identity becomes yours
+└── validate.ts          npm run validate: manifest, metadata, migrations, version floors
 src/
 ├── index.ts             isomorphic entry: manifest + contracts only
 ├── manifest.ts          THE declaration: everything DevEye knows about you
@@ -60,15 +63,23 @@ src/
 │   ├── index.ts         serverEntry: handlers (+ optional repo, migrations, service)
 │   ├── handlers.ts      one handler per command, SDK context
 │   ├── handlers.test.ts node:test against the in-memory harness
-│   ├── repo.ts          starter for your own tables — inert until wired
+│   ├── repo.ts          starter for your own tables, inert until wired
 │   ├── migrations/      starter DDL, numbered locally, ft_<slug>_ prefixed
 │   └── uninstall.sql    its destructive mirror, shipped with it
 └── client/
-    ├── index.tsx        clientEntry: Widget, Full view, settings panels
+    ├── index.tsx        clientEntry: Widget, Full view, Art, settings panels
     ├── Counter.tsx      the components, on `deveye-sdk-client`
+    ├── Art.tsx          the vignette of your card in the add market
     ├── GeneralPanel.tsx a settings tab panel
-    └── style.module.css scoped styles on DevEye's design tokens
+    ├── style.module.css scoped styles on DevEye's design tokens
+    └── style.module.css.d.ts  its class names, committed next to it
 ```
+
+`minTypesVersion` in `deveye-feature.json` is the oldest `@deveye/types` your
+module runs on. `package.json` repeats that floor as the `peerDependencies`
+range and installs the package as a dev dependency; `npm run validate` warns
+when the two floors differ, and DevEye refuses to install a module on a
+`@deveye/types` older than its floor.
 
 ## The rules that matter
 
@@ -102,34 +113,38 @@ src/
 | [01-concepts](docs/01-concepts.md)                             | the one-page map: workspaces, roles, commands, topics                         |
 | [02-manifest](docs/02-manifest.md)                             | every manifest field, annotated                                               |
 | [03-server-handlers](docs/03-server-handlers.md)               | handlers, context, errors, testing                                            |
-| [04-storage-and-encryption](docs/04-storage-and-encryption.md) | KV store, own tables, the three modes                                         |
-| [05-client](docs/05-client.md)                                 | widget, view, data hook, typed commands                                       |
-| [06-settings-panels](docs/06-settings-panels.md)               | tabs and panels in the shared shell                                           |
+| [04-storage-and-encryption](docs/04-storage-and-encryption.md) | KV store, own tables, the three modes, the object store                       |
+| [05-client](docs/05-client.md)                                 | widget, view, vignette, data hook, typed commands                             |
+| [06-settings-panels](docs/06-settings-panels.md)               | tabs and panels in the shared shell, domains                                  |
 | [07-permissions](docs/07-permissions.md)                       | read/write, channels, your own extras                                         |
 | [08-notifications](docs/08-notifications.md)                   | sending through the workspace's channels                                      |
-| [09-live](docs/09-live.md)                                     | presence, outlines, teleport                                                  |
+| [09-live](docs/09-live.md)                                     | presence, outlines, teleport, your own frames                                 |
 | [10-background-services](docs/10-background-services.md)       | the ticker and its limits, devices, key wrapping, providers, what is reserved |
 | [11-cookbook](docs/11-cookbook.md)                             | task-shaped recipes                                                           |
 | [12-quotas-and-account](docs/12-quotas-and-account.md)         | plan quotas, an entry in the user menu, webhook bodies                        |
 | [13-account-export](docs/13-account-export.md)                 | your part of the holder's data export: every table's fate, files              |
 | [REFERENCE](docs/REFERENCE.md)                                 | the API surface, type by type                                                 |
 
-## The living native examples
+## DevEye's own modules as examples
 
-Every DevEye feature is a module on this exact contract, inside the main
-repo, and the app's CI keeps them current. When a doc here feels abstract,
-read them:
+Every DevEye feature is a module on this exact contract, inside the app's
+repository, and the app's CI keeps them current. When a doc here feels
+abstract, read them:
 
-- `features/weather/` — the simple shape: one screen, a shared store, a
-  topbar mini-widget, provider API keys in a Sources panel.
-- `features/osint/` — the richer shape: several client components, a 30s
-  command timeout (`api.send`'s third argument), password-based encryption on
-  reads (`useSecrecy` / `withSecrecy`), and handler tests on the in-memory
-  harness (`src/server/handlers.test.ts`).
-- `features/projects/` — the largest: a secondary live topic for its chat, a
-  provider it publishes and five it consumes, per-item sharing.
-- `features/mail/` — a background service, session tickets for two HTTP
-  routes, and two encryption tiers chosen per item.
+- [`features/weather/`](https://github.com/Gerem66/DevEye/tree/main/features/weather):
+  the simple shape: one screen, a shared store, a topbar mini-widget, provider
+  API keys in a Sources panel.
+- [`features/osint/`](https://github.com/Gerem66/DevEye/tree/main/features/osint):
+  the richer shape: several client components, a 30 s command timeout
+  (`api.send`'s third argument), password-based encryption on reads
+  (`useSecrecy` / `withSecrecy`), and handler tests on the in-memory harness
+  (`src/server/handlers.test.ts`).
+- [`features/projects/`](https://github.com/Gerem66/DevEye/tree/main/features/projects):
+  the largest: a secondary live topic for its chat, a provider it publishes and
+  the six `*.items` contracts it consumes, per-item sharing.
+- [`features/mail/`](https://github.com/Gerem66/DevEye/tree/main/features/mail):
+  a background service, session tickets for two HTTP routes, and two
+  encryption tiers chosen per item.
 
 ## License
 
@@ -142,4 +157,6 @@ is MIT. The DevEye app is AGPL-3.0, with an additional permission for modules
 (granted under section 7 of the AGPL): a module that reaches the app only
 through the SDK (`@deveye/types` and the `deveye-sdk-client` barrel) is not
 covered by the app's license. A module that imports the app's internal code is.
-The authoritative text is `LICENSING.md` in the app's repository.
+The authoritative text is
+[`LICENSING.md`](https://github.com/Gerem66/DevEye/blob/main/LICENSING.md) in
+the app's repository.

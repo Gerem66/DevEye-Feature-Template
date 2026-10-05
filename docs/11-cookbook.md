@@ -73,7 +73,11 @@ const raw = deps.keys.openBytes((await store.get('blobKey')) ?? ''); // null = r
 
 ```
 src/server/migrations/001_init.sql   -- CREATE TABLE ft_myfeature_rows (... workspace_id INT NOT NULL ...)
-serverEntry: { createRepo, features, migrationsDir: new URL('./migrations', import.meta.url).pathname }
+serverEntry: {
+    createRepo,
+    features,
+    migrationsDir: path.join(path.dirname(fileURLToPath(import.meta.url)), 'migrations')
+}
 ```
 
 Guard every statement for replay (INFORMATION_SCHEMA probe + no-op branch);
@@ -183,9 +187,18 @@ List EVERY encrypted column under `sealed`: one left out is copied as a blob no
 key of the destination can open, and nothing can detect it. A table the
 destination rebuilds by itself is `cache: true`: moved, never copied.
 
-## Test a handler's permission gate
+## Test what a handler checks itself
+
+The declarative `access` of a command is enforced by the host's dispatcher,
+which the harness does not run: calling a handler directly bypasses it. Test
+what the handler checks on its own:
 
 ```ts
-const ctx = createTestContext({ isOwner: false, extras: {} });
-await assert.rejects(() => handler(ctx, input), /Permission/);
+// an extra the caller does not hold: the manifest declares it, the grant does not
+const ctx = createTestContext({ isOwner: false, extras: {}, manifest });
+assert.equal(ctx.canExtra('purge'), false);
+
+// a handler that calls ctx.items.assert(id, 'write'), on a read-only caller
+const readOnly = createTestContext({ canWrite: false });
+await assert.rejects(() => handler(readOnly, input), /write required/);
 ```

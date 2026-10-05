@@ -90,7 +90,7 @@ fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 
 fs.writeFileSync(
     path.join(ROOT, 'README.md'),
-    `# ${label}\n\nA DevEye feature module (\`x-${slug}\`). Built from\n[DevEye-Feature-Template](https://github.com/Gerem66/DevEye-Feature-Template),\nwhose \`docs/\` remain the SDK reference.\n\n\`\`\`bash\nnpm install\nnpm run ci\n\`\`\`\n\nInstall it into a DevEye checkout: see \`docs/01-concepts.md\`.\n`
+    `# ${label}\n\nA DevEye feature module (\`x-${slug}\`). Built from\n[DevEye-Feature-Template](https://github.com/Gerem66/DevEye-Feature-Template),\nwhose \`docs/\` remain the SDK reference.\n\n\`\`\`bash\nnpm install\nnpm run ci\n\`\`\`\n\nInstall it into a DevEye checkout: see the Quick start of https://github.com/Gerem66/DevEye-Feature-Template#quick-start-10-minutes.\n`
 );
 
 console.log(

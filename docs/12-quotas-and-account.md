@@ -10,6 +10,9 @@ see the plan: you declare what you count, and you ask before creating.
 quotas: [{ key: 'reports', label: 'reports per month' }],
 ```
 
+A manifest declares at most 8 quotas (`MAX_FEATURE_QUOTAS`); the plan names
+each one `<featureId>.<key>`.
+
 ```ts
 // server entry: how the host counts it, for the screens
 quotas: {
@@ -38,6 +41,9 @@ await ctx.repo.create(input);
   limit of the others then reads 0, so their stock pauses and their creations
   are refused until the mode ends. Nothing to do on your side, the same paths
   apply.
+- `ctx.quota.limit(key)` reads the plan's ceiling for one key: `null` when
+  unlimited, `0` while the host serves priority accounts first and the owner
+  is not one. An undeclared key throws `validation`.
 - `ctx.quota.usage(key)` reads where the owner stands, `{ used, limit }` counted
   by your `server.quotas[key]`, or `null` when unlimited (then nothing is
   counted): what a screen says as "3 of 5" before the refusal. Count with the

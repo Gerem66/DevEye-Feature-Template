@@ -1,11 +1,12 @@
 # Client
 
-Your client entry exports three things:
+Your client entry exports your components and a few options:
 
 ```ts
 export const clientEntry: FeatureClient = {
     Widget,                 // the card body on the grid: NO props
     Full,                   // the expanded view: FeatureViewProps, i.e. { closeFeature }
+    Art,                    // the vignette of your card in the add market: SVG children
     settingsPanels: {...},  // one panel per settings tab that needs one
     cacheDurationMinutes: 10
 };
@@ -43,7 +44,7 @@ The card and the full view share the same hook, so they always agree.
 A few escape hatches for less ordinary commands:
 
 - `api.send(name, input, { timeoutMs: 30_000 })` stretches the wait for a
-  command that queries a slow third party — the default socket timeout stays
+  command that queries a slow third party; the default socket timeout stays
   for everything else.
 - A command that reads `'private'` data can answer `locked`. Wrap the call in
   `withSecrecy(() => api.send(...))` to retry once after the global unlock
@@ -62,8 +63,8 @@ A few escape hatches for less ordinary commands:
 
 ## Talking to a device
 
-`commandsApi(commands)` is `featureApi` for any list of contracts. Its one use
-today is the native agent transport, `commandsApi(agentCommands)`: the
+`commandsApi(commands)` is `featureApi` for any list of contracts. Its use is
+the agent transport, `commandsApi(agentCommands)`: the
 `agent.*` commands of `@deveye/types` (files, terminal, logs, packages, power,
 lifecycle, live metrics subscription), typed like your own and authorized
 under the workspace's `devices` right.
@@ -186,6 +187,18 @@ CloudSync).
 No props, half the size, seconds of attention: show the one number or line
 that makes the card worth placing. `manifest.tile.compact` halves its height
 if that suits it.
+
+## The market vignette (`Art`)
+
+Export an `Art` component to draw your card in the add market and on your
+"About" sheet. Return SVG CHILDREN, not an `<svg>`: the host supplies the
+frame, a 160 x 90 viewBox whose useful area runs from x 16 to 144, centred on
+y 45, so every vignette shares one set of margins. Colour with the theme's
+variables (`var(--accent)`, `var(--text-muted)`), never a literal: an accent
+colour is per-workspace, and a hardcoded one ignores the theme. Draw the shape
+of your screen, not your icon enlarged: a market card is a preview, not a
+logo. Without it the host draws a neutral module mark. See
+`src/client/Art.tsx`.
 
 ## The topbar mini-widget (optional)
 

@@ -10,9 +10,13 @@ and the app-provided `deveye-sdk-client` module.
 - `ManifestCommand`: `{ command, input, output }`, zod both ways.
 - `ExtraPermissionSpec`: `toggle` or `choice` (2..5 options, least-privileged
   `default`, explicit `ownerValue`). `MAX_EXTRA_PERMISSIONS = 10`.
+- `FeatureQuotaSpec`: `{ key, label, unit?: 'bytes', stock?, perOperation? }`,
+  the element of the manifest's `quotas`; `MAX_FEATURE_QUOTAS = 8`. See
+  [12-quotas-and-account](12-quotas-and-account.md).
 - `NativeCapability`: `'notify' | 'mail.accounts' | 'members.read' |
 'workspaces.read' | 'devices.read' | 'telemetry.read' | 'agents' |
-'routes.public' | 'live.publish' | 'accounts.read' | 'accounts.usage' | 'accounts.mail'`; `'telemetry.read'` and `'agents'` are
+'routes.public' | 'live.publish' | 'accounts.read' | 'accounts.usage' |
+'accounts.mail' | 'objects'`; `'telemetry.read'` and `'agents'` are
   reserved to native-id modules (`validateManifest` refuses them on an `x-`
   id).
   `'workspaces.read'` lists every workspace of this DevEye and refuses anyone
@@ -42,8 +46,28 @@ and the app-provided `deveye-sdk-client` module.
   without write access, for one holding nothing but gestures),
   `FeatureCategory`, `FeatureLink` (`{ to, what }`, `MAX_FEATURE_LINKS = 6`).
 - `validateManifest(manifest)`: throws with a named reason.
-- Ids: `externalFeatureIdSchema` (`/^x-[a-z][a-z0-9]{1,24}$/`), `featureIdSchema`,
-  `isExternalFeatureId`, types `ExternalFeatureId`, `FeatureId`.
+  `externalDescriptorOf(manifest)`: the registry descriptor the app's screens
+  read off an external module's manifest. `resolveExtras(specs, isOwner,
+granted)`: the runtime rules of extra permissions (an `ExtrasResolver`,
+  `canExtra` / `extraValue`), shared by the app and the test harness.
+- Ids: `EXTERNAL_FEATURE_ID_PATTERN` and `externalFeatureIdSchema`
+  (`/^x-[a-z][a-z0-9]{1,24}$/`), `featureIdSchema`, `workspaceFeatureIdSchema`,
+  `isExternalFeatureId`, types `ExternalFeatureId`, `FeatureId`,
+  `WorkspaceFeatureId`; `featureAccessSchema` / `FeatureAccess`
+  (`'read' | 'write'`).
+- The look of a public page: `DEVEYE_ICON_PATH` (`/deveye-icon.png`, DevEye's
+  icon, served on every listener and customer domain), `PAGE_THEMES` /
+  `PageTheme`, `PageThemeChoice` (`'auto'` included) and
+  `pageThemeChoiceSchema`, `PAGE_ACCENTS` (the eight account colours),
+  `pageAccentSchema` (an account colour's name, a `#rrggbb`, or `''` for the
+  page's own accent), `resolvePageAccent(raw)`, `accentInk(hex)`,
+  `accentSoft(hex, theme)`; see
+  [11-cookbook](11-cookbook.md#serve-something-on-the-customers-own-domain).
+- `deviceRelayOptionSchema` / `DeviceRelayOption` (`{ id, name, online,
+blocked }`): a device as a module's form offers it for reaching a service
+  through its agent, what `relayDeviceOptions` returns and `DeviceRelayField`
+  shows; `blocked` says what keeps the caller from choosing it, `null` when
+  nothing does.
 - Provider contracts: a named key a module fills so another module, or the app
   itself, can use what it owns without importing it. Server side under
   `FeatureService.providers`, read with `ctx.providers.get` /
@@ -53,44 +77,57 @@ and the app-provided `deveye-sdk-client` module.
 
 ### Server contracts (`sdk/providers.ts`)
 
-| Key                      | Contract                      | What it hands over                                                                                                                               |
-| ------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `'cloudsync.backup'`     | `CloudSyncBackupProvider`     | `findShare`, `listShares`, `statsByShare`, `listPresentFiles`, `openBlob`; rows `SyncBackupShare`, `SyncBackupStats`, `SyncBackupFile`           |
-| `'database.backup'`      | `DatabaseBackupProvider`      | `listDatabases`, `findDatabase`, `openAccess`; `DatabaseBackupCandidate`, `DatabaseBackupAccess` (an open access, `close()` releases the tunnel) |
-| `'mail.transport'`       | `MailTransportProvider`       | `listSenders`, `isReady`, `send`: how an email alert leaves; `MailSender`                                                                        |
-| `'sentinel.agentConfig'` | `SentinelAgentConfigProvider` | `configFor(deviceId)`: what Sentinel adds to the config pushed to an agent; `SentinelAgentConfig`                                                |
-| `'projects.usage'`       | `ProjectsUsageProvider`       | `usageOf`, `countByItem` (which projects link an item of yours), `recordEvent` (one timeline line), `applyVersion`; `ProjectUsage`               |
-| `'uptime.items'`         | `UptimeItemsProvider`         | `exists`, `labelOf`                                                                                                                              |
-| `'git.items'`            | `GitItemsProvider`            | `exists`, `labelOf`                                                                                                                              |
-| `'deploy.items'`         | `DeployItemsProvider`         | `exists`, `labelOf`                                                                                                                              |
-| `'database.items'`       | `DatabaseItemsProvider`       | `exists`, `labelOf`                                                                                                                              |
-| `'audience.items'`       | `AudienceItemsProvider`       | `exists`, `labelOf`                                                                                                                              |
+| Key                      | Contract                      | What it hands over                                                                                                                                                                                                                                                                                            |
+| ------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'cloudsync.backup'`     | `CloudSyncBackupProvider`     | `findShare`, `listShares`, `statsByShare`, `listPresentFiles`, `openBlob`; rows `SyncBackupShare`, `SyncBackupStats`, `SyncBackupFile`                                                                                                                                                                        |
+| `'database.backup'`      | `DatabaseBackupProvider`      | `listDatabases`, `findDatabase`, `openAccess`; `DatabaseBackupCandidate`, `DatabaseBackupAccess` (an open access, `close()` releases the tunnel)                                                                                                                                                              |
+| `'database.measure'`     | `DatabaseMeasureProvider`     | `measure(databaseId, workspaceId, queries)`: single-value read-only queries against a database visible from the workspace, in one session; one `DatabaseNumberOutcome` `{ value, error }` per query, `null` when the database is not visible there                                                            |
+| `'mail.transport'`       | `MailTransportProvider`       | `listSenders`, `isReady`, `send`: how an email alert leaves; `MailSender`, `MailTransportMessage` (`to`, `subject`, `text`, `html?`, `attachments?` of `MailAttachment`)                                                                                                                                      |
+| `'sentinel.agentConfig'` | `SentinelAgentConfigProvider` | `configFor(deviceId)`: what Sentinel adds to the config pushed to an agent; `SentinelAgentConfig`, `DEFAULT_SENTINEL_INTEGRITY_MINUTES`                                                                                                                                                                       |
+| `'audience.self'`        | `AudienceSelfProvider`        | `createSite`, `declareForm`, `findByKey`, `ingest`: the app reports its own usage and measures its public faces into an Audience site; `AudienceSelfSite`, `AudienceSelfEvent`, `AudienceSelfFormField`                                                                                                       |
+| `'projects.usage'`       | `ProjectsUsageProvider`       | `usageOf`, `countByItem` (which projects link an item of yours), `detach` (drop every link of an item that left the workspace), `linkTargets` (the workspace's projects an item can be attached to, `ProjectLinkTarget`), `link`, `unlink`, `recordEvent` (one timeline line), `applyVersion`; `ProjectUsage` |
+| `'invoicing.ledger'`     | `InvoicingLedgerProvider`     | `version`, `payments`, `clientNames`, `receivables`, `profile`: the payments Invoicing recorded and the invoices still waiting for one, for a ledger that mirrors them; `InvoicingLedgerPayment`, `InvoicingLedgerReceivable`                                                                                 |
+| `'account.plan'`         | `AccountPlanProvider`         | `planFor(userId, { fresh? })`: the account's `AccountPlan` (`id`, `label`, `limits` by `<featureId>.<quotaKey>`, `priority`, `trialEndsAt?`, `changesAt?`), what bounds every quota; offered by a billing module, absent on a self-hosted instance where everything is unlimited; `isPaidPlan(plan)`          |
+| `'uptime.items'`         | `UptimeItemsProvider`         | `exists`, `labelOf`                                                                                                                                                                                                                                                                                           |
+| `'git.items'`            | `GitItemsProvider`            | `exists`, `labelOf`                                                                                                                                                                                                                                                                                           |
+| `'deploy.items'`         | `DeployItemsProvider`         | `exists`, `labelOf`                                                                                                                                                                                                                                                                                           |
+| `'database.items'`       | `DatabaseItemsProvider`       | `exists`, `labelOf`                                                                                                                                                                                                                                                                                           |
+| `'audience.items'`       | `AudienceItemsProvider`       | `exists`, `labelOf`                                                                                                                                                                                                                                                                                           |
+| `'hosting.items'`        | `HostingItemsProvider`        | `exists`, `labelOf`                                                                                                                                                                                                                                                                                           |
 
-The five `*.items` contracts share one shape: `exists(itemId, workspaceId)`,
+The six `*.items` contracts share one shape: `exists(itemId, workspaceId)`,
 asked before linking an id a client sent: true for an item visible from that
 workspace, its home or one it is projected into (an id visible nowhere here
 can neither be linked nor leak its existence); and `labelOf(itemId,
 workspaceId)`, the item's name, resolved by the provider under its home's
-open cipher, `null` when it is gone. Projects consumes all five and publishes
+open cipher, `null` when it is gone. Projects consumes all six and publishes
 `'projects.usage'` in return; the app calls its `detach` whenever an item
 stops being visible from a workspace (deleted, moved, projection withdrawn).
 
 ### Client contracts (`sdk/client.ts`)
 
-| Key                 | Contract                 | What it hands over                                                                                                                                                                                                                                                         |
-| ------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `'devices.client'`  | `DevicesClientProvider`  | `useDevices()`, `refreshDevices()`, `resetDevices()`, `DeviceWidget`, over `SdkDeviceSummary` rows (`id`, `name`, `online`, `status`, `platform`)                                                                                                                          |
-| `'uptime.client'`   | `UptimeClientProvider`   | `listServices`, `useServiceHistory`, `StatusBars`, `Ratios`, `ServiceDialog`; `UptimeLinkedService`, `UptimeHistoryPoint`                                                                                                                                                  |
-| `'mail.client'`     | `MailClientProvider`     | `listSenders()` (the ready senders an email channel picks from), `findByAddress(address)` (the account already holding a mailbox, or null) and `AccountDialog`, the feature's own account form, which a `prefill` (`MailAccountPrefill`) opens filled in and ready to save |
-| `'git.client'`      | `GitClientProvider`      | `listRepos`, `LinkedRepo` (the whole linked-item block, rendered inside a project's tab), `RepoDialog`; `GitLinkedCandidate`                                                                                                                                               |
-| `'deploy.client'`   | `DeployClientProvider`   | `listTargets`, `LinkedTarget`, `TargetDialog`; `DeployLinkedCandidate`                                                                                                                                                                                                     |
-| `'database.client'` | `DatabaseClientProvider` | `listDatabases`, `LinkedDatabase`, `DatabaseDialog`; `DatabaseLinkedCandidate`                                                                                                                                                                                             |
-| `'audience.client'` | `AudienceClientProvider` | `listSites`, `LinkedSite`, `SiteDialog`; `AudienceLinkedCandidate`                                                                                                                                                                                                         |
+| Key                  | Contract                  | What it hands over                                                                                                                                                                                                                                                         |
+| -------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'devices.client'`   | `DevicesClientProvider`   | `useDevices()`, `refreshDevices()`, `resetDevices()`, `DeviceWidget`, over `SdkDeviceSummary` rows (`id`, `name`, `online`, `status`, `platform`)                                                                                                                          |
+| `'uptime.client'`    | `UptimeClientProvider`    | `listServices`, `summarize`, `useServiceHistory`, `StatusBars`, `Ratios`, `ServiceDialog`; `UptimeLinkedService`, `UptimeHistoryPoint`, `UptimeHistoryResolution`                                                                                                          |
+| `'mail.client'`      | `MailClientProvider`      | `listSenders()` (the ready senders an email channel picks from), `findByAddress(address)` (the account already holding a mailbox, or null) and `AccountDialog`, the feature's own account form, which a `prefill` (`MailAccountPrefill`) opens filled in and ready to save |
+| `'git.client'`       | `GitClientProvider`       | `listRepos`, `summarize`, `LinkedRepo` (the whole linked-item block, rendered inside a project's tab), `RepoDialog` (several repositories at once: `onSaved` receives every id added); `GitLinkedCandidate`                                                                |
+| `'deploy.client'`    | `DeployClientProvider`    | `listTargets`, `summarize`, `LinkedTarget`, `TargetDialog`; `DeployLinkedCandidate`                                                                                                                                                                                        |
+| `'database.client'`  | `DatabaseClientProvider`  | `listDatabases`, `summarize`, `LinkedDatabase`, `DatabaseDialog`; `DatabaseLinkedCandidate`                                                                                                                                                                                |
+| `'audience.client'`  | `AudienceClientProvider`  | `listSites`, `summarize`, `LinkedSite`, `SiteDialog`; `AudienceLinkedCandidate`                                                                                                                                                                                            |
+| `'hosting.client'`   | `HostingClientProvider`   | `listPacks`, `summarize`, `LinkedPack`, `PackDialog`; `HostingLinkedCandidate`                                                                                                                                                                                             |
+| `'invoicing.client'` | `InvoicingClientProvider` | `recordPayment({ docId, paidOn, amountCents, reference })`: a bank transfer recorded on an invoice under the caller's session, with Invoicing's own rights, audit and notice                                                                                               |
 
-The four `*.client` contracts of linkable features share one shape too: the
-workspace's items to pick from, the block that renders one in full inside a
-project's tab, and the feature's own creation dialog, so a project never
-reimplements a reduced form of it.
+The five `*.client` contracts of linkable features (Git, Deploy, Databases,
+Audience, Hosting) share one shape: the workspace's items to pick from, the
+block that renders one in full inside a project's tab, the feature's own
+creation dialog, so a project never reimplements a reduced form of it, and
+`summarize(ids)`, which Uptime's contract carries too: the items as
+`SdkTileSummary` rows (`{ itemId, title, metrics, unavailable? }`, each metric
+an `SdkTileMetric` `{ key, label, value, tone? }` the module formats itself)
+for a project's dashboard tile, in one round trip whatever their number; an id
+the caller cannot read, or that is gone, comes back `unavailable`, never as a
+throw.
 
 ## `@deveye/types/sdk/server`
 
@@ -102,6 +139,13 @@ reimplements a reduced form of it.
   a `file://` reads the server's disk). It does NOT resolve a hostname: DNS
   would change between the check and the connection anyway, so bound the
   address you finally connect to if that matters to you.
+  `resolvesPublicly(host)` does resolve, and answers whether every address of
+  the name reads as public (a name without any is refused).
+  `safeFetchText(url, { maxBytes, timeoutMs, contentType?, accept?,
+userAgent? })` is the one fetch built on them, for a small text body (a
+  domain's proof, a calendar): the URL, its addresses and each redirect are
+  checked again, three redirects at most, the body capped; every refusal
+  throws a `NetRefused`, whose message is readable as is.
 - `mapLimit(items, limit, fn)`: runs `fn` on every item, at most `limit` at
   once, results in the items' order. A pool, not waves: a slow item holds one
   slot only, so a background loop that probes many targets keeps its pace when
@@ -113,6 +157,8 @@ reimplements a reduced form of it.
   `isRemoteFailure(error)` says whether the far end is to blame (a name that
   does not resolve, a refused or silent connection, a bad certificate, a
   `NetRefused`); anything it does not recognise stays the instance's.
+  `SdkLogger` is the structural subset of the app's logger: `debug`, `info`,
+  `warn`, `error`, each `(obj, msg?)`.
 - The device relay, for a service only a device can reach (a database on its
   loopback, a Dokploy on a LAN) through `agents.openTcp`: `relayDeviceOptions(ctx,
 what)` (the workspace's devices, each with what keeps the caller from
@@ -122,10 +168,24 @@ what)` (the workspace's devices, each with what keeps the caller from
   `relayOf(agents, device, online, what)` (a `DeviceRelay`, after the offline
   and agent-version refusals), `relayForAuthor(deps, workspaceId, { deviceId,
 authorUserId }, what)` (the same for a background job, the author's right
-  re-checked), and `openDeviceTunnel(relay, { host, port }, what)` (a
-  `LocalTunnel` on `127.0.0.1` your driver or HTTP client connects to; close it
-  in a `finally`). `what` is the thing reached, in the messages (`'cette
-base'`).
+  re-checked; `SavedDeviceChoice` is that pair as a row stores it), and
+  `openDeviceTunnel(relay, { host, port }, what)` (a `LocalTunnel` on
+  `127.0.0.1` your driver or HTTP client connects to; close it in a
+  `finally`), built on `localForwarder(connect, onClose?)`. `what` is the
+  thing reached, in the messages (`'cette base'`). `DEVICE_NETWORK_RIGHT`
+  (`'network'`) is the Devices permission that opens a machine's network to
+  another feature; `DEVICE_ACCESS_DENIALS` spells out each `SdkAccessDenial`.
+- Environment variables: `defineModuleEnv(spec)` (identity, for inference),
+  `readModuleEnv(spec, source?)` (`{ values, defaulted }`),
+  `moduleEnvProblem(spec)` (what the host refuses at boot, or `null`),
+  `MODULE_ENV_NAME_PATTERN`; types `ModuleEnvSpec`, `ModuleEnvVar` (`int`,
+  `text`, `path`, `url`, `flag`, `choice`, `secret`), `ModuleEnvValues`,
+  `ModuleEnvDefault` (`{ name, reason: 'unset' | 'invalid', value }`). See
+  [10-background-services](10-background-services.md#environment-variables-env).
+- Domain names: `DOMAIN_HOST_PATTERN`, `normaliseDomainHost(raw)` (lowercase,
+  port and trailing dots dropped: takes a raw `Host` header),
+  `domainOwnershipRecord(featureId, host, token)` (the TXT record DevEye
+  checks, `_deveye.<host>` holding `deveye-<slug>=<token>`), `SdkDnsRecord`.
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
   `migrationsDir`, `createService(deps)`, `mailSamples` (every email you send,
   on made-up data, for the administrator's mail tester: `SdkMailSample`
@@ -153,25 +213,25 @@ origins, signal }`, throws to fail, may return a detail and set `timeoutMs`;
   `records(ctx, domain)`, `probe(ctx, domain)` returning `SdkDomainProbe`,
   optional `useCount(ctx, workspaceId)` and `onRemoved(ctx, domain)`, all given
   a sessionless `FeatureDomainsContext` `{ repo, origins, cipherFor, storeFor,
-keys, dns, logger }`; required with the manifest's `domains`, refused
-  without), `items` (`FeatureItemsEntry`:
+keys, dns, logger }` (`dns` is an `SdkDns`: `txt`, `mx`, `cname`); required
+  with the manifest's `domains`, refused without), `items` (`FeatureItemsEntry`:
   `homeOf(repo, itemId, workspaceId)`, `labelOf(repo, cipher, itemId,
 workspaceId)`, optional `shareable(repo, itemId, workspaceId)` answering
   `false` for an item its tier forbids to project, required by a `shareTier`
   other than `'never'`; optional `move` (`FeatureItemsMove`: `plan(ctx)`
-  returning `SdkMovePlan` `{ blockers, drops, rows }` from a read-only `q`, and
-  `apply(ctx)` given a TRANSACTIONAL `q`, your `repo` for reads only, and the
-  two workspaces' open ciphers) which lets an item change workspace. Omit
-  `move` and your items simply cannot be moved, which is the safe default and a
-  valid answer when an item depends on a workspace source that cannot follow
-  it; optional `copy` (`FeatureItemsCopy`: `tree`, an `ItemTree`, plus optional
-  `plan(ctx)` returning `SdkCopyPlan` `{ blockers, drops }` on the SOURCE, and
-  `admit(ctx)` / `settle(ctx)` on the DESTINATION, inside the transaction, before
-  and after the rows are written) which lets an item be copied to another
-  workspace, of this DevEye or of another one). A module
-  with migrations also ships `src/server/migrations/`' destructive mirror
-  `src/server/uninstall.sql` (`DROP TABLE IF EXISTS` on its own `ft_<slug>_`
-  tables only; see 04-storage-and-encryption).
+  returning `SdkMovePlan` `{ blockers, drops, carries?, rows }` from a
+  read-only `q`, and `apply(ctx)` given a TRANSACTIONAL `q`, your `repo` for
+  reads only, and the two workspaces' open ciphers) which lets an item change
+  workspace. Omit `move` and your items simply cannot be moved, which is the
+  safe default and a valid answer when an item depends on a workspace source
+  that cannot follow it; optional `copy` (`FeatureItemsCopy`: `tree`, an
+  `ItemTree`, plus optional `plan(ctx)` returning `SdkCopyPlan` `{ blockers,
+drops, carries? }` on the SOURCE, and `admit(ctx)` / `settle(ctx)` on the
+  DESTINATION, inside the transaction, before and after the rows are written)
+  which lets an item be copied to another workspace, of this DevEye or of
+  another one). A module with migrations also ships `src/server/migrations/`'
+  destructive mirror `src/server/uninstall.sql` (`DROP TABLE IF EXISTS` on its
+  own `ft_<slug>_` tables only; see 04-storage-and-encryption).
 - `MovableCell` + `resealCells(q, cells, ownerId, ciphers)` +
   `countMovableCells(q, cells, ownerId)`: the two halves of a `move`. Declare
   one cell per encrypted column hanging off your item (`ownerScope` for a row
@@ -192,16 +252,20 @@ workspaceId)`, optional `shareable(repo, itemId, workspaceId)` answering
   `orderColumn` (the copy lands last), `unique` `{ column, message }` (refused
   when the destination already holds one), `tier` `{ column, open, private }`.
   You never write the copy: `exportItemTree` / `importItemTree` are the host's
-  business. Derive your `move` cells with `movableCellsOf(tree)`.
+  business, with `itemTierOf` (which key seals the tree, an `ItemTier`),
+  `countItemTreeRows` and the types `ItemTreeRow`, `ItemTreeRows`,
+  `ItemTreeDestination`. Derive your `move` cells with `movableCellsOf(tree)`.
   `itemTreeProblem(tree)` is what the host checks at boot. What is imported
   comes from a browser, possibly from another DevEye: the engine validates it
   against your tree, so keep the tree exact. `admit` receives the rows in the
   clear and may amend them (a globally unique key to regenerate) or throw (a
   quota: `ctx.quota.assert`, the destination owner's).
 - `SdkFeatureDefinition` / `defineSdkFeature`: one command:
-  `access?: { level?: 'read' | 'write'; extras?: string[]; admin?: boolean }`
-  (`admin: true` requires a global administrator on top of the feature check:
-  fleet management),
+  `access?: { level?: 'read' | 'write'; extras?: string[]; admin?: boolean;
+scope?: 'account' }` (`admin: true` requires a global administrator on top
+  of the feature check: fleet management; `scope: 'account'` runs the command
+  in the caller's personal workspace whatever the client sent, for what acts on
+  the account rather than on a workspace),
   `mutates?: boolean | readonly string[]` (`true` beats your feature's own
   topic, its id; a list names the topics to beat instead: your id, one of
   your `manifest.topics`, or another feature's topic whose screens mirror
@@ -217,24 +281,40 @@ true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
   minutes by default), `keys: SdkServerKeys` (the same object a service gets),
   `live: SdkContextLive` (`publish(event, payload)`: capability
   `'live.publish'`, the frame goes to the members of THIS workspace who hold
-  `read` on your feature; `event` must start with your feature id),
-  `items: SdkItems` (`restrictions()`, `assert(itemId, level?)`,
+  `read` on your feature, and `event` must start with your feature id;
+  `accountChanged(userId)`: the account's open clients, wherever they sit,
+  re-fetch the account plan and your resources, and the host re-applies its
+  `stock` limits; no payload, so no capability), `items: SdkItems`
+  (`restrictions()`, `assert(itemId, level?)`, `canExtra(itemId, key)`,
   `forget(itemId)`, all on text ids: pass `String(row.id)` from a row-keyed
-  table), `sharing: SdkSharing` (`scope()` returning an `SdkShareScope`:
-  `foreignIds`, `homeOf`, `cipherFor`, `orderOf` — the rank a projected item
-  holds in the active workspace — plus `setOrder(itemId, order)`) and
-  `domains: SdkDomains` (`list()`, `get(id)`, `verified()` returning
-  `SdkDomain` `{ id, workspaceId, host, token, verified, verifiedAt, planPaused }`
-  (`verified` is false while the owner's plan holds the name paused); throws
-  `forbidden` unless the manifest declares `domains`),
+  table), `quota: SdkQuota` (below), `sharing: SdkSharing` (`scope()`
+  returning an `SdkShareScope`: `foreignIds`, `homeOf`, `cipherFor`,
+  `orderOf` (the rank a projected item holds in the active workspace), plus
+  `setOrder(itemId, order)`) and `domains: SdkDomains` (`list()`, `get(id)`,
+  `verified()` returning `SdkDomain` `{ id, workspaceId, host, token, verified,
+verifiedAt, planPaused }` (`verified` is false while the owner's plan holds the
+  name paused); throws `forbidden` unless the manifest declares `domains`),
   `providers: SdkProviders` (`get<T>(key)`: a published contract, whoever
-  offers it; `undefined` when nobody does) and `origins: { app, public }`
-  (where DevEye lives, as URLs without a trailing slash: `app` is the origin
-  members use, `public` the one anyone reaches the public routes by, which
-  differs when the host serves them on a domain of their own, the app itself
-  possibly staying private, else the same; for what a module hands to the outside
-  world, an install snippet or a callback URL, never derived from the
-  browser's location).
+  offers it; `undefined` when nobody does) and `origins: SdkOrigins`
+  (`{ app, public, site }`, where DevEye lives, as URLs without a trailing
+  slash: `app` is the origin members use, `public` the one anyone reaches the
+  public routes by, which differs when the host serves them on a domain of
+  their own, the app itself possibly staying private, else the same; `site`
+  the marketing site where the legal pages live, `null` when the host has
+  none; for what a module hands to the outside world, an install snippet or a
+  callback URL, never derived from the browser's location).
+- `SdkQuota` (`ctx.quota`, `deps.quotaFor(workspaceId)`): the owner's plan
+  against your `manifest.quotas`, the owner being the one of the workspace of
+  the call. `limit(key)` (`null` unlimited; `0` while the host serves priority
+  accounts first and the owner is not one), `assert(key, countAfter)` (throws
+  `quota_exceeded` beyond the limit; `countAfter` is never called when
+  unlimited), `usage(key)` (an `SdkQuotaUse` `{ used, limit }`, or `null`
+  when unlimited; a `perOperation` key throws `validation`),
+  `assertActive(key, itemId)` (throws `quota_exceeded` for a paused `stock`
+  item run on demand), `paid()`, and the `SdkPlanPauses` reads,
+  `isPaused(key, itemId)` and `paused(key)`, both synchronous. `SdkStockItem`
+  `{ id, workspaceId }` is what a `stock` quota lists; `SdkPlanPauseChange`
+  `{ key, paused, resumed }` is what `FeatureService.onPlanPause` receives.
 - `FeatureStore`: `put/putJson/get/getJson/remove/keys`; `putJson`/`getJson`
   take a zod schema. `StorageEncryption = 'server' | 'private' | 'none'`.
 - `SessionlessFeatureStore`: the service variant; `'private'` unrepresentable.
@@ -252,16 +332,28 @@ itemIds?, except? })` (an `SdkAlert`: `subject`, `body`, `payload?`, `embeds?`;
   id to keep for the next edit, `null` when the channel refused: stop there),
   `mail.listAccounts`, `members.list`, `workspaces.list` (capability
   `'workspaces.read'` and a global administrator as caller: every workspace,
-  `{ id, name, kind, ownerUserId }`), `usage.of(userId)` / `usage.ofMany(userIds)`
-  (capability `'accounts.usage'`: an `SdkAccountUsage` `{ userId, quotas }`,
-  `{ kind, used, paused }` by full key; `of` answers the caller's own or anyone's for a
-  global administrator, `ofMany` is the administrator's alone),
-  `devices.authorize/list/isOnline`, `telemetry` (an `SdkTelemetry`:
-  `snapshot(deviceId, ts)` returning an `SdkTelemetrySnapshot` or null,
-  `pinInstant(deviceId, ts)`), `agents` (an `AgentsFacade`); each gated by
-  the manifest's `nativeCapabilities`.
+  `{ id, name, kind, ownerUserId }`), `accounts.me()` (capability
+  `'accounts.read'`: the caller's own `SdkAccount`, never someone else's),
+  `usage.of(userId)` / `usage.ofMany(userIds)` (capability `'accounts.usage'`:
+  an `SdkAccountUsage` `{ userId, quotas }`, `{ kind, used, paused }` by full
+  key; `of` answers the caller's own or anyone's for a global administrator,
+  `ofMany` is the administrator's alone), `devices.authorize/list/isOnline`,
+  `telemetry` (an `SdkTelemetry`: `snapshot(deviceId, ts)` returning an
+  `SdkTelemetrySnapshot` or null, `pinInstant(deviceId, ts)`), `agents` (an
+  `AgentsFacade`); each gated by the manifest's `nativeCapabilities`.
+- Accounts: `SdkAccount` `{ id, email, username, isAdmin, e2e, suspended,
+created }`; `SdkAccounts` (`find`, `findByEmail`, `list(userIds)`,
+  `search(query, limit?)`, `all()`), sessionless, for services;
+  `SdkAccountUsage` `{ userId, quotas }` of `SdkAccountQuotaUse` `{ kind:
+'stock' | 'flow' | 'perOperation', used, paused }`, `SdkUsage` (`of`,
+  `ofMany`); `SdkAccountMail` (`configured`, `send(userId, message)`,
+  `sendToAdmins(message)`) over `SdkAccountMailMessage` `{ subject,
+paragraphs, notice?, button?, footnote? }`. See
+  [12-quotas-and-account](12-quotas-and-account.md#an-entry-in-the-user-menu).
 - `SdkDevice`: `{ id, name, online, status, ownerUserId, workspaceId,
-metricIntervalSeconds, report }`, what the devices facade reveals.
+metricIntervalSeconds, effectiveMetricIntervalSeconds, report }`, what the
+  devices facade reveals (`effectiveMetricIntervalSeconds` is the cadence the
+  agent runs at: its own setting, or the default of its owner's plan).
 - `FeatureService`: `start` (may be async; awaited at boot, before the agent
   sockets open), `stop`, `agentHooks?: FeatureAgentHooks`,
   `providers?: Readonly<Record<string, unknown>>` (keyed by a published
@@ -271,7 +363,11 @@ metricIntervalSeconds, report }`, what the devices facade reveals.
   page at `GET /` of one of your verified web domains; capability
   `'routes.public'` and `domains.web` required), `onPlanPause?(change)` (the
   `SdkPlanPauseChange` `{ key, paused, resumed }` of one of your `stock`
-  quotas, once written: for what you hold open), `health?()` (an
+  quotas, once written: for what you hold open), `onAccountDeleted?(userId)`
+  (an account is about to be deleted with everything it owns: end what you
+  hold for it elsewhere; a throw aborts the deletion; may return an
+  `SdkAccountDeletedNote` `{ paragraph }`, one sentence of yours in the
+  confirmation email the holder receives), `health?()` (an
   `SdkServiceHealth` `{ state: 'up' | 'degraded' | 'down', reason? }` read by
   the public status page about once a minute: answer from memory, no network
   call nor write, 2 s at most; `reason` is shown publicly. Omit it when the
@@ -283,19 +379,25 @@ metricIntervalSeconds, report }`, what the devices facade reveals.
 timeWindow }` (a per-address ceiling on top of the host's own),
   `exposure?: 'everywhere' | 'app'` (`'everywhere'`, the default, mounts the
   route on the app and the public surface; `'app'` on the app's own origin
-  only, for a ticketed download or an OAuth callback).
+  only, for a ticketed download or an OAuth callback), `rawBody?` (also hand
+  the handler the undecoded body, JSON bodies only), `bodyLimit?` (the
+  largest body accepted, in bytes; a megabyte by default).
   `SdkPublicHandler(req: SdkPublicRequest, reply: SdkPublicReply)`: the request
   is `{ headers, body (JSON, already decoded, `undefined` when absent or
-unreadable), ip }`, nothing of a session; the reply is the chainable
-  `header(name, value)`, `code(status)`, `send(payload?)`.
+unreadable), query? (the decoded query string), params? (the path
+parameters), host? (the request's host as the host normalised it, untrusted),
+rawBody? (on a route that asked for it), ip }`, nothing of a session;
+  `body`, `query` and `params` are `unknown`, read them through a schema. The
+  reply is the chainable `header(name, value)`, `code(status)`,
+  `send(payload?)`.
   `postStream(path, opts, handler)`: a POST whose body is never decoded nor
   buffered, for an uploaded file. `SdkPublicStreamRouteOptions`: `maxBytes`
   (required, enforced by the host, which cuts the connection past it),
   `exposure: 'app'` (required: never mounted on the public surface),
-  `rateLimit?`. The request carries `body.contentLength` (`null` when chunked)
-  and `body.bytes()`, an `AsyncIterable<Buffer>` consumable once; no path
-  parameter, and the route is kept out of the CORS-widened paths, so
-  authenticate it with a ticket.
+  `rateLimit?`. The request (`SdkPublicStreamRequest`) carries
+  `body.contentLength` (`null` when chunked) and `body.bytes()`, an
+  `AsyncIterable<Buffer>` consumable once; no path parameter, and the route is
+  kept out of the CORS-widened paths, so authenticate it with a ticket.
 - `FeatureServiceDeps<Repo>`: `repo`, `listWorkspaceIds`, `storeFor`,
   `cipherFor` (open tier), `deveyeFor` (notify only), `devicesFor` (`list`,
   `isOnline`), `membersFor` (`list`, capability `'members.read'`), `devices`
@@ -306,11 +408,14 @@ unreadable), ip }`, nothing of a session; the reply is the chainable
   `of`, `ofMany`, capability `'accounts.usage'`, no caller to check),
   `accountMail` (`SdkAccountMail`: `configured`,
   `send(userId, SdkAccountMailMessage)`, `sendToAdmins(message)`, capability
-  `'accounts.mail'`),
+  `'accounts.mail'`), `quotaFor(workspaceId)` (an `SdkQuota` for that
+  workspace's owner, for what gets created outside any command), `pauses`
+  (`SdkPlanPauses`: your paused `stock` items whatever the workspace),
   `telemetry`, `live` (`SdkLive`: `changed(workspaceId, topics?)`: your
   topic by default, or the topics named, your own secondary ones or another
   feature's; `publish(workspaceId, event, payload)`: capability
-  `'live.publish'`, one frame to that workspace's connected readers), `audit` (system
+  `'live.publish'`, one frame to that workspace's connected readers;
+  `accountChanged(userId)`, as on the context), `audit` (system
   source, optional `userId`), `agents`, `access` (what a member may do NOW,
   without a session, for work that runs on their behalf: `feature(workspaceId,
 userId, { level?, extras?, itemId? })` for your feature,
@@ -326,106 +431,180 @@ true }` or `{ ok: false, reason }`, read again on every call), `keys`,
   (`redeem(ticket)`: an `SdkRedeemedTicket` `{ userId, workspaceId, payload,
 cipher: { server, private } }`, the private cipher `null` while the caller's
   session is sealed; `null` as a whole for a ticket invalid, expired or minted
-  by another module), `origins` (`{ app, public }`, as on the context),
+  by another module), `origins` (`{ app, public, site }`, as on the context),
   `domains` (`SdkFleetDomains`: `findByHost(host)` whatever the workspace, given
   the raw `Host` header, `get(workspaceId, id)`, `listVerified(workspaceId)`),
   `providers` (`SdkProviders`, same as on the context),
   `createTicker({ intervalMs, tick })`, `logger`.
-- `SdkServerKeys`: `sealBytes(Uint8Array): string`,
-  `openBytes(string): Uint8Array | null` (null: tampered, or server keys
-  changed), `derive(salt, info, length): Uint8Array` (HKDF-SHA256 over the
-  server key, never stored: for material that must survive the database).
-  Server key, module-owned key material only, never user data.
+- `SdkServerKeys`: `sealBytes(plain: Uint8Array, context?: string): string`,
+  `openBytes(sealed: string, context?: string): Uint8Array | null` (null:
+  tampered, wrong context, or server keys changed; `context` binds the blob to
+  its row, `<table>:<column>:<id>`, the same string both ways),
+  `derive(salt, info, length): Uint8Array` (HKDF-SHA256 over the server key,
+  never stored: for material that must survive the database). Server key,
+  module-owned key material only, never user data; the host seals under a
+  sub-key of its own for each module.
+- Sealed file container (`DEVB`): `sealStream(key, plain)` on the way into
+  the object store, `openSealedStream` for the whole file, `openSealedRange`
+  for an HTTP range (reads the header and the chunks that hold it only),
+  `sealedSize(plainSize)` for the bytes it takes on the store; the chunk
+  primitives `sealChunk`, `openChunk`, `openStreamDecipher`,
+  `createBlobHeader`, `parseBlobHeader`, and the constants `BLOB_HEADER_LEN`,
+  `BLOB_TAG_LEN`, `BLOB_CHUNK_BYTES`, `BLOB_CHUNK_SEALED`,
+  `BLOB_VERSION_STREAM`, `BLOB_VERSION_CHUNKED`. See
+  [04-storage-and-encryption](04-storage-and-encryption.md#files-the-object-store).
+- Serving a file: `contentDisposition(filename, 'attachment' | 'inline')`
+  (the header written safely for any name, the real one in the RFC 5987 form)
+  and `parseByteRange(header, size)` (one `Range`: `{ start, end }` inclusive,
+  `null` for a plain 200, `'unsatisfiable'` for a 416).
+- The holder's data export: `accountExportProblem(entry)` (what the host
+  refuses at boot, or `null`; check it in your tests), `EXPORT_SECRET_COLUMN`
+  (the column names that must be `omit` or `keep`), `exportTableRows`; types
+  `FeatureAccountExport`, `SdkExportTable`, `SdkExportSkip`, `SdkExportFiles`,
+  `SdkExportWriter`, `SdkAccountExportContext`, `SdkWorkspaceExportContext`.
+  See [13-account-export](13-account-export.md).
 - Reserved to native-id modules (capability `'agents'`): `AgentsFacade`
-  (`isOnline`, `requestScan`, `pushConfig`; the two orders a device's
-  lifecycle gives the hub, `requestDestroy` (the agent uninstalls itself) and
-  `disconnectAgent` (its socket closes now), each `false` when the agent is
-  offline;
-  `requestSyncConfig`,
-  `requestSyncScan`, `requestSyncPush`,
+  (`isOnline`; the two orders a device's lifecycle gives the hub,
+  `requestDestroy` (the agent uninstalls itself) and `disconnectAgent` (its
+  socket closes now), each `false` when the agent is offline;
+  `servedManifest()` (the manifest of the agent binaries the app serves, or
+  null); `requestScan`, `pushConfig`; `metricIntervals(devices)` (the cadence
+  each device's agent runs at); the ten sync orders `requestSyncConfig`,
+  `requestSyncScan`, `requestSyncPush`, `requestSyncPushAck`,
   `requestSyncApplyChunk`, `requestSyncApplyStart`, `requestSyncApplyDir`,
   `requestSyncApplyLocal`, `requestSyncMove`, `requestSyncDelete`, each
   `false` when the agent is offline; `publishSyncProgress`,
   `publishSyncState`; the file orders of the explorer: `requestFilesMutate`,
-  `requestFilesUpload`, `awaitFilesOp(opId, timeoutMs)`, `cancelFilesOp`,
-  `buffered(deviceId)` for backpressure), `SdkSocketTransport` (`subscribeSync`,
-  `unsubscribeSync`, `sendSyncChunk` returning the send-buffer size,
-  `syncChunkBuffered`), `FeatureAgentHooks` (`onAgentConnect`,
-  `onAgentOffline`, `onReport`, `onMetricsBatch`, `onIntegrity`,
-  `onAuthEvents`, `onSyncChanged`, `onSyncIndex`, `onSyncChunk`,
-  `onSyncAck`, `onSyncBusy`, `onSyncOpResult`, all optional). Their payload types come from
+  `requestFilesUpload`, `awaitFilesOp(opId, timeoutMs)`, `cancelFilesOp`;
+  `dockerRun(deviceId, order, options?)` and `dockerInventory(deviceId,
+timeoutMs?)`; `archiveFolder(deviceId, request, options?)` (an
+  `AgentFolderArchive`, the `.tar.gz` of a folder pulled at the consumer's
+  pace, its `summary` an `AgentFolderArchiveSummary` once ended;
+  `AgentFolderArchiveRequest` is `{ path, exclusions, oneFileSystem }`);
+  `openTcp(deviceId, { host, port })` (a connection the device opens on its
+  side, as a `Duplex`); `buffered(deviceId)` for backpressure),
+  `SdkSocketTransport` (`subscribeSync`, `unsubscribeSync`, `sendSyncChunk`
+  returning the send-buffer size, `syncChunkBuffered`), `FeatureAgentHooks`
+  (`onAgentConnect`, `onAgentOffline`, `onReport`, `onMetricsBatch`,
+  `onIntegrity`, `onAuthEvents`, `onSyncChanged`, `onSyncIndex`,
+  `onSyncChunk`, `onSyncAck`, `onSyncBusy`, `onSyncOpResult`,
+  `onSyncDeviceKey`, all optional). Their payload types come from
   `@deveye/types` itself, outside the SDK's stability promise.
 - `FeatureError(code, message, details?)`: codes `validation`, `forbidden`,
   `not_found`, `conflict`, `locked`, `internal`.
 
 ## `@deveye/types/sdk/client`
 
-- `FeatureClient`: your `./client` export: `Widget` (no props),
-  `Full({ closeFeature })`, `settingsPanels?` (one panel per manifest tab
-  that needs one: `general`, `sources`, `sync`, `encryption`, custom ids),
-  `TopbarWidget?` (no props: it may only show what your own commands return,
-  which the server authorizes against the caller's grants),
-  `AccountView?` (`manifest.accountEntry`), `AdminView?` (`manifest.adminEntry`,
-  `{ close }`, for a global administrator only),
-  `cacheDurationMinutes?`, `preload?`, `holdSecrecy?`, `providers?` (named
-  contracts offered to the host's screens; `UptimeClientProvider` with
-  `UptimeLinkedService`, `UptimeHistoryPoint`, `UptimeHistoryResolution`,
-  `MailClientProvider` with `listSenders`, `findByAddress` and `AccountDialog`, and the four
-  Projects composes, `GitClientProvider`, `DeployClientProvider`,
-  `DatabaseClientProvider`, `AudienceClientProvider`, each a `list...`, a
-  `Linked...` block rendered in full inside a project's tab, and the
-  feature's own dialog, with their `...LinkedCandidate` rows, are the ones
-  published).
+- `FeatureClient`: your `./client` export: `Widget` (no props) and
+  `Full({ closeFeature })`, both required unless `manifest.accountOnly`;
+  `Art?` (the vignette of your card in the add market and on the About sheet:
+  SVG children in the host's 160 x 90 frame, theme variables only; see
+  [05-client](05-client.md#the-market-vignette-art)), `settingsPanels?` (one
+  panel per manifest tab that needs one: `general`, `sources`, `sync`,
+  `encryption`, custom ids), `TopbarWidget?` (no props: it may only show what
+  your own commands return, which the server authorizes against the caller's
+  grants; mounted inside a button that opens your feature, so nothing
+  interactive in it), `AccountView?` (`manifest.accountEntry`;
+  `AccountViewProps` `{ close, isAdmin, hint? }`), `AdminView?`
+  (`manifest.adminEntry`; `AdminViewProps` `{ close }`, for a global
+  administrator only), `cacheDurationMinutes?`, `preload?`, `holdSecrecy?`,
+  `providers?` (named contracts offered to the host's screens, the ones
+  published in [Client contracts](#client-contracts-sdkclientts)).
 - `SettingsPanelProps`: `{ scope, canWrite, close, gone }`; `close()`
   dismisses the settings dialog and nothing more; `gone()` says the item
   being configured no longer exists here (deleted, moved), closes the
   dialog and makes the view that opened it leave the item; `SdkSettingsScope`
-  is `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel, shareable? }`
-  (`shareable: false` hides the Sharing tab for an item the server would
-  refuse to project). The item id is text, whatever key your table uses: a
-  row-keyed feature reads it back with `Number(...)`.
+  is `{ kind: 'feature' }` or `{ kind: 'item', itemId, itemLabel }`. The item
+  id is text, whatever key your table uses: a row-keyed feature reads it back
+  with `Number(...)`. (`shareable: false`, which hides the Sharing tab for an
+  item the server would refuse to project, is a field of the `scope` prop of
+  the host's `FeatureSettingsButton`, below, not of the panel's scope.)
+- `FeatureViewProps`: `{ closeFeature }`.
+- `SdkTileSummary` `{ itemId, title, metrics, unavailable? }` and
+  `SdkTileMetric` `{ key, label, value, tone? }`: what a linkable feature's
+  `summarize` answers for a project's dashboard tile.
 - `DevicesClientProvider` and `SdkDeviceSummary`: the Devices module's
-  client contract (see `DEVICES_CLIENT_PROVIDER` above).
+  client contract (see `DEVICES_CLIENT_PROVIDER` above), and the other client
+  contracts of the table above with their candidate rows.
 
 ## `@deveye/types/sdk/testing`
 
-- `createTestContext(overrides?)`: in-memory `SdkFeatureContext` plus
-  `recorded` (notifications, liveMessages, audits, agentRequests,
-  archiveRequests, pinnedInstants, livePublishes),
+- `createTestContext(overrides?)`: an in-memory `SdkFeatureContext` plus
+  `recorded` (`notifications`, `liveMessages`, `audits`, `agentRequests`,
+  `archiveRequests`, `pinnedInstants`, `livePublishes`, `accountChanges`),
   `forgotten` (the item ids passed to `items.forget`) and an inspectable
-  `store.rows`. Its facade answers by default: `devices.authorize` resolves
-  `testDevice({ id })` (active, online, unreported), `devices.list` is empty,
+  `store.rows`. By default the caller is the owner, writes, is not an
+  administrator, and sits in personal workspace 1 as user 1; the facade
+  answers: `devices.authorize` resolves `testDevice({ id })` for an id nothing
+  listed (active, online, unreported), `devices.list` is empty,
   `devices.isOnline` is true, `telemetry.snapshot` is null, `agents` records
-  every request and answers true, `transport` is a no-op, `secrecy` is
-  unlocked, `items.restrictions()` is empty and `sharing.scope()` has no
-  projection. Overrides: `repo`, `userId`, `workspaceId`, `kind`, `isOwner`,
-  `isAdmin`, `canWrite`, `extras`, `manifest`, `hasRoute`, `notifyAccepted`
-  (what `notify.send` resolves; recorded either way), `liveChannels`,
-  `devices`, `refuseDeviceExtras` (`devices.authorize` with `extras` throws
-  `forbidden`, on every device or on the ids listed), `archives` (what
-  `agents.archiveFolder` streams, by device id: `{ chunks, summary? }` or an
-  `Error`; a device without an entry throws), `openTcp` (what
-  `agents.openTcp` resolves; default a rejection, as for an offline device),
-  `snapshots`, `workspaces` (what
-  `workspaces.list()` answers),
-  `origins`, `providers`, `deveye` (a partial facade), `unlocked` (false also
-  seals the `'private'` cipher: `decrypt` throws `locked`, `tryDecrypt`
-  answers null, like the app's guarded tier in a locked session),
-  `itemRestrictions`, `shares`.
-- `testDomain({ id, host, ... })` builds an `SdkDomain` (verified by default)
-  for the `domains` override of both harnesses, and
-  `createTestDomainsContext({ repo?, dns?, origins? })` builds what the
-  `domains` hooks receive, with lookups that find nothing unless `dns` says so.
-- `createTestServiceDeps(overrides?)`: the service twin; `recorded` adds
-  `tickers`, `liveChanges` and `liveTopicChanges` (which topics a
-  `live.changed(ws, [...])` beat), and shares `livePublishes` with the
-  context harness, and `mails` (what `accountMail.send` accepted, with the
-  address). Overrides: `repo`, `workspaceIds`,
-  `devices`, `archives`, `access` (a partial `deps.access`; every member
-  holds every right by default), `accounts` (also who `accountMail` can
-  write to), `mailConfigured`, `hasRoute`, `notifyAccepted`,
-  `liveChannels`, `origins`, `snapshots`, `providers`.
-- `testDevice(over)`: an `SdkDevice` with sensible defaults.
+  every request and answers true (file orders succeed, `dockerRun` succeeds,
+  `dockerInventory` and `servedManifest` are null, `openTcp` rejects as for an
+  offline device), `transport` is a no-op, `secrecy` is unlocked and `ticket`
+  mints what the service harness's `redeem` reads back, `accounts.me()` is an
+  account named after `userId`, `usage` follows the app's rule (the caller's
+  own, anyone's for an administrator), `quota` is unlimited and `paid`,
+  `keys.openBytes` answers `null` (unwrap in a service, where the harness
+  keeps what it sealed), `items.restrictions()` is empty, `items.assert`
+  applies the dispatcher's rule, `sharing.scope()` has no projection and the
+  identity cipher, `domains` is empty, and `origins` is `https://deveye.test`
+  / `https://public.deveye.test` / `https://site.deveye.test`. Overrides:
+  `repo`, `userId`, `workspaceId`, `kind`, `isOwner`, `isAdmin`, `canWrite`,
+  `extras` (the grant as a role would carry it), `manifest` (its
+  `extraPermissions`, so `canExtra` / `extraValue` follow the runtime rules;
+  without it every extra answers `false` / `''`), `workspaces` (what
+  `workspaces.list()` answers), `account` (what `accounts.me()` answers),
+  `quotaLimits` (the plan's limits by your quota key; an absent key is
+  unlimited), `paid`, `ownerWorkspaceIds` (handed to a quota counter),
+  `quotas` (your server's `quotas`, what `quota.usage` counts through),
+  `accountUsage` (what `usage` knows, by account), `pausedItems` (the items
+  the plan holds paused, by `stock` key), `hasRoute`, `notifyAccepted` (what
+  `notify.send` resolves; recorded either way), `liveChannels`, `devices`,
+  `refuseDeviceExtras` (`devices.authorize` with `extras` throws `forbidden`,
+  on every device or on the ids listed), `dockerRun`, `dockerInventory`,
+  `archives` (what `agents.archiveFolder` streams, by device id: `{ chunks,
+summary? }` or an `Error`; a device without an entry throws), `openTcp`,
+  `snapshots`, `deveye` (a partial facade), `unlocked` (false also seals the
+  `'private'` cipher: `decrypt` throws `locked`, `tryDecrypt` answers null,
+  like the app's guarded tier in a locked session), `itemRestrictions` (by
+  item id), `itemExtras` (extra permissions overridden on one item, by item id
+  then key: what `items.canExtra` answers there), `shares` (items projected
+  into the workspace, as `itemId` to home workspace id), `domains` (every
+  workspace mixed; `ctx.domains` answers for the active one), `origins`,
+  `providers` (the contracts `ctx.providers.get` finds).
+- `createTestServiceDeps(overrides?)`: the service twin, sessionless (no
+  guarded cipher, no `'private'` row). `recorded` adds `tickers` (every
+  `createTicker` call, so a test drives ticks by hand: `await
+tickers[0].tick()`), `liveChanges` and `liveTopicChanges` (which topics a
+  `live.changed(ws, [...])` beat) and `mails` (what `accountMail.send` and
+  `sendToAdmins` accepted, with the address), and `stores` maps each
+  workspace touched to its in-memory store. By default `access` grants every
+  right, `accountMail` is configured and writes to the `accounts` given,
+  `keys.sealBytes` answers a handle its `openBytes` opens (an unknown handle
+  opens to `null`, like a tampered blob), `objects(localDir)` returns one
+  `memoryObjectStore()` whatever the directory, and tickers never start on
+  their own. Overrides: `repo`, `workspaceIds` (what `listWorkspaceIds`
+  answers, `[1]` by default), `devices`, `members` (what
+  `membersFor(workspaceId).list()` answers, by workspace id), `dockerRun`,
+  `dockerInventory`, `archives`, `openTcp`, `access` (a partial
+  `deps.access`), `accounts` (what `deps.accounts` knows and `accountMail`
+  can write to), `mailConfigured`, `quotaLimits`, `paid`, `objects` (your own
+  `SdkObjectStore`, to share one with your assertions), `quotas`,
+  `accountUsage`, `pausedItems`, `hasRoute`, `notifyAccepted`, `liveChannels`,
+  `origins`, `snapshots`, `domains`, `providers`.
+- `testDevice(over)`: an `SdkDevice` with sensible defaults (active, online,
+  unreported, workspace 1, owner 1, the default cadence). `testDomain({ id,
+host, ... })`: an `SdkDomain`, verified by default, for the `domains`
+  override of both harnesses. `createTestDomainsContext({ repo?, dns?,
+origins? })`: what the `domains` hooks receive, with lookups that find nothing
+  unless `dns` says so. `memoryObjectStore({ kind?, spoolDir?,
+ephemeralRoot? })`: a `MemoryObjectStore` with its `objects` exposed; `kind`
+  is `'s3'` by default so a test exercises the remote path, the spool a real
+  directory under the system's temporary folder.
+- Types: `TestContext`, `TestContextOverrides`, `TestServiceDeps`,
+  `TestServiceOverrides`, `RecordedCalls`, `RecordedServiceCalls`,
+  `TestFeatureStore` (the store with its `rows`), `TestFolderArchive`,
+  `MemoryObjectStore`.
 
 ## `deveye-sdk-client` (provided by the app)
 
@@ -437,30 +616,48 @@ authority when the two differ.
 - UI kit: `Button`, `TextInput`, `Checkbox`, `Switch`,
   `NumberInput` (the number field with its ± buttons: `value: number | null`,
   `min`, `max`, `step`, `live`), `Slider` (a labelled range input: `valueLabel`,
-  `marks`, `indicator`), `SearchSelect` (the dropdown: options carry `prefix`
-  (any node), `detail`, `keywords`, `group` (a heading shared by the options of
-  one category) and `disabled` (shown, not pickable); `placeholder` reads when no
-  option matches the value; the search field appears from eight options on, or
-  with `searchable`; `filters` adds a row of chips, `exclusive` ones acting as a
-  radio; `id` serves a label's `htmlFor`), `SegmentedControl`, `ChoiceCards`,
-  `CopyButton` (copies `value`, confirms by its icon), `LoadingVeil` (the veil
-  of a re-read: a sibling of the scrolling area inside a positioned parent),
+  `marks`, `indicator`), `SearchSelect` (the dropdown: options
+  (`SearchSelectOption`) carry `prefix` (any node), `detail`, `keywords`,
+  `group` (a heading shared by the options of one category) and `disabled`
+  (shown, not pickable); `placeholder` reads when no option matches the value;
+  the search field appears from eight options on, or with `searchable`;
+  `filters` adds a row of chips (`SearchSelectFilter`), `exclusive` ones
+  acting as a radio; `id` serves a label's `htmlFor`; with `multiple`, each
+  option is a check box and `value` is an array), `SegmentedControl`,
+  `ChoiceCards`, `ActionMenu` (a "⋯" button that unfolds secondary actions
+  above everything: `items` of `ActionMenuItem` `{ label, icon?, onSelect,
+danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
+  dots; `ActionMenuProps`), `CopyButton` (copies `value`, confirms by its
+  icon; `CopyButtonProps`), `LoadingVeil` (the veil of a re-read: a sibling of
+  the scrolling area inside a positioned parent; `LoadingVeilProps`),
   `LogOutput` (a raw log made readable: ANSI stripped, lines coloured by what
-  they say, filter and copy), `CountBadge` (a counter pill:
-  `count`, `tone`, `max`), `Dialog`, `DialogCancelButton`, `Popup` / `OpenPopup` /
-  `ClosePopup` (the imperative dialog layer), `openInfo`, `Term` (a glossary
-  term that opens its definition), `StatusBadge`,
-  `ConfirmDialog`, `FeatureSettingsButton` (`scope`, `initialSection?`,
-  `onOpenChange?`, `onGone?`: the item was deleted or moved from inside the
-  settings, the detail view leaves it), `settingsStyles` (the canonical
+  they say, filter and copy; `LogOutputProps`), `CountBadge` (a counter pill:
+  `count`, `tone`, `max`; `CountBadgeProps`), `SaveButton` (the save button
+  of a settings panel, "Saving", "Saved", then its label again;
+  `placement: 'footer'` by default pins it to the dialog's footer, `'inline'`
+  leaves it where written), `Dialog`, `DialogCancelButton`, `Popup` /
+  `OpenPopup` / `ClosePopup` (the imperative dialog layer), `openInfo`, `Term`
+  (a glossary term that opens its definition; `GlossaryTermId` names the
+  terms the glossary defines), `StatusBadge`, `ConfirmDialog` (+
+  `ConfirmRequest`), `FeatureSettingsButton` (`scope`, with `shareable?` on an
+  item scope, `variant` (`'link'` renders an underlined word), `label`,
+  `initialSection?`, `onOpenChange?`, `onGone?`: the item was deleted or moved
+  from inside the settings, the detail view leaves it), `flashSettings(scope)`
+  (points at the canonical settings button of `scope` for about a second, for
+  a gesture taken outside the settings), `settingsStyles` (the canonical
   settings rows), `ReadOnlyNotice` (the one shape of a read-only refusal in a
-  settings panel), `CountWidget` + `useWorkspaceCount` (+ `CountState`),
-  `useDragReorder`, `UsageMeter` (a quota's gauge), `Dropzone`,
-  `useFileDrop`, `pickFiles`, `filesOfDrop` (files picked or dropped, folders
-  included, as `PickedFile`), `uploadFile` + `UploadError`, `saveFrom`,
-  `Avatar` (a member's identity dot; `user` may be
-  `undefined`), `userColorVar(color)` (the CSS variable of an account colour,
-  the one the live presence paints with).
+  settings panel), `ProviderKeys` + `ProviderKeyRow` (a fixed list of
+  providers each wanting one key: the rows, the add/edit button and the
+  dialog), `ErrorNote` (+ `ErrorNoteInput`, `ErrorNoteProps`: a refusal
+  banner with the caller's repair actions and a report button) and
+  `openReport(context?)` (the report form, primed with what failed),
+  `CountWidget` + `useWorkspaceCount` (+ `CountState`), `useDragReorder`,
+  `UsageMeter` (a quota's gauge), `Dropzone`, `useFileDrop`, `pickFiles`,
+  `filesOfDrop` (files picked or dropped, folders included, as `PickedFile`),
+  `uploadFile` (an `UploadHandle`: `done`, `abort()`) + `UploadError`,
+  `saveFrom`, `Avatar` (a member's identity dot; `user` may be `undefined`),
+  `userColorVar(color)` (the CSS variable of an account colour, the one the
+  live presence paints with).
 - `useDialogClose()`: the enclosing `Dialog`'s guarded close (unsaved-changes
   prompt included).
 - `useDialogSubmit(fn | null)`: `fn` becomes the enclosing `Dialog`'s primary
@@ -478,7 +675,7 @@ authority when the two differ.
   `code`, `message`, `details`; `instanceof` works), `featureApi(manifest)`
   (typed `send`, with an optional `{ timeoutMs }` for commands that query a
   slow third party), `commandsApi(commands)` (the same over any list of
-  contracts: `commandsApi(agentCommands)`, the native agent transport, with
+  contracts: `commandsApi(agentCommands)`, the agent transport, with
   `agentCommands` from `@deveye/types`).
 - HTTP, for the routes that serve binaries: `httpGet(path, schema)` (one replay
   after an access refresh), `httpFetch(path, init)` (the same, returning the raw
@@ -496,27 +693,43 @@ authority when the two differ.
 - Push events: `onServerEvent(event, schema, cb)` (typed server-push
   subscription), `onSocketOpen(cb)` (the resubscribe-on-reconnect primitive),
   `isSocketOpen()`.
+- Account and plan: `useAccountPlan()` (the account's `AccountPlan`, kept
+  live; `null` while loading AND without a plan provider, never read it as
+  "free"), `usePlanPauses()` (how many of the account's items its plan holds
+  paused, by `<featureId>.<quotaKey>`), `PlanPausedBadge` (the badge of a
+  paused item), `PlanPausedNotice` (`count`, `one`, `many`: the notice above
+  a list that holds paused items), `openAccountView(featureId?)` (opens an
+  account view, the given module's or the first one), `useHiddenFeatures()`
+  (the features in preview the current account does not see).
 - Shared helpers: `formatBytesFr`, `DeviceFolderPicker` (`allowCreate: false`
   to pick only what exists), `DeviceFolderField` (a path on a device, typed or
   browsed; the label stays yours), `DeviceRelayField` (the device a service is
   reached through, fed by your command that returns `relayDeviceOptions`; a
-  blocked device stays listed with its reason; the label and hint stay yours),
-  `PathExclusionsEditor` (the exclusions of a
-  walked folder, validated with `pathExclusionProblem` from `@deveye/types`,
-  the way the agent runs them), `useDevices()` (the
+  blocked device stays listed with its reason; the label and hint stay yours)
+  and `useDeviceRelayOptions(load)` (its options, for a form that renders its
+  own field), `PathExclusionsEditor` (the exclusions of a walked folder, as
+  `PathExclusionItem` rows, validated with `pathExclusionProblem` from
+  `@deveye/types`, the way the agent runs them), `useDevices()` (the
   workspace's devices through the Devices module's provider, `{ devices,
 loading, error }`; empty, loaded and error-free without the module),
   `acquireMetrics(deviceId)` (a counted live metrics subscription; call the
   returned release), `joinPath(base, name)` and `isWinPath(p)` (device paths
-  as the agent reports them), `PageLookFields` (the theme and accent of a
-  public page you serve, your miniature under it; pairs with `pageLook` in
-  `@deveye/types/sdk`, see [11-cookbook](11-cookbook.md)).
-- Rights and workspace: `useWorkspacePermissions()` (incl. `canExtra`,
-  `extraValue`), `useActiveWorkspace()` (`.kind`), `useWorkspaceMembers()`
-  (the active workspace's members as the session lists them, empty before it
-  answers), `useCurrentUser()` (the signed-in user, `null` before the session
-  answers), `useFeatureLifecycle`, `useDomains(feature)` (`{ domains, loading,
-error }`, the feature's domains kept live, for a form that designates one).
+  as the agent reports them), `safeHref(url)` (the `href` for a link whose
+  address comes from data: http(s) and mailto only, `undefined` otherwise),
+  `randomUuid()` (a v4 UUID, secure context or not), `copyText(value)` (writes
+  to the clipboard and answers whether it worked), `PageLookFields` (the theme
+  and accent of a public page you serve, your miniature under it; pairs with
+  the page look exports of `@deveye/types/sdk`, see
+  [11-cookbook](11-cookbook.md)).
+- Rights and workspace: `useWorkspacePermissions()` (`isOwner`, `can`,
+  `canFeature`, `canChannels`, `canManageItemGrants`, `canExtra` and
+  `extraValue`; `canFeature` and `canExtra` take an `itemId` to answer for
+  that item, override included), `useActiveWorkspace()` (`.kind`),
+  `useWorkspaceMembers()` (the active workspace's members as the session
+  lists them, empty before it answers), `useCurrentUser()` (the signed-in
+  user, `null` before the session answers), `useFeatureLifecycle`,
+  `useDomains(feature)` (`{ domains, loading, error }`, the feature's domains
+  kept live, for a form that designates one).
 - Composing another module: `moduleClientProvider<T>(key)` (the client
   contract another module offers under a key of `@deveye/types/sdk`,
   `undefined` when that module is not installed: degrade, never assume).
@@ -528,7 +741,8 @@ error }`, the feature's domains kept live, for a form that designates one).
   (`'view' | 'l1' | 'l2' | 'l3' | 'l4'`), `SecrecyState` (what `useSecrecy()`
   answers), `ConfirmRequest` (what a `ConfirmDialog` is opened with),
   `CountState` (what `useWorkspaceCount` answers), `ExternalResourceKey` (a
-  resource key of an `x-` module), `LiveOutlineProps`.
+  resource key of an `x-` module), `LiveOutlineProps`, `PickedFile`,
+  `UploadHandle`, `StickyOffset`.
 - Host navigation and frame: `openFeature(feature, itemId?)` (open another
   feature of the active workspace, on one of its items), `useRequestPopupWidth(px | null)`
   (ask the feature popup for a wider frame while mounted), `useStickyOffset<T>()`

@@ -85,8 +85,8 @@ Three rules that come with the lane:
 - **Push the change, never the state.** A full snapshot on every frame is what
   invalidation already does, more cheaply.
 - **A frame can be missed** (a socket in backpressure drops it, a tab was
-  asleep). Your client must be able to recover on its own — re-read your state
-  on `onSocketOpen`, and on a frame that no longer makes sense — rather than
+  asleep). Your client must be able to recover on its own (re-read your state
+  on `onSocketOpen`, and on a frame that no longer makes sense) rather than
   assume every frame lands.
 - **The rate is yours to hold.** Unlike `changed`, nothing throttles this lane:
   what bounds it is the cadence of the command that emits it.

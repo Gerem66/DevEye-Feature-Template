@@ -65,7 +65,9 @@ Migrations run at boot without a transaction: make every statement replayable
 - **Key material of your own.** A module that runs its own bulk encryption
   (files, streams) owns a raw symmetric key. `ctx.keys` (the same
   `SdkServerKeys` a service gets as `deps.keys`) wraps it under the server key
-  (`sealBytes` / `openBytes`) or derives one from it (`derive(salt, info,
+  (`sealBytes(raw, context?)` / `openBytes(sealed, context?)`, `context`
+  binding the blob to its row, `<table>:<column>:<id>`, so a blob copied onto
+  another row does not open) or derives one from it (`derive(salt, info,
 length)`: HKDF over the server key, never stored anywhere, for material
   that must survive the database). Details and the unwrap-at-start pattern in
   [10-background-services](10-background-services.md#wrapping-key-material-of-your-own-depskeys).
@@ -124,10 +126,10 @@ assertions.
 
 A module that declares migrations must also ship their destructive mirror:
 `src/server/uninstall.sql`, dropping every table the migrations created
-(`DROP TABLE IF EXISTS ft_<slug>_...;` — idempotent, so a failed cleanup can
+(`DROP TABLE IF EXISTS ft_<slug>_...;`, idempotent, so a failed cleanup can
 simply be re-run). DevEye's `scripts/uninstall-feature.ts` executes it when an
 administrator removes your module, then cleans everything the app stored FOR
 you (KV rows, migration records, notification channels and routes, role
-grants, placed tiles). The file may only touch your `ft_<slug>_` prefix —
+grants, placed tiles). The file may only touch your `ft_<slug>_` prefix:
 both that script and `gen:features` refuse anything else. No migrations, no
 tables, no `uninstall.sql` needed: the app side is cleaned either way.

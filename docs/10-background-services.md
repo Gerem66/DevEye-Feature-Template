@@ -1,20 +1,22 @@
 # Background services
 
-Export `createService` from your server entry to run periodic work: polling an
+Declare `createService` on your server entry to run periodic work: polling an
 external API, firing deadlines, refreshing a cache.
 
 ```ts
-export function createService(deps: FeatureServiceDeps): FeatureService {
-    return deps.createTicker({
-        intervalMs: 60_000,
-        async tick() {
-            for (const workspaceId of await deps.listWorkspaceIds()) {
-                const store = deps.storeFor(workspaceId);
-                ...
+export const serverEntry: FeatureServer = {
+    features,
+    createService: (deps) =>
+        deps.createTicker({
+            intervalMs: 60_000,
+            async tick() {
+                for (const workspaceId of await deps.listWorkspaceIds()) {
+                    const store = deps.storeFor(workspaceId);
+                    ...
+                }
             }
-        }
-    });
-}
+        })
+};
 ```
 
 `createTicker` is the app's standard loop: an interval, a reentrancy guard (a
@@ -41,18 +43,33 @@ ticker and delegate: `{ start: () => ticker.start(), stop: () => ticker.stop(), 
 `deveyeFor(workspaceId)` (notify only), `devicesFor(workspaceId)` (`list` and
 `isOnline`, capability `'devices.read'`), `membersFor(workspaceId)` (`list`, the
 members owner included, capability `'members.read'`: the names a public page
-shows), `devices` (`find(id)` and
-`isOnline`, the whole fleet, same capability), `telemetry` (reserved,
-capability `'telemetry.read'`), `live.changed(workspaceId, topics?)` (your
-topic, or the topics named, from a service: see
-[09-live](09-live.md#writes-without-a-command)),
-`audit(entry)` (recorded as the system; pass `userId` when the work concerns
-one user's data), `keys` (raw key wrapping and derivation,
-[below](#wrapping-key-material-of-your-own-depskeys)), `secrecy`
-(`redeem(ticket)`, [below](#tickets-a-public-route-acting-for-a-session)),
-`origins` (`{ app, public }`, the same a handler gets as `ctx.origins`),
-`providers` (`get<T>(key)`, [below](#consuming-a-contract-providersget)),
-`agents` (reserved, [below](#the-agent-fleet-reserved)), `access`
+shows), `devices` (`find(id)` and `isOnline`, the whole fleet, same
+capability), `accounts` (`find`, `findByEmail`, `list`, `search`, `all`,
+capability `'accounts.read'`), `usage` (`of`, `ofMany`, capability
+`'accounts.usage'`), `accountMail` (`configured`, `send`, `sendToAdmins`,
+capability `'accounts.mail'`; all three in
+[12-quotas-and-account](12-quotas-and-account.md#an-entry-in-the-user-menu)),
+`quotaFor(workspaceId)` (the owner's plan against your quotas, for what gets
+created outside any command) and `pauses` (`isPaused`, `paused`: your paused
+`stock` items whatever the workspace; both in
+[12-quotas-and-account](12-quotas-and-account.md#quotas)), `telemetry`
+(reserved, capability `'telemetry.read'`), `live` (`changed(workspaceId,
+topics?)`: your topic, or the topics named,
+[09-live](09-live.md#writes-without-a-command); `publish(workspaceId, event,
+payload)`, capability `'live.publish'`,
+[09-live](09-live.md#pushing-your-own-frames-livepublish);
+`accountChanged(userId)`), `audit(entry)` (recorded as the system; pass
+`userId` when the work concerns one user's data), `keys` (raw key wrapping and
+derivation, [below](#wrapping-key-material-of-your-own-depskeys)),
+`objects(localDir)` (the host's object store, capability `'objects'`,
+[04-storage-and-encryption](04-storage-and-encryption.md#files-the-object-store)),
+`secrecy` (`redeem(ticket)`,
+[below](#tickets-a-public-route-acting-for-a-session)), `origins`
+(`{ app, public, site }`, the same a handler gets as `ctx.origins`), `domains`
+(`findByHost`, `get`, `listVerified`: your feature's domains whatever the
+workspace, [06-settings-panels](06-settings-panels.md#domains)), `providers`
+(`get<T>(key)`, [below](#consuming-a-contract-providersget)), `agents`
+(reserved, [below](#the-agent-fleet-reserved)), `access`
 ([below](#acting-on-a-members-behalf-depsaccess)), `createTicker`, `logger`.
 
 No user, no session, no `'private'` tier: the sessionless store cannot write
@@ -161,12 +178,16 @@ if (wrapped === null) {
 }
 ```
 
-- `sealBytes(plain: Uint8Array): string` seals under the SERVER key, in the
-  app's own wire format; `openBytes(sealed: string): Uint8Array | null`
-  reverses it, and answers `null` when the blob was tampered with or the
-  server keys changed. Treat `null` as fatal for that key and say so loudly:
-  generating a fresh one would silently make everything sealed under the old
-  one unreadable.
+- `sealBytes(plain: Uint8Array, context?: string): string` seals under the
+  SERVER key, in the app's own wire format; `openBytes(sealed: string,
+context?: string): Uint8Array | null` reverses it, and answers `null` when
+  the blob was tampered with, the context differs or the server keys changed.
+  `context` binds the blob to the row it belongs to (authenticated, not
+  stored): pass the same string both ways, `<table>:<column>:<id>`, so a blob
+  copied onto another row does not open. The host seals under a sub-key of its
+  own for each module: a blob sealed by one module never opens in another.
+  Treat `null` as fatal for that key and say so loudly: generating a fresh one
+  would silently make everything sealed under the old one unreadable.
 - `derive(salt: string, info: string, length: number): Uint8Array` yields a
   key DERIVED from the server key (HKDF-SHA256 over the same material as
   `sealBytes`), never stored anywhere: for material that must survive the
@@ -217,21 +238,34 @@ createService(deps) {
   origins. Whatever gate you need (a public key, an origin allowlist, a
   rate limit) is yours to enforce in the handler; `rateLimit` adds a
   per-address ceiling on top of the host's own.
+- `bodyLimit` caps the body in bytes (a megabyte by default): size it on the
+  biggest legitimate call, every byte of it is parsed before your schema sees
+  anything. `rawBody: true` also hands the handler the undecoded body, what a
+  webhook signature is computed over (JSON bodies only; see
+  [12-quotas-and-account](12-quotas-and-account.md#webhooks)).
 - `exposure` picks the listeners: `'everywhere'` (default) serves the route
   on the app and on the public surface, for what the outside world calls (a
   beacon); `'app'` serves it on the app's own origin only, for what the
   logged-in browser fetches without a session header (a ticketed download,
   an OAuth callback that lands back in the app).
-- `req` is `{ headers, body, ip }` and nothing else: no user, no workspace,
-  no `'private'` tier. Route the request from what it carries (a key in the
-  body) to the workspace it belongs to, through your repo.
+- `req` is `{ headers, body, query, params, host, ip }`, plus `rawBody` on a
+  route that asked for it: no user, no workspace, no `'private'` tier. `body`
+  is the JSON body already decoded (`undefined` when absent or unreadable),
+  `query` the decoded query string, `params` the path parameters; all three
+  are `unknown`, read them through a schema. `host` is the request's host as
+  the host normalised it (`Host`, or `X-Forwarded-Host` behind a trusted
+  proxy, port included): untrusted data, which proves nothing and only picks
+  among what the database already verified. Route the request from what it
+  carries (a key in the body) to the workspace it belongs to, through your
+  repo.
 - The reply surface is minimal and chainable: `header(name, value)`,
   `code(status)`, `send(payload?)`.
 - What you hand to the outside world (an install snippet, a callback URL)
   comes from `ctx.origins.public` in a handler, or `deps.origins` in a service
-  (`{ app, public }`, no trailing slash), never from the browser's location:
-  the app members use and the surface the outside reaches may be two
-  different addresses.
+  (`{ app, public, site }`, no trailing slash; `site` is the marketing site
+  where the legal pages live, `null` when the host has none), never from the
+  browser's location: the app members use and the surface the outside reaches
+  may be two different addresses.
 - `/` is the host's, refused at boot. A page served at the root of a
   customer's domain goes through `domainRoot(req, reply, domain)` on the
   service ([cookbook](11-cookbook.md#serve-something-on-the-customers-own-domain)).
@@ -281,19 +315,12 @@ clean "module not installed" error and hides that source kind in its UI). What
 it means for you:
 
 - You can only fill a contract the host already knows: a key nothing looks up
-  is inert. The published contracts today: `CLOUDSYNC_BACKUP_PROVIDER`
-  (`'cloudsync.backup'`, interface `CloudSyncBackupProvider`),
-  `UPTIME_ITEMS_PROVIDER` (`'uptime.items'`, `UptimeItemsProvider`, what the
-  Projects feature asks before linking a service), `SENTINEL_AGENT_CONFIG_PROVIDER`
-  (`'sentinel.agentConfig'`, `SentinelAgentConfigProvider`, what Sentinel
-  contributes to the config pushed to an agent), `HOSTING_ITEMS_PROVIDER`
-  (`'hosting.items'`, `HostingItemsProvider`, what Projects asks before
-  linking a Hosting folder: the one link family owned by an external module,
-  which is why `PROJECT_LINKED_FEATURES` takes any `FeatureId`). Proposing a new one is a
-  change to `@deveye/types`, hence a pull request against DevEye. The client
-  twin (`FeatureClient.providers`, `UPTIME_CLIENT_PROVIDER`) lets an app
+  is inert. The published contracts are listed in
+  [REFERENCE](REFERENCE.md#server-contracts-sdkprovidersts). Proposing a new
+  one is a change to `@deveye/types`, hence a pull request against DevEye. The
+  client twin (`FeatureClient.providers`, `UPTIME_CLIENT_PROVIDER`) lets an app
   screen compose a module's components the same way ([05-client](05-client.md#offering-components-to-the-host-providers)).
-- Providers live on the service: a module that offers one exports
+- Providers live on the service: a module that offers one declares
   `createService`, even with no ticker.
 - The app calls a provider without a session, like every service: only
   `'server'`-tier data can serve it.
@@ -303,9 +330,9 @@ it means for you:
 The same registry works the other way: a module that needs what another
 feature owns reads the published contract through `deps.providers.get<T>(key)`
 (service) or `ctx.providers.get<T>(key)` (handler), and degrades cleanly on
-`undefined`. Who offers the key is none of your business: every native
-feature is a module today, so a key comes from a module's service, but a
-future one could just as well come from the app itself.
+`undefined`. Who offers the key is none of your business: a key comes from the
+service of whichever module fills it, DevEye's own features being modules on
+the same contract.
 
 ```ts
 const databases = deps.providers.get<DatabaseBackupProvider>(DATABASE_BACKUP_PROVIDER);
@@ -315,10 +342,10 @@ const access = await databases.openAccess(sourceId, workspaceId);
 
 ## The agent fleet (reserved)
 
-DevEye installs an agent on the workspace's devices, and one native feature
-migrated onto this contract (CloudSync, the folder sync) drives it. The surface
-is in the SDK types so that a native module can be built out of tree, and it
-is reserved to native-id modules: `validateManifest` refuses
+DevEye installs an agent on the workspace's devices, and one of DevEye's own
+modules (CloudSync, the folder sync) drives it. The surface is in the SDK
+types so that such a module can be built out of tree, and it is reserved to
+native-id modules: `validateManifest` refuses
 `nativeCapabilities: ['agents']` on an `x-` id. The agent protocol is app
 infrastructure, the contract between DevEye and its own agent binary; the
 payload types the facade takes come from `@deveye/types` itself, outside the
@@ -326,13 +353,19 @@ payload types the facade takes come from `@deveye/types` itself, outside the
 cannot depend on them. What a module may know about devices is
 `'devices.read'`, above. For the record, what the capability opens:
 
-- `ctx.deveye.agents` and `deps.agents` (`AgentsFacade`): `isOnline`,
-  `requestScan` (an immediate security scan), `pushConfig` (the device's
+- `ctx.deveye.agents` and `deps.agents` (`AgentsFacade`): `isOnline`; the two
+  orders of a device's lifecycle (`requestDestroy`, `disconnectAgent`);
+  `requestScan` (an immediate security scan); `pushConfig` (the device's
   collection config, recomposed by the app from the device row and the
-  modules' contributions), nine outbound `requestSync*` calls that answer
+  modules' contributions) and `metricIntervals`; `servedManifest` (the agent
+  binaries the app serves); ten outbound `requestSync*` calls that answer
   `false` when the agent is offline (frame dropped, never queued), and
   `publishSyncProgress` / `publishSyncState`, the fan-out to the browsers
-  subscribed to a share.
+  subscribed to a share; the file orders of the explorer (`requestFilesMutate`,
+  `requestFilesUpload`, `awaitFilesOp`, `cancelFilesOp`); `dockerRun` and
+  `dockerInventory`; `archiveFolder` (a folder's `.tar.gz`, pulled at the
+  consumer's pace) and `openTcp` (a connection the device opens on its side);
+  `buffered` for backpressure.
 - `ctx.transport` (`SdkSocketTransport`): the caller's own browser socket,
   `subscribeSync` / `unsubscribeSync`, and chunked downloads with backpressure
   (`sendSyncChunk` returns the socket's send-buffer size after the frame,
@@ -343,8 +376,9 @@ cannot depend on them. What a module may know about devices is
   persisted it (`onReport`, `onMetricsBatch`, `onIntegrity`, `onAuthEvents`;
   only for active devices, and whether a device is watched by your feature
   is your decision), `onSyncChanged`, `onSyncIndex`, `onSyncChunk`,
-  `onSyncAck`, `onSyncBusy`, `onSyncOpResult`. Every hook is optional; an
-  absent one is a no-op. The app aggregates the hooks of every module that
+  `onSyncAck`, `onSyncBusy`, `onSyncOpResult`, `onSyncDeviceKey` (the agent's
+  X25519 public key, sent after every `sync.config` it receives). Every hook
+  is optional; an absent one is a no-op. The app aggregates the hooks of every module that
   declares `'agents'` and calls each in isolation: a throw or a rejection in
   one module is logged by the host (`{ err, module, hook }`) and reaches
   neither the other modules nor the socket layer. You do not need to catch to
