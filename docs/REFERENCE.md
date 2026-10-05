@@ -623,7 +623,9 @@ maintained separately from the server sections above, and that file is the
 authority when the two differ.
 
 - UI kit: `Button`, `TextInput` (`onClear` puts a clear button in the field
-  while it holds a value; touch screens only on a date field), `Checkbox`, `Switch`,
+  while it holds a value; touch screens only on a date field), `TextArea` (the
+  same look over several lines; `autoGrow` makes the height follow the
+  content, with no manual resize), `Checkbox`, `Switch`,
   `NumberInput` (the number field with its ± buttons: `value: number | null`,
   `min`, `max`, `step`, `live`), `Slider` (a labelled range input: `valueLabel`,
   `marks`, `indicator`), `SearchSelect` (the dropdown: options
