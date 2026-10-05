@@ -209,7 +209,14 @@ origins, signal }`, throws to fail, may return a detail and set `timeoutMs`;
   counts, oldest first; a flow gives `count(repo, ownerWorkspaceIds)`; see
   [12-quotas-and-account](12-quotas-and-account.md)), `env` (the `ModuleEnvSpec` your
   variables are read with, `defineModuleEnv` / `readModuleEnv`: the host warns
-  at boot about each one left to its default), `domains` (`FeatureDomainsEntry`:
+  at boot about each one left to its default), `externalServices(ctx)` (the
+  external services you reach with the instance's own key, for the
+  administrator's "Services externes" page: `SdkExternalService[]`, each
+  `{ id, name, provider?, state, summary?, facts?, meters? }` with `state` one
+  of `ok`, `degraded`, `down`, `inactive`; `ctx` is `{ repo, refresh }`;
+  network calls are allowed, the host gives up after 8 s, so cache what is
+  costly and skip the cache when `refresh` is set; never a service a
+  workspace sets up itself), `domains` (`FeatureDomainsEntry`:
   `records(ctx, domain)`, `probe(ctx, domain)` returning `SdkDomainProbe`,
   optional `useCount(ctx, workspaceId)` and `onRemoved(ctx, domain)`, all given
   a sessionless `FeatureDomainsContext` `{ repo, origins, cipherFor, storeFor,
