@@ -203,7 +203,11 @@ origins, signal }`, throws to fail, may return a detail and set `timeoutMs`;
   account's deletion), `accountExport` (a `FeatureAccountExport`: the fate
   of every table you own in the holder's data export, `store.omit`, `files`
   and the `account` / `workspace` hooks; see
-  [13-account-export](13-account-export.md)), `quotas` (one `FeatureQuotaEntry` per quota of the
+  [13-account-export](13-account-export.md)), `sealed` (the
+  `FeatureSealedColumn`s `{ table, column, id, match?, context? }` holding blobs
+  of `keys.sealBytes`, each table one of `accountExport.tables`: the host
+  re-wraps them when the server key changes; see
+  [10-background-services](10-background-services.md#wrapping-key-material-of-your-own-depskeys)), `quotas` (one `FeatureQuotaEntry` per quota of the
   manifest, `perOperation` ones excepted, and none other: a `stock` gives
   `list(repo, ownerWorkspaceIds)`, the `SdkStockItem`s `{ id, workspaceId }` it
   counts, oldest first; a flow gives `count(repo, ownerWorkspaceIds)`; see

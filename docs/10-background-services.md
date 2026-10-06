@@ -159,22 +159,33 @@ decision, made in a handler). Same gate as in handlers: without
 `ctx.cipher()` and the store already encrypt strings for you. `deps.keys` is
 for the one case they do not cover: a module that runs its own bulk encryption
 (files, streams) and therefore owns a raw symmetric key. You generate it once,
-persist it wrapped under the server key, and unwrap it at `start()`:
+keep it wrapped under the server key in a table of yours, and unwrap it at
+`start()`:
 
 ```ts
 import { randomBytes } from 'node:crypto';
 
-const store = deps.storeFor(workspaceId);
-const wrapped = await store.get('blobKey');
-let raw: Uint8Array;
-if (wrapped === null) {
-    raw = randomBytes(32);
-    // Already ciphertext: 'none' stores the sealed string as is.
-    await store.put('blobKey', deps.keys.sealBytes(raw), { encryption: 'none' });
-} else {
-    const opened = deps.keys.openBytes(wrapped);
-    if (opened === null) throw new Error('blob key cannot be unwrapped: server keys changed?');
-    raw = opened;
+// migrations/002_key.sql: CREATE TABLE ft_myfeature_key (id TINYINT NOT NULL
+// PRIMARY KEY, sealed TEXT NOT NULL) ... COLLATE utf8mb4_general_ci
+export const KEY_CONTEXT = 'ft_myfeature_key:sealed';
+
+let sealed = await deps.repo.sealedKey(); // SELECT sealed FROM ft_myfeature_key WHERE id = 1
+if (sealed === null) {
+    // INSERT IGNORE ... (1, ?): two processes booting together keep the first one.
+    await deps.repo.insertSealedKey(deps.keys.sealBytes(randomBytes(32), KEY_CONTEXT));
+    sealed = await deps.repo.sealedKey();
+}
+const raw = sealed === null ? null : deps.keys.openBytes(sealed, KEY_CONTEXT);
+if (raw === null) throw new Error('blob key cannot be unwrapped: server keys changed?');
+```
+
+Then declare the column on your server entry, so a change of the server key
+(`CRYPT_KEY_A` / `CRYPT_KEY_B`) re-wraps it:
+
+```ts
+sealed: [{ table: 'ft_myfeature_key', column: 'sealed', id: 'id', context: () => KEY_CONTEXT }],
+accountExport: {
+    tables: { ft_myfeature_key: { skip: 'The key that encrypts your files never leaves the server.' } }
 }
 ```
 
@@ -188,6 +199,15 @@ context?: string): Uint8Array | null` reverses it, and answers `null` when
   own for each module: a blob sealed by one module never opens in another.
   Treat `null` as fatal for that key and say so loudly: generating a fresh one
   would silently make everything sealed under the old one unreadable.
+- `sealed` on your server entry lists every column holding such blobs:
+  `{ table, column, id, match?, context? }`, `id` naming the column that
+  identifies a row on its own, `match` narrowing to the rows that hold a blob
+  (`{ kind: 'root' }`), `context` returning what you passed to `sealBytes` for
+  that row. The host re-wraps exactly these columns when the server key
+  changes, and refuses to boot on a table missing from your
+  `accountExport.tables`. A column left out turns unreadable at the first
+  rotation; so does a blob kept in the store, which is the host's table and
+  never declared. Check it in tests with `sealedColumnsProblem(serverEntry)`.
 - `derive(salt: string, info: string, length: number): Uint8Array` yields a
   key DERIVED from the server key (HKDF-SHA256 over the same material as
   `sealBytes`), never stored anywhere: for material that must survive the

@@ -69,7 +69,9 @@ Migrations run at boot without a transaction: make every statement replayable
   binding the blob to its row, `<table>:<column>:<id>`, so a blob copied onto
   another row does not open) or derives one from it (`derive(salt, info,
 length)`: HKDF over the server key, never stored anywhere, for material
-  that must survive the database). Details and the unwrap-at-start pattern in
+  that must survive the database). Every column holding a sealed blob is
+  declared in `sealed` on your server entry, or a rotation of the server key
+  leaves it unreadable. Details and the unwrap-at-start pattern in
   [10-background-services](10-background-services.md#wrapping-key-material-of-your-own-depskeys).
 - **A browser request without a session.** A download the browser must open
   natively, an OAuth consent that comes back through the provider: no header

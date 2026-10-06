@@ -64,9 +64,11 @@ if (!ctx.deveye.devices.isOnline(device.id)) throw new FeatureError('conflict', 
 ## Keep a raw key of your own
 
 ```ts
-// service only: deps.keys wraps bytes under the SERVER key; never user data
-await store.put('blobKey', deps.keys.sealBytes(randomBytes(32)), { encryption: 'none' });
-const raw = deps.keys.openBytes((await store.get('blobKey')) ?? ''); // null = refuse to start
+// service only: deps.keys wraps bytes under the SERVER key; never user data.
+// A table of yours, declared in `sealed`, or a server key rotation loses it.
+await deps.repo.insertSealedKey(deps.keys.sealBytes(randomBytes(32), 'ft_myfeature_key:sealed'));
+const raw = deps.keys.openBytes((await deps.repo.sealedKey()) ?? '', 'ft_myfeature_key:sealed'); // null = refuse to start
+// serverEntry.sealed: [{ table: 'ft_myfeature_key', column: 'sealed', id: 'id', context: () => 'ft_myfeature_key:sealed' }]
 ```
 
 ## Ship your own table
