@@ -717,8 +717,11 @@ danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   "free"), `usePlanPauses()` (how many of the account's items its plan holds
   paused, by `<featureId>.<quotaKey>`), `PlanPausedBadge` (the badge of a
   paused item), `PlanPausedNotice` (`count`, `one`, `many`: the notice above
-  a list that holds paused items), `openAccountView(featureId?)` (opens an
-  account view, the given module's or the first one), `useHiddenFeatures()`
+  a list that holds paused items), `openAccountView(featureId?, hint?)` (opens
+  an account view, the given module's or the first one; `'pro'` preselects
+  the paid offer), `openProOffer({ title?, body })` (the "available with the
+  Pro offer" prompt, for a screen that knows the owner's plan leaves a feature
+  out before sending anything), `useHiddenFeatures()`
   (the features in preview the current account does not see).
 - Shared helpers: `formatBytesFr`, `DeviceFolderPicker` (`allowCreate: false`
   to pick only what exists), `DeviceFolderField` (a path on a device, typed or

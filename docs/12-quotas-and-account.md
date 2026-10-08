@@ -34,7 +34,10 @@ await ctx.repo.create(input);
 - The counter is **never called when unlimited**, and everything is unlimited
   on an instance with no plan provider (a self-hosted DevEye).
 - Beyond the limit the host throws `quota_exceeded` and the client shows its own
-  upgrade prompt: you handle nothing.
+  upgrade prompt: you handle nothing. A limit of 0 (a feature the free plan
+  leaves out) opens its "available with the Pro offer" variant; a screen that
+  already knows it (`ctx.quota.limit(key)` read into a resource) opens that
+  same prompt itself with `openProOffer({ body })`, before sending.
 - Nothing is ever deleted. When a limit drops, a flow quota refuses the next
   use, and a stock quota pauses what goes beyond it (below).
 - Under heavy load, the administrator may serve paying accounts first: every
@@ -165,7 +168,8 @@ caller's personal workspace, whatever workspace is displayed.
   log instead.
 - `ctx.live.accountChanged(userId)` (or `deps.live.accountChanged`) makes that
   account's open clients re-fetch your resources, wherever they sit.
-- `openAccountView()` and `useAccountPlan()` are exported by the client SDK.
+- `openAccountView()`, `openProOffer()` and `useAccountPlan()` are exported by the
+  client SDK.
 
 ## A system page for administrators
 
