@@ -627,7 +627,7 @@ portrait of the barrel that DevEye's own CI checks against the real one; it is
 maintained separately from the server sections above, and that file is the
 authority when the two differ.
 
-- UI kit: `Button`, `TextInput` (`onClear` puts a clear button in the field
+- UI kit: `Button` (`href` renders a real link with the button's look), `TextInput` (`onClear` puts a clear button in the field
   while it holds a value; touch screens only on a date field), `TextArea` (the
   same look over several lines; `autoGrow` makes the height follow the
   content, with no manual resize), `Checkbox`, `Switch`,
