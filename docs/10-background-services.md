@@ -320,10 +320,10 @@ interface on its service under that key, and the app looks it up at call
 time:
 
 ```ts
-import { CLOUDSYNC_BACKUP_PROVIDER, type CloudSyncBackupProvider } from '@deveye/types/sdk';
+import { CLOUDSYNC_BACKUP_PROVIDER, type TreeBackupProvider } from '@deveye/types/sdk';
 
 createService(deps) {
-    const backup: CloudSyncBackupProvider = { findShare, listShares, statsByShare, listPresentFiles, openBlob };
+    const backup: TreeBackupProvider = { list, find, entries, open };
     return { start() {}, stop() {}, providers: { [CLOUDSYNC_BACKUP_PROVIDER]: backup } };
 }
 ```
