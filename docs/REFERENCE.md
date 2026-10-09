@@ -766,12 +766,12 @@ loading, error }`; empty, loaded and error-free without the module),
   answers), `ConfirmRequest` (what a `ConfirmDialog` is opened with),
   `CountState` (what `useWorkspaceCount` answers), `ExternalResourceKey` (a
   resource key of an `x-` module), `LiveOutlineProps`, `PickedFile`,
-  `UploadHandle`, `StickyOffset`.
+  `UploadHandle`, `StickyHeaderProps`.
 - Host navigation and frame: `openFeature(feature, itemId?)` (open another
   feature of the active workspace, on one of its items), `useRequestPopupWidth(px | null)`
-  (ask the feature popup for a wider frame while mounted), `useStickyOffset<T>()`
-  (two sticky bands one under the other: `{ ref, style }`, the ref measures
-  the top band, the style hands a common ancestor the `--sticky-head`
-  variable the lower band offsets itself by; `StickyOffset<T>` is its type).
+  (ask the feature popup for a wider frame while mounted), `StickyHeader`
+  (the top band of a view, its header and the tab bar under it, kept at the
+  top while the content scrolls; `className` sets its layout; publishes its
+  height as `--sticky-head` on its parent for a lower sticky band's `top`).
 
 Anything not listed here is DevEye internal and may change without notice.

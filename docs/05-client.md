@@ -229,10 +229,28 @@ another feature of the active workspace, on one of its items when `itemId` is
 given (the host's teleport, for a "see this project" link), and
 `useRequestPopupWidth(px | null)` asks the feature popup for a wider frame
 while the calling component is mounted (a table explorer in expanded mode).
-When two sticky bands stack (a detail header, then a period bar under it),
-`useStickyOffset<T>()` measures the top one: put its `ref` on that band and its
-`style` on a common ancestor, and the lower band reads `--sticky-head` for its
-`top` (falling back to `0px` where there is no band above).
+
+The popup is the scroll container: your root takes `min-height: 100%`, never
+its own `overflow`, or it reopens scrolled. Its first child is the header,
+wrapped in `StickyHeader` with the tab bar right under it if there is one: the
+band stays at the top while the content scrolls, on an opaque background, and
+draws a line once stuck. Keep your header's layout class on the element inside;
+a `className` on the band itself sets its layout when it holds tabs too, and
+`padding-bottom: 0` when that tab bar draws its own bottom border. The band
+publishes its height as `--sticky-head` on its parent, the view's root: a sticky
+band of your content sits under it with `top: var(--sticky-head, 0px)`.
+
+```tsx
+<div className={styles.root}>
+    <StickyHeader>
+        <header className={styles.header}>
+            <h2 className={styles.title}>{manifest.label}</h2>
+            <FeatureSettingsButton scope={{ kind: 'feature', feature: 'x-counter' }} />
+        </header>
+    </StickyHeader>
+    {/* the content */}
+</div>
+```
 
 ## Styles
 

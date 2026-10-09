@@ -4,12 +4,13 @@
  * without a line of theme code. Never hardcode a color.
  */
 
+/* The popup is the scroll container: a root that scrolled on its own would
+   keep its position and reopen scrolled. */
 .root {
     display: flex;
     flex-direction: column;
     gap: var(--space-lg);
-    height: 100%;
-    overflow-y: auto;
+    min-height: 100%;
 }
 
 /* ------------------------------ L'en-tête -------------------------------- */
