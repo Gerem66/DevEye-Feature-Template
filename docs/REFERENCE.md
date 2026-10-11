@@ -397,7 +397,13 @@ metricIntervalSeconds, effectiveMetricIntervalSeconds, report }`, what the
   read from your env: each matches `DOMAIN_HOST_PATTERN`, differs from the
   app's and the public surface's hosts and is claimed by one feature only, or
   the boot refuses; reserved, no workspace can declare them and the domain
-  proxy never routes them; requires `hostRequest`), `hostRequest?(req:
+  proxy never routes them; requires `hostRequest`), `ownListener?: { port:
+number }` (a listener of your own, opened by the host on this port, that
+  serves your public routes and `hostRequest` for your `ownHosts` and your
+  verified web domains, and nothing else; none of your routes stays on the
+  other listeners, and the domain proxy sends your domains there; requires
+  `ownHosts` and `hostRequest`; a port another listener holds is refused at
+  boot), `hostRequest?(req:
 SdkHostRequest, reply, domain: SdkDomain | null)` (every GET or HEAD no route
   matched, root included, on one of your `ownHosts`, `domain` then `null`, or
   on one of your verified web domains; your `publicRoutes` still win; behind

@@ -144,6 +144,12 @@ points it at the public listener by hand. The boot refuses an `ownHosts`
 entry that is malformed, that is the app's or the public surface's own host,
 or that another feature claims.
 
+To keep that name off the instance's ports entirely, add `ownListener: { port
+}`, read from your env: the host opens a listener of its own on that port,
+serving your routes and nothing else, mounts none of them on the app's or the
+public surface's listeners, and sends your customers' domains there too. The
+operator then routes the name to that port instead.
+
 ```ts
 createService(deps) {
     const short = env.SHORT_ORIGIN ? new URL(env.SHORT_ORIGIN).hostname : null;
