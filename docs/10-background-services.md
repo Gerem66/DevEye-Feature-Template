@@ -46,7 +46,7 @@ members owner included, capability `'members.read'`: the names a public page
 shows), `devices` (`find(id)` and `isOnline`, the whole fleet, same
 capability), `accounts` (`find`, `findByEmail`, `list`, `search`, `all`,
 capability `'accounts.read'`), `usage` (`of`, `ofMany`, capability
-`'accounts.usage'`), `accountMail` (`configured`, `send`, `sendToAdmins`,
+`'accounts.usage'`), `accountMail` (`configured`, `send`, `sendToModerators`,
 capability `'accounts.mail'`; all three in
 [12-quotas-and-account](12-quotas-and-account.md#an-entry-in-the-user-menu)),
 `quotaFor(workspaceId)` (the owner's plan against your quotas, for what gets
@@ -58,7 +58,11 @@ topics?)`: your topic, or the topics named,
 [09-live](09-live.md#writes-without-a-command); `publish(workspaceId, event,
 payload)`, capability `'live.publish'`,
 [09-live](09-live.md#pushing-your-own-frames-livepublish);
-`accountChanged(userId)`), `audit(entry)` (recorded as the system; pass
+`accountChanged(userId)`; `pendingChanged()`: what your `adminPending` counts
+may have moved, a report just filed on a public route, a queue a ticker finds
+late,
+[12-quotas-and-account](12-quotas-and-account.md#administration-tabs)),
+`audit(entry)` (recorded as the system; pass
 `userId` when the work concerns one user's data), `keys` (raw key wrapping and
 derivation, [below](#wrapping-key-material-of-your-own-depskeys)),
 `objects(localDir)` (the host's object store, capability `'objects'`,

@@ -38,6 +38,11 @@ and the app-provided `deveye-sdk-client` module.
   [10-background-services](10-background-services.md#who-visits-depsgeo-and-the-visitor-helpers)).
 - `CrossTopicInvalidation`: `{ topic, keys }`, the element of the manifest's
   `alsoInvalidatedBy` (a native topic, a subset of `resources`; at most 4).
+- `AdminTabSpec`: `{ id, label, moderation?: true }`, the element of the
+  manifest's `adminTabs` (ids unique, the shape of an extra permission key,
+  each with its component in `FeatureClient.AdminTabs`): your tabs in the
+  feature administration popup, a `moderation` one open to moderators too; see
+  [12-quotas-and-account](12-quotas-and-account.md#administration-tabs).
 - `FeatureManifest.topics`: `{ id, keys }[]`, secondary live topics of your
   own (`id` prefixed by your feature id and different from it, `keys` a
   subset of `resources`), beaten by `mutates: ['<topic>']` or
@@ -233,7 +238,15 @@ origins, signal }`, throws to fail, may return a detail and set `timeoutMs`;
   counts, oldest first; a flow gives `count(repo, ownerWorkspaceIds)`; see
   [12-quotas-and-account](12-quotas-and-account.md)), `env` (the `ModuleEnvSpec` your
   variables are read with, `defineModuleEnv` / `readModuleEnv`: the host warns
-  at boot about each one left to its default), `externalServices(ctx)` (the
+  at boot about each one left to its default), `adminPending(ctx)` (what
+  awaits a human decision, by id of `manifest.adminTabs`: the live badges of
+  the moderators and administrators; cheap counts, asked again on every
+  `live.pendingChanged()`), `adminFacts(ctx)` (your own figures for the
+  overview of the administration popup, across every account: `SdkAdminFact`
+  `{ label, value, unit: 'count' | 'bytes' }[]`); both get an
+  `SdkAdminContext` `{ repo, pauses }`, sessionless (see
+  [12-quotas-and-account](12-quotas-and-account.md#administration-tabs)),
+  `externalServices(ctx)` (the
   external services you reach with the instance's own key, for the
   administrator's "Services externes" page: `SdkExternalService[]`, each
   `{ id, name, provider?, state, summary?, facts?, meters? }` with `state` one
@@ -293,8 +306,11 @@ drops, carries? }` on the SOURCE, and `admit(ctx)` / `settle(ctx)` on the
   quota: `ctx.quota.assert`, the destination owner's).
 - `SdkFeatureDefinition` / `defineSdkFeature`: one command:
   `access?: { level?: 'read' | 'write'; extras?: string[]; admin?: boolean;
-scope?: 'account' }` (`admin: true` requires a global administrator on top
-  of the feature check: fleet management; `scope: 'account'` runs the command
+moderation?: boolean; scope?: 'account' }` (`admin: true` requires a global
+  administrator on top of the feature check: fleet management, an admin-only
+  administration tab; `moderation: true` a moderator or a global
+  administrator, for the commands of a `moderation` administration tab;
+  `scope: 'account'` runs the command
   in the caller's personal workspace whatever the client sent, for what acts on
   the account rather than on a workspace),
   `mutates?: boolean | readonly string[]` (`true` beats your feature's own
@@ -304,9 +320,10 @@ scope?: 'account' }` (`admin: true` requires a global administrator on top
 - `SdkFeatureContext<Repo>`: see [03-server-handlers](03-server-handlers.md).
   Carries `isAdmin` (the caller is a global administrator: what a fleet-wide
   view keys on; a command that must require it declares `access: { admin:
-true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
-  throws `forbidden` otherwise), `secrecy: SdkSecrecy` (`isUnlocked()`, and
-  `ticket(payload, { ttlSeconds? })`: a short-lived ticket signed by the host
+true }`; `false` for a moderator), `transport: SdkSocketTransport`
+  (capability `'agents'`; every method throws `forbidden` otherwise),
+  `secrecy: SdkSecrecy` (`isUnlocked()`, and `ticket(payload, { ttlSeconds?
+})`: a short-lived ticket signed by the host
   and bound to the caller, their session, this workspace and your module, that
   a public route of your service redeems with `deps.secrecy.redeem`; two
   minutes by default), `keys: SdkServerKeys` (the same object a service gets),
@@ -315,7 +332,10 @@ true }`), `transport: SdkSocketTransport` (capability `'agents'`; every method
   `read` on your feature, and `event` must start with your feature id;
   `accountChanged(userId)`: the account's open clients, wherever they sit,
   re-fetch the account plan and your resources, and the host re-applies its
-  `stock` limits; no payload, so no capability), `items: SdkItems`
+  `stock` limits; no payload, so no capability; `pendingChanged()`: what your
+  `adminPending` counts may have moved, the host counts again, coalesced, and
+  relights the badges of every moderator and administrator connected),
+  `items: SdkItems`
   (`restrictions()`, `assert(itemId, level?)`, `canExtra(itemId, key)`,
   `forget(itemId)`, all on text ids: pass `String(row.id)` from a row-keyed
   table), `quota: SdkQuota` (below), `sharing: SdkSharing` (`scope()`
@@ -372,14 +392,17 @@ itemIds?, except? })` (an `SdkAlert`: `subject`, `body`, `payload?`, `embeds?`;
   `telemetry` (an `SdkTelemetry`: `snapshot(deviceId, ts)` returning an
   `SdkTelemetrySnapshot` or null, `pinInstant(deviceId, ts)`), `agents` (an
   `AgentsFacade`); each gated by the manifest's `nativeCapabilities`.
-- Accounts: `SdkAccount` `{ id, email, username, isAdmin, e2e, suspended,
-created }`; `SdkAccounts` (`find`, `findByEmail`, `list(userIds)`,
+- Accounts: `SdkAccount` `{ id, email, username, isAdmin, canModerate, e2e,
+suspended, created }` (`canModerate`: a moderator or a global
+  administrator); `SdkAccounts` (`find`, `findByEmail`, `list(userIds)`,
   `search(query, limit?)`, `all()`), sessionless, for services;
   `SdkAccountUsage` `{ userId, quotas }` of `SdkAccountQuotaUse` `{ kind:
 'stock' | 'flow' | 'perOperation', used, paused }`, `SdkUsage` (`of`,
   `ofMany`); `SdkAccountMail` (`configured`, `send(userId, message)`,
-  `sendToAdmins(message)`) over `SdkAccountMailMessage` `{ subject,
-paragraphs, notice?, button?, footnote? }`. See
+  `sendToModerators(message)`: one copy to each active moderator and
+  administrator, never the reporter's address nor IP in it) over
+  `SdkAccountMailMessage` `{ subject, paragraphs, notice?, button?,
+footnote? }`. See
   [12-quotas-and-account](12-quotas-and-account.md#an-entry-in-the-user-menu).
 - `SdkDevice`: `{ id, name, online, status, ownerUserId, workspaceId,
 metricIntervalSeconds, effectiveMetricIntervalSeconds, report }`, what the
@@ -458,7 +481,7 @@ rawBody? (on a route that asked for it), ip }`, nothing of a session;
   `suspended` an account an administrator suspended), `usage` (`SdkUsage`:
   `of`, `ofMany`, capability `'accounts.usage'`, no caller to check),
   `accountMail` (`SdkAccountMail`: `configured`,
-  `send(userId, SdkAccountMailMessage)`, `sendToAdmins(message)`, capability
+  `send(userId, SdkAccountMailMessage)`, `sendToModerators(message)`, capability
   `'accounts.mail'`), `quotaFor(workspaceId)` (an `SdkQuota` for that
   workspace's owner, for what gets created outside any command), `pauses`
   (`SdkPlanPauses`: your paused `stock` items whatever the workspace),
@@ -466,7 +489,8 @@ rawBody? (on a route that asked for it), ip }`, nothing of a session;
   topic by default, or the topics named, your own secondary ones or another
   feature's; `publish(workspaceId, event, payload)`: capability
   `'live.publish'`, one frame to that workspace's connected readers;
-  `accountChanged(userId)`, as on the context), `audit` (system
+  `accountChanged(userId)` and `pendingChanged()`, as on the context, the
+  latter also from a public route), `audit` (system
   source, optional `userId`), `agents`, `access` (what a member may do NOW,
   without a session, for work that runs on their behalf: `feature(workspaceId,
 userId, { level?, extras?, itemId? })` for your feature,
@@ -560,9 +584,10 @@ timeoutMs?)`; `archiveFolder(deviceId, request, options?)` (an
   your own commands return, which the server authorizes against the caller's
   grants; mounted inside a button that opens your feature, so nothing
   interactive in it), `AccountView?` (`manifest.accountEntry`;
-  `AccountViewProps` `{ close, isAdmin, hint? }`), `AdminView?`
-  (`manifest.adminEntry`; `AdminViewProps` `{ close }`, for a global
-  administrator only), `cacheDurationMinutes?`, `preload?`, `holdSecrecy?`,
+  `AccountViewProps` `{ close, isAdmin, hint? }`), `AdminTabs?` (one
+  component per id of `manifest.adminTabs`, no props, drawn under the header
+  of the feature administration popup: no title, sticky header or scrolling
+  container of its own), `cacheDurationMinutes?`, `preload?`, `holdSecrecy?`,
   `providers?` (named contracts offered to the host's screens, the ones
   published in [Client contracts](#client-contracts-sdkclientts)).
 - `SettingsPanelProps`: `{ scope, canWrite, close, gone }`; `close()`
@@ -588,7 +613,8 @@ timeoutMs?)`; `archiveFolder(deviceId, request, options?)` (an
 
 - `createTestContext(overrides?)`: an in-memory `SdkFeatureContext` plus
   `recorded` (`notifications`, `liveMessages`, `audits`, `agentRequests`,
-  `archiveRequests`, `pinnedInstants`, `livePublishes`, `accountChanges`),
+  `archiveRequests`, `pinnedInstants`, `livePublishes`, `accountChanges`,
+  `pendingChanges`: how many times `live.pendingChanged` was called),
   `forgotten` (the item ids passed to `items.forget`) and an inspectable
   `store.rows`. By default the caller is the owner, writes, is not an
   administrator, and sits in personal workspace 1 as user 1; the facade
@@ -606,7 +632,8 @@ timeoutMs?)`; `archiveFolder(deviceId, request, options?)` (an
   applies the dispatcher's rule, `sharing.scope()` has no projection and the
   identity cipher, `domains` is empty, and `origins` is `https://deveye.test`
   / `https://public.deveye.test` / `https://site.deveye.test`. Overrides:
-  `repo`, `userId`, `workspaceId`, `kind`, `isOwner`, `isAdmin`, `canWrite`,
+  `repo`, `userId`, `workspaceId`, `kind`, `isOwner`, `isAdmin` (a
+  moderator is `isAdmin: false`), `canWrite`,
   `extras` (the grant as a role would carry it), `manifest` (its
   `extraPermissions`, so `canExtra` / `extraValue` follow the runtime rules;
   without it every extra answers `false` / `''`), `workspaces` (what
@@ -634,7 +661,8 @@ summary? }` or an `Error`; a device without an entry throws), `openTcp`,
   `createTicker` call, so a test drives ticks by hand: `await
 tickers[0].tick()`), `liveChanges` and `liveTopicChanges` (which topics a
   `live.changed(ws, [...])` beat) and `mails` (what `accountMail.send` and
-  `sendToAdmins` accepted, with the address), and `stores` maps each
+  `sendToModerators` accepted, with the address; `sendToModerators` writes to
+  the `accounts` given with `canModerate`), and `stores` maps each
   workspace touched to its in-memory store. By default `access` grants every
   right, `accountMail` is configured and writes to the `accounts` given,
   `keys.sealBytes` answers a handle its `openBytes` opens (an unknown handle

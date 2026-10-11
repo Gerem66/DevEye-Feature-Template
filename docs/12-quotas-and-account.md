@@ -155,10 +155,12 @@ caller's personal workspace, whatever workspace is displayed.
   tick. `configured` is `false` on a server without SMTP, where `send` throws
   `conflict`. Keep it to what the account must receive (a renewal notice, a
   receipt): it never agreed to anything else.
-- `deps.accountMail.sendToAdmins(message)` writes the same kind of email to
-  every active administrator of the DevEye, for what only the operator can
-  act on (a report of illicit content on a public page). It resolves the
-  addresses reached, empty without any administrator.
+- `deps.accountMail.sendToModerators(message)` writes the same kind of email
+  to every active moderator and administrator of the DevEye, for what awaits
+  their decision (a report of illicit content on a public page). A moderator
+  never learns where a report came from: leave the reporter's address and IP
+  out of the message. It resolves the addresses reached, empty when there is
+  no one.
 - `onAccountDeleted(userId)` on your service runs before an account is
   deleted with everything it owns: end what you hold for it elsewhere (a
   subscription with a payment provider). It may return `{ paragraph }`, one
@@ -171,14 +173,60 @@ caller's personal workspace, whatever workspace is displayed.
 - `openAccountView()`, `openProOffer()` and `useAccountPlan()` are exported by the
   client SDK.
 
-## A system page for administrators
+## Administration tabs
 
-For what the operator handles for the whole instance (reports to moderate),
-`adminEntry: { label, icon? }` adds a page among the system pages of the
-account menu, shown and opened for a global administrator only. It renders
-`FeatureClient.AdminView` (`close()`), and every command it sends declares
-`access: { scope: 'account', admin: true }`. `/?admin=<your module id>` opens
-it on arrival: the button of a mail sent with `accountMail.sendToAdmins`.
+For what the operator of the instance handles across accounts (reports to
+moderate, a queue to watch), `adminTabs` adds your tabs to the feature
+administration popup. A global administrator opens it from the account menu
+and finds, for your feature, the overview the host draws and then your tabs; a
+moderator opens the moderation popup, which shows only the `moderation` tabs.
+
+```ts
+// manifest.ts
+adminTabs: [{ id: 'reports', label: 'Reports', moderation: true }],
+```
+
+```tsx
+// client entry
+export const clientEntry: FeatureClient = { Widget, Full, AdminTabs: { reports: Reports } };
+```
+
+- Each tab id (the shape of an extra permission key) has its component in
+  `FeatureClient.AdminTabs`, without props. The popup draws the header (your
+  feature, its tabs): draw no title and no sticky header of your own, and no
+  scrolling container; your content sits right under the tabs. A filter that
+  governs one block sits on that block's heading row.
+- A `moderation` tab opens to moderators as well as to global administrators,
+  and every command it sends declares
+  `access: { scope: 'account', moderation: true }`. Any other tab is for global
+  administrators only, its commands declaring
+  `access: { scope: 'account', admin: true }`. The host enforces both before
+  your handler runs.
+- `ctx.isAdmin` stays `false` for a moderator. What only an administrator may
+  read (who filed a report: their address, their IP) is left out on the
+  server, the output schema declaring those fields nullable, and the tab shows
+  them only when present.
+- `server.adminPending({ repo, pauses })` answers, by tab id, how many things
+  await a human decision (open reports, a queue running late): the live badges
+  of the account menu, of your feature in the popup and of the tab. Cheap
+  counts only; a tab absent or at 0 lights nothing. `pauses` holds your paused
+  `stock` items, whatever the workspace.
+- Whenever that count may have moved, call `ctx.live.pendingChanged()` in a
+  handler (a report decided) or `deps.live.pendingChanged()` in a service or a
+  public route (a report just filed, a ticker finding a queue late). The host
+  counts again, coalesced, and relights the badges of every moderator and
+  administrator connected. The beat travels on the native topic `pending`:
+  declare `alsoInvalidatedBy: [{ topic: 'pending', keys: ['x-demo.reports'] }]`
+  and a decision taken by one moderator refreshes the list on the others'
+  screens.
+- `server.adminFacts({ repo, pauses })` answers your own figures for the
+  overview, across every account: `{ label, value, unit: 'count' | 'bytes' }[]`
+  (links created, bytes stored). The host counts the rest itself: the
+  workspaces whose home has your card, their members, the size of your tables,
+  your quotas.
+- `/?moderation=<your module id>` opens the reader's popup on your feature on
+  arrival: the button of a report mail sent with
+  `accountMail.sendToModerators`.
 
 ## Webhooks
 
