@@ -80,7 +80,9 @@ length)`: HKDF over the server key, never stored anywhere, for material
   session, this workspace, your module); a public route of your service
   redeems it with `deps.secrecy.redeem(ticket)` and gets the caller's ciphers
   back, private tier included while their session is unlocked. The module
-  never sees a session id nor a key. See
+  never sees a session id nor a key. A consent that must end in the session
+  that started it redeems its `state` with `ctx.secrecy.redeem` instead, from
+  a command. See
   [10-background-services](10-background-services.md#tickets-a-public-route-acting-for-a-session).
 
 ## Files: the object store

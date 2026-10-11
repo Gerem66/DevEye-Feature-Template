@@ -315,9 +315,20 @@ the download URL, as the OAuth `state`); the public route redeems it,
 `await deps.secrecy.redeem(ticket)`, and gets `{ userId, workspaceId,
 payload, cipher: { server, private } }` back: the caller's open cipher
 always, the private one while their session is unlocked (`null` otherwise).
-`null` as a whole means invalid, expired, or another module's ticket: answer
-403 and stop. The module never sees a session id nor a key, and the route
-stays sessionless for everyone who does not hold a ticket.
+`null` as a whole means invalid, expired, another module's ticket, or a
+session that has since ended: answer 403 and stop. The module never sees a
+session id nor a key, and the route stays sessionless for everyone who does
+not hold a ticket.
+
+A ticket is a bearer: whoever presents it is served. For a gesture that
+must end where it began (an OAuth consent: the `state` in a link mailed to
+someone else must never land that person's account in the sender's
+workspace), the public route finalises nothing. It renders a page that hands
+`code` and `state` back to the page that opened the popup
+(`window.opener.postMessage`), and that page sends them through a command of
+yours, which redeems the ticket with `ctx.secrecy.redeem(state)`: only the
+session that minted it reads it back, `null` for any other. Mail and Finance
+do exactly this.
 
 ### Who visits: `deps.geo` and the visitor helpers
 

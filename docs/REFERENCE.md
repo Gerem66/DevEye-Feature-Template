@@ -328,11 +328,13 @@ SdkItemFinder; admin?: boolean; moderation?: boolean; scope?: 'account' }`
   view keys on; a command that must require it declares `access: { admin:
 true }`; `false` for a moderator), `transport: SdkSocketTransport`
   (capability `'agents'`; every method throws `forbidden` otherwise),
-  `secrecy: SdkSecrecy` (`isUnlocked()`, and `ticket(payload, { ttlSeconds?
+  `secrecy: SdkSecrecy` (`isUnlocked()`; `ticket(payload, { ttlSeconds?
 })`: a short-lived ticket signed by the host
   and bound to the caller, their session, this workspace and your module, that
-  a public route of your service redeems with `deps.secrecy.redeem`; two
-  minutes by default), `keys: SdkServerKeys` (the same object a service gets),
+  a public route of your service redeems with `deps.secrecy.redeem`, two
+  minutes by default; `redeem(ticket)`: the payload of a ticket THIS session
+  minted, `null` for any other, for a gesture that must end where it began),
+  `keys: SdkServerKeys` (the same object a service gets),
   `live: SdkContextLive` (`publish(event, payload)`: capability
   `'live.publish'`, the frame goes to the members of THIS workspace who hold
   `read` on your feature, and `event` must start with your feature id;
