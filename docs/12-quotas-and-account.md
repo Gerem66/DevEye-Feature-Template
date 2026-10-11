@@ -177,9 +177,10 @@ caller's personal workspace, whatever workspace is displayed.
 
 For what the operator of the instance handles across accounts (reports to
 moderate, a queue to watch), `adminTabs` adds your tabs to the feature
-administration popup. A global administrator opens it from the account menu
-and finds, for your feature, the overview the host draws and then your tabs; a
-moderator opens the moderation popup, which shows only the `moderation` tabs.
+administration popup, "Modération" in the account menu. A feature with a
+`moderation` tab is listed apart, at the top. A global administrator sees every
+feature there, each with the overview the host draws and then your tabs; a
+moderator sees only the features with a `moderation` tab, and only those tabs.
 
 ```ts
 // manifest.ts
