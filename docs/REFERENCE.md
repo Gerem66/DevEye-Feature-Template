@@ -305,8 +305,11 @@ drops, carries? }` on the SOURCE, and `admit(ctx)` / `settle(ctx)` on the
   clear and may amend them (a globally unique key to regenerate) or throw (a
   quota: `ctx.quota.assert`, the destination owner's).
 - `SdkFeatureDefinition` / `defineSdkFeature`: one command:
-  `access?: { level?: 'read' | 'write'; extras?: string[]; admin?: boolean;
-moderation?: boolean; scope?: 'account' }` (`admin: true` requires a global
+  `access?: { level?: 'read' | 'write'; extras?: string[]; item?: field |
+SdkItemFinder; admin?: boolean; moderation?: boolean; scope?: 'account' }`
+  (`item` names the targeted item, as an input field or as a function that
+  finds it, and the host checks `level` and `extras` on it, override included;
+  without it, the role decides; `admin: true` requires a global
   administrator on top of the feature check: fleet management, an admin-only
   administration tab; `moderation: true` a moderator or a global
   administrator, for the commands of a `moderation` administration tab;
@@ -629,7 +632,7 @@ timeoutMs?)`; `archiveFolder(deviceId, request, options?)` (an
   own, anyone's for an administrator), `quota` is unlimited and `paid`,
   `keys.openBytes` answers `null` (unwrap in a service, where the harness
   keeps what it sealed), `items.restrictions()` is empty, `items.assert`
-  applies the dispatcher's rule, `sharing.scope()` has no projection and the
+  applies the host's rule (an override replaces `canWrite`, both ways), `sharing.scope()` has no projection and the
   identity cipher, `domains` is empty, and `origins` is `https://deveye.test`
   / `https://public.deveye.test` / `https://site.deveye.test`. Overrides:
   `repo`, `userId`, `workspaceId`, `kind`, `isOwner`, `isAdmin` (a

@@ -57,6 +57,27 @@ required) or imperatively (`ctx.canExtra('reset')`,
 `ctx.extraValue('exportScope')`) when the answer shapes the result instead of
 gating the command.
 
+## 4. Per-item overrides
+
+When your manifest declares `items`, a workspace can set a role's level and
+extras on ONE item: hide it, make it read-only, or open writing on it to a role
+that only reads elsewhere. A command that targets an item names it in
+`access.item`, and the host checks the level and the extras on THAT item
+before your handler runs:
+
+```ts
+defineSdkFeature({ ...boardRename, access: { level: 'write', item: 'boardId' }, handler });
+// reached through another row: return the item, or undefined when the row does not exist
+defineSdkFeature({
+    ...cardMove,
+    access: { level: 'write', item: async (ctx, input) => (await ctx.repo.findCard(input.cardId))?.boardId },
+    handler
+});
+```
+
+A command that names no item (add, reorder, a setting of the feature) needs the
+level and the extras from the role itself: an item's override never opens it.
+
 ## The one rule to never forget
 
 **The UI hides, the server authorizes.** Client-side checks

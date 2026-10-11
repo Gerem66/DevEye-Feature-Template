@@ -249,4 +249,8 @@ assert.equal(ctx.canExtra('purge'), false);
 // a handler that calls ctx.items.assert(id, 'write'), on a read-only caller
 const readOnly = createTestContext({ canWrite: false });
 await assert.rejects(() => handler(readOnly, input), /write required/);
+
+// the same caller, with writing opened on THIS item by an override
+const opened = createTestContext({ canWrite: false, itemRestrictions: { [id]: 'write' } });
+await handler(opened, input);
 ```
