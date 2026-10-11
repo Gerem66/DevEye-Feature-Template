@@ -289,7 +289,10 @@ drops, carries? }` on the SOURCE, and `admit(ctx)` / `settle(ctx)` on the
   reference it): what an item is made of, the ONE hand-held list both gestures
   use. Per table: `table`, `idColumn` (absent on a pure link table), `idKind`
   (`'auto'` | `'uuid'`), `ownerColumn` / `ownerScope`, `sealed` (encrypted
-  columns), `refs` (column to table of the tree, rewritten to the new ids),
+  columns), `redact` (per sealed column, what travels instead of the clear
+  text: a copy goes through the browser of a member who may only read the
+  item, so no password or token ever travels; a secret in a column of its own
+  goes in `omit`), `refs` (column to table of the tree, rewritten to the new ids),
   `workspaceColumn`, `userColumn` (rewritten to whoever copies), `omit` (left to
   the column default: a source of the origin workspace, a sync state), `cache`
   (rows the destination rebuilds: moved, never copied). On the root only:
