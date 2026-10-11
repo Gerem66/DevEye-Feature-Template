@@ -388,7 +388,7 @@ itemIds?, except? })` (an `SdkAlert`: `subject`, `body`, `payload?`, `embeds?`;
   `usage.of(userId)` / `usage.ofMany(userIds)` (capability `'accounts.usage'`:
   an `SdkAccountUsage` `{ userId, quotas }`, `{ kind, used, paused }` by full
   key; `of` answers the caller's own or anyone's for a global administrator,
-  `ofMany` is the administrator's alone), `devices.authorize/list/isOnline`,
+  `ofMany` is the administrator's alone), `devices.authorize/assertControl/list/isOnline`,
   `telemetry` (an `SdkTelemetry`: `snapshot(deviceId, ts)` returning an
   `SdkTelemetrySnapshot` or null, `pinInstant(deviceId, ts)`), `agents` (an
   `AgentsFacade`); each gated by the manifest's `nativeCapabilities`.

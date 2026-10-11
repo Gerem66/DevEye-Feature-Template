@@ -85,6 +85,13 @@ effectiveMetricIntervalSeconds, report }` (`effectiveMetricIntervalSeconds`
   requires the CALLER to hold these Devices permissions on this device
   (`files`, `docker`…), item overrides included, and throws `forbidden`
   otherwise: your `access` can only name your own feature's permissions.
+  Add `control: true` where your handler is about to make the machine act
+  (save a folder it reads or writes, a service it redeploys, a tunnel it
+  opens): the caller must then have confirmed with their authenticator app
+  lately, and gets `stepup_required` otherwise, which the client turns into
+  the code prompt and one retry. Leave it out of a mere check of rights, such
+  as the list of devices a form offers. `devices.assertControl()` asks the
+  same confirmation where no device exists yet.
 - `telemetry`: the devices' metric store, capability `'telemetry.read'`,
   reserved to DevEye's own modules.
 - `agents`: the agent-fleet transport, capability `'agents'`, reserved to
