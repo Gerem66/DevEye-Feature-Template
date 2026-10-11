@@ -544,6 +544,7 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   (the header written safely for any name, the real one in the RFC 5987 form)
   and `parseByteRange(header, size)` (one `Range`: `{ start, end }` inclusive,
   `null` for a plain 200, `'unsatisfiable'` for a 416).
+- A CSV for a spreadsheet: `toCsv(rows, separator?)` (byte order mark, CRLF, `;` by default) and `csvCell(value, separator?)`, which quotes what needs it and prefixes an apostrophe to a formula trigger (`=`, `+`, `-`, `@`) that is not a number, so a value that came from a form or a bank never evaluates.
 - The holder's data export: `accountExportProblem(entry)` (what the host
   refuses at boot, or `null`; check it in your tests), `EXPORT_SECRET_COLUMN`
   (the column names that must be `omit` or `keep`), `exportTableRows`; types
