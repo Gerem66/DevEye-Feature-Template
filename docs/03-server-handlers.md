@@ -81,7 +81,10 @@ effectiveMetricIntervalSeconds, report }` (`effectiveMetricIntervalSeconds`
   device when it exists and belongs to this workspace, a throw otherwise
   (`not_found` for an unknown id). Call `authorize` before acting on a device
   id the client sent: the id is caller input, and this check is what ties it
-  to the request's workspace. `devices.authorize(id, { extras })` also
+  to the request's workspace and to what the caller sees: a device their
+  role hides is `not_found`, and `level: 'write'` refuses one that is
+  read-only for them (`devices.list()` leaves out the hidden ones too).
+  `devices.authorize(id, { extras })` also
   requires the CALLER to hold these Devices permissions on this device
   (`files`, `docker`…), item overrides included, and throws `forbidden`
   otherwise: your `access` can only name your own feature's permissions.
