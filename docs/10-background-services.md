@@ -63,6 +63,8 @@ payload)`, capability `'live.publish'`,
 derivation, [below](#wrapping-key-material-of-your-own-depskeys)),
 `objects(localDir)` (the host's object store, capability `'objects'`,
 [04-storage-and-encryption](04-storage-and-encryption.md#files-the-object-store)),
+`geo` (`country`, `attribution`, capability `'geoip'`,
+[below](#who-visits-depsgeo-and-the-visitor-helpers)),
 `secrecy` (`redeem(ticket)`,
 [below](#tickets-a-public-route-acting-for-a-session)), `origins`
 (`{ app, public, site }`, the same a handler gets as `ctx.origins`), `domains`
@@ -288,7 +290,10 @@ createService(deps) {
   may be two different addresses.
 - `/` is the host's, refused at boot. A page served at the root of a
   customer's domain goes through `domainRoot(req, reply, domain)` on the
-  service ([cookbook](11-cookbook.md#serve-something-on-the-customers-own-domain)).
+  service, and a name whose every path is yours (`go.example.com/promo`)
+  through `hostRequest(req, reply, domain)`, with `ownHosts` for a name of the
+  instance itself
+  ([cookbook](11-cookbook.md#serve-something-on-the-customers-own-domain)).
 - A page you render sets its own `content-security-policy`: the public
   surface answers `default-src 'none'` otherwise, which blocks an inline
   `<style>`. A script is best served from a route of yours
@@ -309,6 +314,51 @@ always, the private one while their session is unlocked (`null` otherwise).
 `null` as a whole means invalid, expired, or another module's ticket: answer
 403 and stop. The module never sees a session id nor a key, and the route
 stays sessionless for everyone who does not hold a ticket.
+
+### Who visits: `deps.geo` and the visitor helpers
+
+A public route often wants to know who comes, without keeping anything that
+identifies them. The rules that count people without recognising them are
+pure functions of `@deveye/types/sdk/server`, the ones DevEye's own analytics
+use:
+
+```ts
+import { looksLikeBot, normalizeReferrer, parseUserAgent, visitorRef } from '@deveye/types/sdk/server';
+
+const ua = String(req.headers['user-agent'] ?? '');
+if (looksLikeBot(ua)) return countBot(linkId);
+const { browser, os, device } = parseUserAgent(ua); // browser and os are null when unrecognised
+const visitor = visitorRef(todaysSalt, String(linkId), req.ip, ua);
+const referrer = normalizeReferrer(String(req.headers.referer ?? ''), myHosts, 255);
+const country = deps.geo.country(req.ip); // 'FR', or null
+```
+
+- `parseUserAgent(ua)` gives `{ browser, os, device }`: `browser` and `os` are
+  `null` when unrecognised (name that in your own words), `device` is
+  `'desktop'`, `'mobile'` or `'tablet'`.
+- `looksLikeBot(ua)` catches the robots that announce themselves, nothing
+  more: count them apart, or not at all.
+- `visitorRef(salt, scope, ip, ua)` is a 16-character fingerprint that counts
+  one person once. Neither the address nor the user agent comes out of it.
+  Change the salt every day, so nobody is recognised from one day to the next,
+  and pass a `scope` (a site, a link) so one person never carries the same
+  fingerprint across two of your counters.
+- `originHost(raw)` reduces any form of origin (`https://Example.com:443/`)
+  to its host; `normalizeReferrer(raw, ownHosts, maxLength)` keeps the host of
+  a referrer and nothing else (a full URL would quietly collect personal
+  addresses), `null` when it is empty or one of your own names.
+
+The country comes from the host: declare `'geoip'` and read
+`deps.geo.country(ip)`, an ISO 3166-1 alpha-2 code (`FR`), or `null` for a
+private or unknown address and while the database is not loaded. It answers
+from memory, cheap enough for every request of a public route, and nothing
+leaves the server. The host downloads the database (DB-IP's free country
+edition) at boot and refreshes it every month, only while an installed module
+declares the capability; until a download succeeds, every country is `null`,
+so design for it. Keep the country, never the address. `deps.geo.attribution`
+(`{ text, url }`) is the credit the database's licence requires: show both
+wherever a country appears. In tests, `createTestServiceDeps({ countries:
+{ '203.0.113.7': 'FR' } })`.
 
 ## Offering a contract to the host: `providers`
 

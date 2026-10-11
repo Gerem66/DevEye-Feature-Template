@@ -16,7 +16,7 @@ and the app-provided `deveye-sdk-client` module.
 - `NativeCapability`: `'notify' | 'mail.accounts' | 'members.read' |
 'workspaces.read' | 'devices.read' | 'telemetry.read' | 'agents' |
 'routes.public' | 'live.publish' | 'accounts.read' | 'accounts.usage' |
-'accounts.mail' | 'objects'`; `'telemetry.read'` and `'agents'` are
+'accounts.mail' | 'objects' | 'geoip'`; `'telemetry.read'` and `'agents'` are
   reserved to native-id modules (`validateManifest` refuses them on an `x-`
   id).
   `'workspaces.read'` lists every workspace of this DevEye and refuses anyone
@@ -32,6 +32,10 @@ and the app-provided `deveye-sdk-client` module.
   [09-live](09-live.md#pushing-your-own-frames-livepublish)). `'objects'`
   opens the host's object store (`deps.objects`, see
   [04-storage-and-encryption](04-storage-and-encryption.md#files-the-object-store)).
+  `'geoip'` gives the country of a client address (`deps.geo`), from a
+  database the host downloads and refreshes only while an installed module
+  declares it (see
+  [10-background-services](10-background-services.md#who-visits-depsgeo-and-the-visitor-helpers)).
 - `CrossTopicInvalidation`: `{ topic, keys }`, the element of the manifest's
   `alsoInvalidatedBy` (a native topic, a subset of `resources`; at most 4).
 - `FeatureManifest.topics`: `{ id, keys }[]`, secondary live topics of your
@@ -187,6 +191,17 @@ authorUserId }, what)` (the same for a background job, the author's right
   port and trailing dots dropped: takes a raw `Host` header),
   `domainOwnershipRecord(featureId, host, token)` (the TXT record DevEye
   checks, `_deveye.<host>` holding `deveye-<slug>=<token>`), `SdkDnsRecord`.
+- Visitors, pure functions that count people without recognising them:
+  `parseUserAgent(ua)` (a `UserAgentInfo` `{ browser, os, device }`;
+  `browser` and `os` are `null` when unrecognised, `device` is `'desktop'`,
+  `'mobile'` or `'tablet'`), `looksLikeBot(ua)` (the robots that announce
+  themselves), `visitorRef(salt, scope, ip, userAgent)` (a 16-character
+  fingerprint from which neither the address nor the user agent comes back;
+  change the salt daily, scope it per counter), `originHost(raw)` (the host of
+  an origin, whatever form it came in, port dropped) and
+  `normalizeReferrer(raw, ownHosts, maxLength)` (the referrer's host alone,
+  `null` when empty or one of `ownHosts`). See
+  [10-background-services](10-background-services.md#who-visits-depsgeo-and-the-visitor-helpers).
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
   `migrationsDir`, `createService(deps)`, `mailSamples` (every email you send,
   on made-up data, for the administrator's mail tester: `SdkMailSample`
@@ -200,6 +215,10 @@ authorUserId }, what)` (the same for a background job, the author's right
   that removes what a crashed run left OUTSIDE your tables; a step receives an
   `SdkE2eContext` `{ account, send, fetch, waitFor, defer, state, repo,
 origins, signal }`, throws to fail, may return a detail and set `timeoutMs`;
+  `fetch(path, init?)` is a sessionless request to the server's own listener,
+  resolving `{ status, body, headers }`: header names lowercase, repeated
+  values joined by `, `, and redirects not followed (a 302 comes back as is,
+  its target in `headers.location`);
   register a `defer` right after creating anything that would survive the
   account's deletion), `accountExport` (a `FeatureAccountExport`: the fate
   of every table you own in the holder's data export, `store.omit`, `files`
@@ -373,7 +392,19 @@ metricIntervalSeconds, effectiveMetricIntervalSeconds, report }`, what the
   `'routes.public'`; called once per listener the host exposes, register the
   same routes each time), `domainRoot?(req, reply, domain: SdkDomain)` (the
   page at `GET /` of one of your verified web domains; capability
-  `'routes.public'` and `domains.web` required), `onPlanPause?(change)` (the
+  `'routes.public'` and `domains.web` required), `ownHosts?: readonly string[]`
+  (names of the instance your feature serves whole, outside any customer,
+  read from your env: each matches `DOMAIN_HOST_PATTERN`, differs from the
+  app's and the public surface's hosts and is claimed by one feature only, or
+  the boot refuses; reserved, no workspace can declare them and the domain
+  proxy never routes them; requires `hostRequest`), `hostRequest?(req:
+SdkHostRequest, reply, domain: SdkDomain | null)` (every GET or HEAD no route
+  matched, root included, on one of your `ownHosts`, `domain` then `null`, or
+  on one of your verified web domains; your `publicRoutes` still win; behind
+  the maintenance gate and rate-limited by the host; when several features
+  verified the same name, the first installed that answers the path takes it;
+  exclusive with `domainRoot`; capability `'routes.public'`, and
+  `domains.web` when your manifest declares `domains`), `onPlanPause?(change)` (the
   `SdkPlanPauseChange` `{ key, paused, resumed }` of one of your `stock`
   quotas, once written: for what you hold open), `onAccountDeleted?(userId)`
   (an account is about to be deleted with everything it owns: end what you
@@ -387,7 +418,7 @@ metricIntervalSeconds, effectiveMetricIntervalSeconds, report }`, what the
 - `SdkPublicApp`: `get(path, opts, handler)` / `post(path, opts, handler)`;
   paths are absolute (`/t.js`, `/api/t/b`) and a path the host already serves
   is refused at boot, `/` included: the root belongs to the host
-  (`domainRoot`). `SdkPublicRouteOptions`: `rateLimit?: { max,
+  (`domainRoot`, `hostRequest`). `SdkPublicRouteOptions`: `rateLimit?: { max,
 timeWindow }` (a per-address ceiling on top of the host's own),
   `exposure?: 'everywhere' | 'app'` (`'everywhere'`, the default, mounts the
   route on the app and the public surface; `'app'` on the app's own origin
@@ -401,7 +432,9 @@ parameters), host? (the request's host as the host normalised it, untrusted),
 rawBody? (on a route that asked for it), ip }`, nothing of a session;
   `body`, `query` and `params` are `unknown`, read them through a schema. The
   reply is the chainable `header(name, value)`, `code(status)`,
-  `send(payload?)`.
+  `send(payload?)`. `SdkHostRequest`, what `hostRequest` receives, adds
+  `method` (`'GET' | 'HEAD'`) and `path` (as received, still percent-encoded,
+  without the query string: `/` at the root, `/promo` below it).
   `postStream(path, opts, handler)`: a POST whose body is never decoded nor
   buffered, for an uploaded file. `SdkPublicStreamRouteOptions`: `maxBytes`
   (required, enforced by the host, which cuts the connection past it),
@@ -446,6 +479,10 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   by another module), `origins` (`{ app, public, site }`, as on the context),
   `domains` (`SdkFleetDomains`: `findByHost(host)` whatever the workspace, given
   the raw `Host` header, `get(workspaceId, id)`, `listVerified(workspaceId)`),
+  `geo` (`SdkGeo`, capability `'geoip'`: `country(ip)`, the ISO 3166-1
+  alpha-2 code from memory, `null` for a private or unknown address and while
+  the database is not loaded; `attribution`, the `{ text, url }` credit to
+  show wherever a country appears),
   `providers` (`SdkProviders`, same as on the context),
   `createTicker({ intervalMs, tick })`, `logger`.
 - `SdkServerKeys`: `sealBytes(plain: Uint8Array, context?: string): string`,
@@ -605,7 +642,8 @@ tickers[0].tick()`), `liveChanges` and `liveTopicChanges` (which topics a
   can write to), `mailConfigured`, `quotaLimits`, `paid`, `objects` (your own
   `SdkObjectStore`, to share one with your assertions), `quotas`,
   `accountUsage`, `pausedItems`, `hasRoute`, `notifyAccepted`, `liveChannels`,
-  `origins`, `snapshots`, `domains`, `providers`.
+  `origins`, `snapshots`, `countries` (what `geo.country` answers, by
+  address; every address is unknown by default), `domains`, `providers`.
 - `testDevice(over)`: an `SdkDevice` with sensible defaults (active, online,
   unreported, workspace 1, owner 1, the default cadence). `testDomain({ id,
 host, ... })`: an `SdkDomain`, verified by default, for the `domains`

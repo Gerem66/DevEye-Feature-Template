@@ -123,6 +123,46 @@ createService(deps) {
 }
 ```
 
+When every path of the name is yours (`go.example.com/promo`, a short link
+per path), declare `hostRequest` instead; it excludes `domainRoot`, and needs
+`'routes.public'` and, when your manifest declares `domains`, `domains.web`.
+The host mounts a catch-all `GET` route and hands you every GET or HEAD that
+no route matched, root included, under one of your verified web domains:
+`req.path` as received (still percent-encoded, no query string, `/` at the
+root) and `req.method`. Your `publicRoutes` still win where they match, and a
+path you do not serve is yours to answer (a 404). When several features
+verified the same name, the first installed that answers the path takes it.
+The host caches each verified-domain lookup for 30 seconds, so a name just
+verified or removed takes that long to follow.
+
+A name of the instance itself, outside any customer (a short domain the
+operator bought for your feature), goes in `ownHosts`, read from your env.
+The host hands you every request on it that no route matched, with `domain`
+set to `null`, before any customer lookup, and reserves it: no workspace can
+declare it as a domain, and the domain proxy never routes it, so the operator
+points it at the public listener by hand. The boot refuses an `ownHosts`
+entry that is malformed, that is the app's or the public surface's own host,
+or that another feature claims.
+
+```ts
+createService(deps) {
+    const short = env.SHORT_ORIGIN ? new URL(env.SHORT_ORIGIN).hostname : null;
+    return {
+        start() {},
+        stop() {},
+        ownHosts: short ? [short] : [],
+        async hostRequest(req, reply, domain) {
+            const slug = req.path.slice(1);
+            const link = domain
+                ? await deps.repo.findBySlug(domain.id, slug)
+                : await deps.repo.findByCode(slug);
+            if (!link) return reply.code(404).send();
+            return reply.code(302).header('location', link.target).send();
+        }
+    };
+}
+```
+
 Test the hooks with `createTestDomainsContext({ dns: { mx: async () => [...] } })`
 and the routing with `createTestServiceDeps({ domains: [testDomain({ id: 1, host: 'a.example.com' })] })`.
 
