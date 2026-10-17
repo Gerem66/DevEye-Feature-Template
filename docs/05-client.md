@@ -54,12 +54,57 @@ A few escape hatches for less ordinary commands:
   `instanceof` works): `code` is the protocol code (`locked`, `forbidden`,
   `not_found`, `validation`, `conflict`, `timeout`...), `details` carries the
   validation breakdown when there is one. `humanizeError(e, fallback)` turns
-  the common codes into a sentence; read `code` yourself when your feature
-  knows better (Mail tells an expired mailbox authorization from a sealed
-  session, and spells out which field a validation refused).
+  the common codes into a sentence (`errorNote` builds on it); read `code`
+  yourself when your feature knows better (Mail tells an expired mailbox
+  authorization from a sealed session, and spells out which field a
+  validation refused), and pass that code along in the note.
 - `touchSecrecy()` keeps the unlocked session alive during a long operation
   the user is watching (a mailbox sync). `withSecrecy` already touches after
   every successful call, so most features never call it directly.
+
+## Showing a failure
+
+Every failure your screens show goes through `ErrorNote`, the banner the
+whole app shares. It takes a note, `{ message, code }`: `useResource` hands
+you its `error` already in that shape, and `errorNote(e, fallback)` builds one
+from anything a `catch` receives.
+
+```tsx
+const { data, error } = useCounter();
+const [clickError, setClickError] = useState<ErrorNoteInput | null>(null);
+// ...
+catch (e) {
+    setClickError(errorNote(e, 'Le clic n’a pas abouti.'));
+}
+// ...
+<ErrorNote note={error} />
+<ErrorNote note={clickError} />
+```
+
+The code decides what the banner offers. A refusal that explains itself
+(`validation`, `conflict`, `forbidden`, `not_found`, `locked`,
+`rate_limited`, `quota_exceeded`, `maintenance`, an expired session, a dropped
+connection) shows its sentence and nothing else. Any other failure
+(`internal`, `timeout`, no code at all) also offers a **Signaler** button,
+when the instance takes reports, that opens the report form primed with the
+message: nobody on the user's side can fix it, so it must at least reach the
+administrator.
+
+So keep the code honest on both sides:
+
+- Server side, a failure the user's side explains (their host unreachable,
+  their token revoked, their agent offline, a provider refusing them) throws a
+  code that speaks for itself, `conflict` or `validation`, with a readable
+  sentence. Keep `internal` for what only the instance can fix.
+- Client side, a check you run before sending (a required field, a file too
+  big) builds its note with the matching code:
+  `{ message: 'Le nom est requis.', code: 'validation' }`.
+
+Your repair actions (retry, open the settings) go as children, before the
+report button; `onDismiss` adds a close button at the end. A field's own
+error (`<TextInput error=...>`) stays a string: it is about what was typed. A
+state read from your data (a monitor that is down, the last sync error) is
+not a failure of the screen, and keeps its own rendering.
 
 ## Talking to a device
 

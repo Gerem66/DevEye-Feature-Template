@@ -5,7 +5,6 @@ declare const styles: {
     readonly hero: string;
     readonly value: string;
     readonly bigButton: string;
-    readonly clickError: string;
     readonly journal: string;
     readonly when: string;
     readonly plain: string;

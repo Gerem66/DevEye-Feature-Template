@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import {
+    ErrorNote,
+    errorNote,
     featureApi,
     FeatureSettingsButton,
-    humanizeError,
     invalidate,
     StickyHeader,
     useResource,
-    useWorkspacePermissions
+    useWorkspacePermissions,
+    type ErrorNoteInput
 } from 'deveye-sdk-client';
 
 import { manifest } from '../manifest';
@@ -52,7 +54,7 @@ export default function CounterFull() {
     // rendered, and had it been, the dispatcher would refuse the command.
     const canWrite = useWorkspacePermissions().canFeature('x-counter', 'write');
     const [busy, setBusy] = useState(false);
-    const [clickError, setClickError] = useState<string | null>(null);
+    const [clickError, setClickError] = useState<ErrorNoteInput | null>(null);
 
     const bump = async (): Promise<void> => {
         setBusy(true);
@@ -66,7 +68,9 @@ export default function CounterFull() {
             // get the same refresh through the live topic.
             invalidate('x-counter.state');
         } catch (e) {
-            setClickError(humanizeError(e, 'Le clic n’a pas abouti.'));
+            // The note keeps the failure's code: a refusal that explains itself
+            // shows its sentence, a failure nobody can fix offers a report.
+            setClickError(errorNote(e, 'Le clic n’a pas abouti.'));
         } finally {
             setBusy(false);
         }
@@ -87,7 +91,7 @@ export default function CounterFull() {
                 </header>
             </StickyHeader>
 
-            {error && <p className={styles.empty}>{error}</p>}
+            <ErrorNote note={error} />
 
             <div className={styles.hero}>
                 <span className={styles.value}>{data?.value ?? '…'}</span>
@@ -101,7 +105,7 @@ export default function CounterFull() {
                         +{data?.step ?? 1}
                     </button>
                 )}
-                {clickError && <p className={styles.clickError}>{clickError}</p>}
+                <ErrorNote note={clickError} />
             </div>
 
             {/* The journal this example exists for: the same value twice,

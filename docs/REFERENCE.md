@@ -746,13 +746,16 @@ danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   settings rows), `ReadOnlyNotice` (the one shape of a read-only refusal in a
   settings panel), `ProviderKeys` + `ProviderKeyRow` (a fixed list of
   providers each wanting one key: the rows, the add/edit button and the
-  dialog), `ErrorNote` (+ `ErrorNoteInput`, `ErrorNoteProps`: a refusal
-  banner with the caller's repair actions and a report button) and
+  dialog), `ErrorNote` (+ `ErrorNoteInput`, `ErrorNoteProps`: the banner of
+  every failure shown, with the caller's repair actions as children, an
+  optional `onDismiss`, and a report button when the code is not one the user
+  can act on; see [05-client](05-client.md#showing-a-failure)) and
   `openReport(context?)` (the report form, primed with what failed),
   `CountWidget` + `useWorkspaceCount` (+ `CountState`), `useDragReorder`,
   `UsageMeter` (a quota's gauge), `Dropzone`, `useFileDrop`, `pickFiles`,
   `filesOfDrop` (files picked or dropped, folders included, as `PickedFile`),
-  `uploadFile` (an `UploadHandle`: `done`, `abort()`) + `UploadError`,
+  `uploadFile` (an `UploadHandle`: `done`, `abort()`) + `UploadError`
+  (`code` from the HTTP status, `aborted`),
   `saveFrom`, `Avatar` (a member's identity dot; `user` may be `undefined`),
   `userColorVar(color)` (the CSS variable of an account colour, the one the
   live presence paints with), `useColorScheme()` (`'dark'` or `'light'`, to
@@ -768,9 +771,10 @@ danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   (`'site'`, `'site/traffic'`) for the instance's usage figures and bug
   reports. Static segments only, never an id, a name or anything typed; counted
   while your view is the one open, the deepest screen mounted winning.
-- Data: `useResource(key, load, fallback, deps?)`, `invalidate(...keys)`,
-  `useResourceVersion(key)`, `onResourceChange(key, cb)`,
-  `humanizeError(e, fallback)`, `WsError` (the class a command rejects with:
+- Data: `useResource(key, load, fallback, deps?)` (its `error` is an
+  `ErrorNoteInput`), `invalidate(...keys)`, `useResourceVersion(key)`,
+  `onResourceChange(key, cb)`, `humanizeError(e, fallback)`,
+  `errorNote(e, fallback)` (the note `ErrorNote` takes), `WsError` (the class a command rejects with:
   `code`, `message`, `details`; `instanceof` works), `featureApi(manifest)`
   (typed `send`, with an optional `{ timeoutMs }` for commands that query a
   slow third party, and `{ workspaceId }` to run the command in another of the

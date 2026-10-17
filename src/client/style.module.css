@@ -74,12 +74,6 @@
     filter: opacity(0.5);
 }
 
-.clickError {
-    margin: 0;
-    font-size: 0.8rem;
-    color: var(--danger);
-}
-
 /* ------------------------------ Le journal -------------------------------- */
 
 .journal {
