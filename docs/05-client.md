@@ -100,11 +100,18 @@ So keep the code honest on both sides:
   big) builds its note with the matching code:
   `{ message: 'Le nom est requis.', code: 'validation' }`.
 
+Wherever you write `<ErrorNote>`, the banner shows at the top of its frame,
+full width: under your view's `StickyHeader`, under a dialog's title (the
+settings shell included), and it stays there while the content scrolls. A
+view without a `StickyHeader` keeps it in place. `inline` keeps it where it is
+written: for the failure of one row among others (a history entry, an
+upload), which the top of the frame would cut off from its row.
+
 Your repair actions (retry, open the settings) go as children, before the
-report button; `onDismiss` adds a close button at the end. A field's own
-error (`<TextInput error=...>`) stays a string: it is about what was typed. A
-state read from your data (a monitor that is down, the last sync error) is
-not a failure of the screen, and keeps its own rendering.
+report button; `onDismiss` adds a close button at the end, on the same line.
+A field's own error (`<TextInput error=...>`) stays a string: it is about what
+was typed. A state read from your data (a monitor that is down, the last sync
+error) is not a failure of the screen, and keeps its own rendering.
 
 ## Talking to a device
 

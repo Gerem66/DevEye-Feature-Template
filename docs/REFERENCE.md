@@ -747,8 +747,9 @@ danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   settings panel), `ProviderKeys` + `ProviderKeyRow` (a fixed list of
   providers each wanting one key: the rows, the add/edit button and the
   dialog), `ErrorNote` (+ `ErrorNoteInput`, `ErrorNoteProps`: the banner of
-  every failure shown, with the caller's repair actions as children, an
-  optional `onDismiss`, and a report button when the code is not one the user
+  every failure shown, placed at the top of its view or dialog, with the
+  caller's repair actions as children, an optional `onDismiss`, `inline` to
+  keep it in its row, and a report button when the code is not one the user
   can act on; see [05-client](05-client.md#showing-a-failure)) and
   `openReport(context?)` (the report form, primed with what failed),
   `CountWidget` + `useWorkspaceCount` (+ `CountState`), `useDragReorder`,
