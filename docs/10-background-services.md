@@ -76,7 +76,9 @@ derivation, [below](#wrapping-key-material-of-your-own-depskeys)),
 workspace, [06-settings-panels](06-settings-panels.md#domains)), `providers`
 (`get<T>(key)`, [below](#consuming-a-contract-providersget)), `agents`
 (reserved, [below](#the-agent-fleet-reserved)), `access`
-([below](#acting-on-a-members-behalf-depsaccess)), `createTicker`, `logger`.
+([below](#acting-on-a-members-behalf-depsaccess)), `alertInstance`
+([below](#telling-the-administrators-depsalertinstance)), `createTicker`,
+`logger`.
 
 No user, no session, no `'private'` tier: the sessionless store cannot write
 private values (the type refuses), and reading one throws `locked`. If your
@@ -103,6 +105,25 @@ The rules of a command apply: account not suspended, membership, role, the
 item's override, permissions. `feature` answers for your own feature only;
 `device` for the Devices permissions on one device (capability
 `'devices.read'`). Nothing is cached: a right withdrawn stops the next run.
+
+## Telling the administrators: `deps.alertInstance`
+
+Some failures belong to the instance, not to a member: a certificate the
+operator provides is about to expire, a setting points nowhere. Log them as
+`warn`, and raise them on the administrators' `system` channels:
+
+```ts
+deps.alertInstance({
+    key: 'certificate',
+    level: 'error',
+    title: 'Certificate expires in 3 days',
+    detail: '/etc/ssl/live/mail.example.com/fullchain.pem'
+});
+```
+
+The host prefixes the key with your feature id and sends one alert per key
+every ten minutes at most; nothing leaves outside production. A member's own
+trouble never goes there: notify their workspace with `deveyeFor(ws).notify`.
 
 ## Discipline that keeps hosts happy
 

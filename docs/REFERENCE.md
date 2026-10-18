@@ -522,6 +522,10 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   the database is not loaded; `attribution`, the `{ text, url }` credit to
   show wherever a country appears),
   `providers` (`SdkProviders`, same as on the context),
+  `alertInstance({ key, level, title, detail? })` (`SdkInstanceAlert`: the
+  instance's administrators on their `system` channels, for what the instance
+  must fix; `level` is `info`, `resolved`, `error` or `critical`; one alert per
+  key every ten minutes, nothing outside production),
   `createTicker({ intervalMs, tick })`, `logger`.
 - `SdkServerKeys`: `sealBytes(plain: Uint8Array, context?: string): string`,
   `openBytes(sealed: string, context?: string): Uint8Array | null` (null:
@@ -671,7 +675,8 @@ summary? }` or an `Error`; a device without an entry throws), `openTcp`,
 tickers[0].tick()`), `liveChanges` and `liveTopicChanges` (which topics a
   `live.changed(ws, [...])` beat) and `mails` (what `accountMail.send` and
   `sendToModerators` accepted, with the address; `sendToModerators` writes to
-  the `accounts` given with `canModerate`), and `stores` maps each
+  the `accounts` given with `canModerate`), `instanceAlerts` (what
+  `alertInstance` raised), and `stores` maps each
   workspace touched to its in-memory store. By default `access` grants every
   right, `accountMail` is configured and writes to the `accounts` given,
   `keys.sealBytes` answers a handle its `openBytes` opens (an unknown handle
