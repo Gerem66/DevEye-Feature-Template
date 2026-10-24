@@ -131,7 +131,10 @@ export const clientEntry: FeatureClient = { AccountView };
 and, once, the `hint` a sign-up carried when you declare
 `accountEntry.signupHint`. An `accountOnly` module declares
 `access: { scope: 'account' }` on every command: the host runs them in the
-caller's personal workspace, whatever workspace is displayed.
+caller's personal workspace, whatever workspace is displayed. A module that
+serves the instance rather than its members (lists the moderators keep) may
+drop `accountEntry` too and declare `adminTabs` alone: it then exists only in
+the feature administration popup.
 
 - `'accounts.read'` gives `ctx.deveye.accounts.me()` in a handler and
   `deps.accounts.find / findByEmail / list / search / all` in a service. `search`
