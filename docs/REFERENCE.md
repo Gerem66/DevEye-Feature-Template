@@ -731,8 +731,10 @@ authority when the two differ.
   above everything: `items` of `ActionMenuItem` `{ label, icon?, onSelect,
 danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   dots; `ActionMenuProps`), `CopyButton` (copies `value`, confirms by its
-  icon; `CopyButtonProps`), `LoadingVeil` (the veil of a re-read: a sibling of
-  the scrolling area inside a positioned parent; `LoadingVeilProps`),
+  icon; `CopyButtonProps`), `Reveal` (a block that unfolds while `open` is
+  true and folds back after, instead of popping), `LoadingVeil` (the veil of
+  a re-read: a sibling of the scrolling area inside a positioned parent;
+  `LoadingVeilProps`),
   `LogOutput` (a raw log made readable: ANSI stripped, lines coloured by what
   they say, filter and copy; `LogOutputProps`), `CountBadge` (a counter pill:
   `count`, `tone`, `max`; `CountBadgeProps`), `SaveButton` (the save button
