@@ -56,7 +56,8 @@ created outside any command) and `pauses` (`isPaused`, `paused`: your paused
 (reserved, capability `'telemetry.read'`), `live` (`changed(workspaceId,
 topics?)`: your topic, or the topics named,
 [09-live](09-live.md#writes-without-a-command); `publish(workspaceId, event,
-payload)`, capability `'live.publish'`,
+payload)` and `publishTo(workspaceId, userIds, event, payload)`, capability
+`'live.publish'`,
 [09-live](09-live.md#pushing-your-own-frames-livepublish);
 `accountChanged(userId)`; `pendingChanged()`: what your `adminPending` counts
 may have moved, a report just filed on a public route, a queue a ticker finds

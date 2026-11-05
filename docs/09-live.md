@@ -7,7 +7,9 @@ peer's location. Most of it costs you nothing.
 ## What is free
 
 - **Presence and cursors**: as soon as your feature is in the catalog, the
-  presence widget shows "Alice · Counter" and cursors render over your view.
+  presence widget shows "Alice · Counter" and cursors render over your view
+  (a canvas of your own turns them off, see
+  [Drawing your own cursors](#drawing-your-own-cursors)).
 - **Refresh on writes**: your `mutates` commands broadcast your topic; peers'
   clients re-fetch your resources. Covered in [05-client](05-client.md). A
   write that must not refresh everything beats one of your secondary topics
@@ -90,6 +92,30 @@ Three rules that come with the lane:
   assume every frame lands.
 - **The rate is yours to hold.** Unlike `changed`, nothing throttles this lane:
   what bounds it is the cadence of the command that emits it.
+
+When what moves is one of your **items** rather than the whole feature, a role
+may hide it from some members of the room. Name the recipients instead, from a
+service: `deps.live.publishTo(workspaceId, userIds, event, payload)` reaches
+only the connections of those accounts, still among those holding `read`. A
+live session on an item (several people editing one board) sends one frame per
+room its participants sit in: that is also how an item shared into another
+workspace reaches the people viewing it there, since the push lane does not
+cross projections.
+
+For what a client re-sends several times a second (a pointer), use
+`featureApi(manifest).post(name, input)` instead of `send`: no promise, no
+timeout, no entry in the bug-report trace, dropped silently while the socket is
+closed or backed up. The server still validates and authorizes it like any
+command, and does not reply.
+
+## Drawing your own cursors
+
+DevEye's cursors are placed relative to the popup. Over a canvas that pans and
+zooms, such a point means nothing to a peer looking elsewhere in the scene:
+call `useSuppressLiveCursors()` in that view and draw pointers in your own
+coordinates (sent with `post`, pushed with `publishTo`). While it is mounted,
+yours stops being sent and the peers' stop being drawn, cursor bubble
+included; the roster, outlines and typing indicator stay.
 
 ## Typing indicator
 
