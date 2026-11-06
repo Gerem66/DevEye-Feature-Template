@@ -8,8 +8,8 @@ peer's location. Most of it costs you nothing.
 
 - **Presence and cursors**: as soon as your feature is in the catalog, the
   presence widget shows "Alice · Counter" and cursors render over your view
-  (a canvas of your own turns them off, see
-  [Drawing your own cursors](#drawing-your-own-cursors)).
+  (a canvas of your own gives them its coordinates, see
+  [A cursor surface of your own](#a-cursor-surface-of-your-own)).
 - **Refresh on writes**: your `mutates` commands broadcast your topic; peers'
   clients re-fetch your resources. Covered in [05-client](05-client.md). A
   write that must not refresh everything beats one of your secondary topics
@@ -102,20 +102,33 @@ room its participants sit in: that is also how an item shared into another
 workspace reaches the people viewing it there, since the push lane does not
 cross projections.
 
-For what a client re-sends several times a second (a pointer), use
-`featureApi(manifest).post(name, input)` instead of `send`: no promise, no
+For what a client re-sends often without waiting for an answer (a selection,
+a heartbeat), use `featureApi(manifest).post(name, input)` instead of `send`: no promise, no
 timeout, no entry in the bug-report trace, dropped silently while the socket is
 closed or backed up. The server still validates and authorizes it like any
 command, and does not reply.
 
-## Drawing your own cursors
+## A cursor surface of your own
 
 DevEye's cursors are placed relative to the popup. Over a canvas that pans and
 zooms, such a point means nothing to a peer looking elsewhere in the scene:
-call `useSuppressLiveCursors()` in that view and draw pointers in your own
-coordinates (sent with `post`, pushed with `publishTo`). While it is mounted,
-yours stops being sent and the peers' stop being drawn, cursor bubble
-included; the roster, outlines and typing indicator stay.
+give DevEye your coordinates instead, and keep everything else (cadence,
+glide, shapes, bubble, the account switch).
+
+1. **Server**: when someone opens the item, after your own access check, seat
+   their connection in your cursor channel: `await ctx.live.joinCursors(key)`
+   (capability `'live.publish'`) resolves with `{ channel, connId }`, `null`
+   outside a browser socket. Hand `channel` to the client; `connId` is the one
+   the cursors of that participant carry. Call `ctx.live.leaveCursors(key)`
+   when they leave. The channel gathers its participants whatever their
+   workspace, so an item shared into another workspace works too.
+2. **Client**: declare the surface with `useLiveCursorSurface(surface)`, where
+   `surface` is `{ channel, fromScreen, toScreen, subscribe }`: client pixels
+   to your coordinates and back, and a callback for when the mapping moves (a
+   pan, a zoom). Pass a stable object. Only the view that is open counts.
+
+Whatever else you draw from the peers' positions (a laser trail) comes from
+`onLiveCursors(channel, cb)`.
 
 ## Typing indicator
 
