@@ -77,7 +77,9 @@ online, status, ownerUserId, workspaceId, metricIntervalSeconds,
 effectiveMetricIntervalSeconds, report }` (`effectiveMetricIntervalSeconds`
   is the cadence the agent runs at: its own setting, or the default of its
   owner's plan);
-  `devices.isOnline(id)`: presence, synchronous; `devices.authorize(id)`: the
+  `devices.isOnline(id)`: presence, synchronous; `devices.isPaused(id)`: the
+  agent was paused on the machine or from DevEye and only its control session
+  is connected (offline for every purpose but a resume); `devices.authorize(id)`: the
   device when it exists and belongs to this workspace, a throw otherwise
   (`not_found` for an unknown id). Call `authorize` before acting on a device
   id the client sent: the id is caller input, and this check is what ties it

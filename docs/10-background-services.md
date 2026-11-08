@@ -177,7 +177,8 @@ boot log instead of discovered in production.
 ## Devices, from a service
 
 `deps.devicesFor(workspaceId)` is the sessionless subset of the devices facade:
-`list()` (each device with its live `online` flag) and `isOnline(id)`, no
+`list()` (each device with its live `online` flag), `isOnline(id)` and
+`isPaused(id)`, no
 `authorize` (authorizing a device id the client sent is a request-time
 decision, made in a handler). Same gate as in handlers: without
 `'devices.read'` in the manifest, every call throws `forbidden`.
