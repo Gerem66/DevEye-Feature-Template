@@ -42,6 +42,10 @@ than rendering it inert.
   own data when your feature leaves the choice (Backup: sealed or plain
   archives, per job; Mail: the open or guarded tier of a mailbox). The shell
   names and places the tab; you provide `settingsPanels.encryption`.
+- `'sharing'` (item scope only) is **not a tab you declare**: the shell draws
+  the sharing tab itself. A `settingsPanels.sharing` panel is appended under
+  its gestures, for something that extends sharing without being it (Devices:
+  enrolling the machine on a remote instance too).
 
 ## Domains
 
