@@ -276,9 +276,13 @@ mounted (state preserved) after closing: `0` unmounts immediately, omit for
 forever. `holdSecrecy: true` keeps the password-encryption session alive while
 open, if you read `'private'` data.
 
-Two hooks into the host from there: `openFeature(feature, itemId?)` opens
+Hooks into the host from there: `openFeature(feature, itemId?)` opens
 another feature of the active workspace, on one of its items when `itemId` is
-given (the host's teleport, for a "see this project" link), and
+given (the host's teleport, for a "see this project" link);
+`handFileTo(feature, file, purpose?)` hands a `File` to another feature and
+opens it, and `useHandedFile(feature, cb)` picks it up on the receiving side
+(the parcel waits in memory, is taken once, and never outlives the page;
+`purpose` says what to do with it, in the recipient's own terms); and
 `useRequestPopupWidth(px | null)` asks the feature popup for a wider frame
 while the calling component is mounted (a table explorer in expanded mode).
 

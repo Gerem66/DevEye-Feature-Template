@@ -861,7 +861,10 @@ loading, error }`; empty, loaded and error-free without the module),
   resource key of an `x-` module), `LiveOutlineProps`, `PickedFile`,
   `UploadHandle`, `StickyHeaderProps`.
 - Host navigation and frame: `openFeature(feature, itemId?)` (open another
-  feature of the active workspace, on one of its items), `useRequestPopupWidth(px | null)`
+  feature of the active workspace, on one of its items), `handFileTo(feature, file, purpose?)`
+  and `useHandedFile(feature, cb)` (hand a `File` to another feature and open
+  it; the recipient picks it up once, with `purpose` in its own terms;
+  `HandedFile` is the parcel), `useRequestPopupWidth(px | null)`
   (ask the feature popup for a wider frame while mounted), `StickyHeader`
   (the top band of a view, its header and the tab bar under it, kept at the
   top while the content scrolls; `className` sets its layout; publishes its
