@@ -718,7 +718,7 @@ authority when the two differ.
   same look over several lines; `autoGrow` makes the height follow the
   content, with no manual resize), `Checkbox`, `Switch`,
   `NumberInput` (the number field with its ± buttons: `value: number | null`,
-  `min`, `max`, `step`, `live`), `Slider` (a labelled range input: `valueLabel`,
+  `min`, `max`, `step`, `live`), `Slider` (a labelled range input: `valueLabel` or `editable`,
   `marks`, `indicator`), `SearchSelect` (the dropdown: options
   (`SearchSelectOption`) carry `prefix` (any node), `detail`, `keywords`,
   `group` (a heading shared by the options of one category) and `disabled`
