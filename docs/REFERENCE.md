@@ -802,8 +802,8 @@ danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   dialog back before a prompt, `origin`), `useTasks({ feature, itemId?, key?
 })` (the running operations of the active workspace, as `Task`),
   `TaskProgress` (the progress drawn in place; `TaskProgressProps`),
-  `TaskError` (`code`: `closed`, `timeout`, `conflict` or `cancelled`; its
-  message is the sentence to show).
+  `TaskError` (`code`: `closed`, `timeout`, `lost`, `conflict` or `cancelled`;
+  its message is the sentence to show).
 - HTTP, for the routes that serve binaries: `httpGet(path, schema)` (one replay
   after an access refresh), `httpFetch(path, init)` (the same, returning the raw
   `Response`), both routed to the instance of the active workspace;

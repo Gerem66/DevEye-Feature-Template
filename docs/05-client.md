@@ -147,18 +147,24 @@ await runTask(
   returning the whole note).
 - `title` is a noun phrase; `subject` names what it acts on, so two rows with
   the same title can be told apart.
-- `task.sendOptions` goes to THE command that is the operation: the tolerated
-  silence (two minutes, restarted by each `ctx.progress` update), the progress
-  wiring and the workspace the operation started in. A sequence of commands
-  driven by the browser, or work done in the tab (an upload, a worker), is a
-  `local: true` operation that reports through `task.report({ value, step })`;
-  closing the tab then asks first. Report as often as you like: at most ten
-  updates a second are published, the last one always.
+- `task.sendOptions` goes to THE command that is the operation: it marks the
+  command so the server follows it, wires its `ctx.progress` updates and keeps
+  the workspace the operation started in. A followed command never times out
+  once sent, survives a dropped socket or a reload, and shows in the
+  account's other tabs, where its row can be dismissed but not cancelled. A
+  sequence of commands driven by the browser, or work done in the tab (an
+  upload, a worker), is a `local: true` operation that reports through
+  `task.report({ value, step })`; it lives and dies with its tab, and closing
+  the tab asks first. Report as often as you like: at most ten updates a
+  second are published, the last one always.
+- Only strings travel to the other tabs: a `done` or `failed` given as a
+  function shows there as a default sentence.
 - `key` names the kind of operation: two with the same feature, workspace,
   item and key never run together, the second one rejects with a `TaskError`
   `conflict`.
 - `useTasks({ feature, itemId?, key? })` returns what is running for your
-  feature in the active workspace, whichever screen started it. Disable the
+  feature in the active workspace, whichever screen started it, in this tab
+  or in another one of the account. Disable the
   conflicting actions with it and draw `<TaskProgress task={task} />` in
   place: the top bar sits under the veil of any open dialog, so a screen
   living in one must show the progress itself. A screen remounted while an
@@ -172,9 +178,13 @@ await runTask(
 - `cancel` offers "Annuler": make `run` reject when it is called. The
   operation then leaves without an outcome and rejects with a `TaskError`
   `cancelled`, which your `catch` ignores.
-- A dropped socket rejects with a `TaskError` `closed` (the server finishes
-  the command anyway) and a silent command with `timeout`. Both carry a
-  sentence that says what to do, which `errorNote` keeps.
+- When the server no longer knows the operation (it restarted, or the page
+  came back too late for the answer), the promise rejects with a `TaskError`
+  `lost`; `closed` and `timeout` mean the command could not leave. Each
+  carries a sentence that says what to do, which `errorNote` keeps.
+- In a personal workspace whose owner turned password encryption on, the
+  server keeps nothing of an operation: only the page that started it follows
+  it, and a reload loses sight of it.
 
 ## Talking to a device
 
