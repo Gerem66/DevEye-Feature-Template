@@ -326,7 +326,9 @@ SdkItemFinder; admin?: boolean; moderation?: boolean; scope?: 'account' }`
 - `SdkFeatureContext<Repo>`: see [03-server-handlers](03-server-handlers.md).
   Carries `isAdmin` (the caller is a global administrator: what a fleet-wide
   view keys on; a command that must require it declares `access: { admin:
-true }`; `false` for a moderator), `transport: SdkSocketTransport`
+true }`; `false` for a moderator), `progress(update: CommandProgress)` (`{
+done?, total?, step? }`, pushed to the caller only, at most four frames a
+  second, each one restarting its timeout), `transport: SdkSocketTransport`
   (capability `'agents'`; every method throws `forbidden` otherwise),
   `secrecy: SdkSecrecy` (`isUnlocked()`; `ticket(payload, { ttlSeconds?
 })`: a short-lived ticket signed by the host
@@ -734,7 +736,8 @@ danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   icon; `CopyButtonProps`), `Reveal` (a block that unfolds while `open` is
   true and folds back after, instead of popping), `LoadingVeil` (the veil of
   a re-read: a sibling of the scrolling area inside a positioned parent;
-  `LoadingVeilProps`),
+  `LoadingVeilProps`), `ProgressBar` (`value` from 0 to 1, or a sweep without
+  it; `ProgressBarProps`),
   `LogOutput` (a raw log made readable: ANSI stripped, lines coloured by what
   they say, filter and copy; `LogOutputProps`), `CountBadge` (a counter pill:
   `count`, `tone`, `max`; `CountBadgeProps`), `SaveButton` (the save button
@@ -785,10 +788,22 @@ danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   `errorNote(e, fallback)` (the note `ErrorNote` takes), `WsError` (the class a command rejects with:
   `code`, `message`, `details`; `instanceof` works), `featureApi(manifest)`
   (typed `send`, with an optional `{ timeoutMs }` for commands that query a
-  slow third party, and `{ workspaceId }` to run the command in another of the
+  slow third party, `{ onProgress }` for what the handler reports through
+  `ctx.progress`, each update restarting the wait, and `{ workspaceId }` to run the command in another of the
   caller's workspaces, one of `useWorkspaces()`), `commandsApi(commands)` (the same over any list of
   contracts: `commandsApi(agentCommands)`, the agent transport, with
   `agentCommands` from `@deveye/types`).
+- Long operations ([05-client](05-client.md#long-operations)):
+  `runTask(options, run)` (`TaskOptions`: `feature`, `title`, `failed`,
+  `itemId?`, `key?`, `subject?`, `description?`, `done?`, `dialog?`,
+  `minimizable?`, `local?`, `cancel?`, `onDetach?`; `run` receives a
+  `TaskContext`: `sendOptions` for the one command of the operation,
+  `report({ value, step })` for work done in the tab, `raise()` to bring the
+  dialog back before a prompt, `origin`), `useTasks({ feature, itemId?, key?
+})` (the running operations of the active workspace, as `Task`),
+  `TaskProgress` (the progress drawn in place; `TaskProgressProps`),
+  `TaskError` (`code`: `closed`, `timeout`, `conflict` or `cancelled`; its
+  message is the sentence to show).
 - HTTP, for the routes that serve binaries: `httpGet(path, schema)` (one replay
   after an access refresh), `httpFetch(path, init)` (the same, returning the raw
   `Response`), both routed to the instance of the active workspace;

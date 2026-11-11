@@ -123,6 +123,11 @@ leaves the item. Call it right after the delete command succeeds, and only
 then invalidate your resources: a detail view reloaded before it leaves would
 look for an item that is no longer there. Everything else applies in place.
 
+A deletion that lasts goes through `runTask`
+([05-client](05-client.md#long-operations)), whose dialog the person may
+minimize before the command ends. Leave from its `onDetach` too, behind a
+guard so it runs once: later, it would close whatever sheet is open by then.
+
 ## An item is edited in its General tab
 
 There is no "Edit" dialog next to the settings button of an item. What a

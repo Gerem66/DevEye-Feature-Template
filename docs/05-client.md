@@ -45,7 +45,10 @@ A few escape hatches for less ordinary commands:
 
 - `api.send(name, input, { timeoutMs: 30_000 })` stretches the wait for a
   command that queries a slow third party; the default socket timeout stays
-  for everything else.
+  for everything else. `onProgress` receives what the handler reports through
+  `ctx.progress`, and each update restarts the wait: the timeout bounds the
+  command's silence, not its duration. A gesture long enough to report
+  progress belongs in [`runTask`](#long-operations), which wires both.
 - A command that reads `'private'` data can answer `locked`. Wrap the call in
   `withSecrecy(() => api.send(...))` to retry once after the global unlock
   prompt, or read `useSecrecy()` and render locked rows as such (see
@@ -112,6 +115,66 @@ report button; `onDismiss` adds a close button at the end, on the same line.
 A field's own error (`<TextInput error=...>`) stays a string: it is about what
 was typed. A state read from your data (a monitor that is down, the last sync
 error) is not a failure of the screen, and keeps its own rendering.
+
+## Long operations
+
+A gesture that lasts (deleting a large item, a restore, a conversion) goes
+through `runTask`. It opens a dialog the person can **minimize**: the
+operation keeps running and moves to the operations area of the top bar, which
+shows its progress, then its outcome. Never build a blocking wait dialog of
+your own.
+
+```tsx
+await runTask(
+    {
+        feature: manifest.id,
+        itemId: counter.id,
+        subject: counter.name,
+        key: 'reset',
+        title: 'Remise à zéro du compteur',
+        description: 'Chaque clic enregistré est effacé.',
+        done: 'Compteur remis à zéro.',
+        failed: 'Remise à zéro impossible.'
+    },
+    (task) => api.send('x-counter.reset', { id: counter.id }, task.sendOptions)
+);
+```
+
+- The promise resolves and rejects like your work, so the code after the
+  `await` (reload, write a note) stays as it was. If your screen was closed
+  meanwhile, those writes do nothing and the panel carries the outcome: `done`
+  on success, `failed` on failure (the fallback of `errorNote`, or a function
+  returning the whole note).
+- `title` is a noun phrase; `subject` names what it acts on, so two rows with
+  the same title can be told apart.
+- `task.sendOptions` goes to THE command that is the operation: the tolerated
+  silence (two minutes, restarted by each `ctx.progress` update), the progress
+  wiring and the workspace the operation started in. A sequence of commands
+  driven by the browser, or work done in the tab (an upload, a worker), is a
+  `local: true` operation that reports through `task.report({ value, step })`;
+  closing the tab then asks first. Report as often as you like: at most ten
+  updates a second are published, the last one always.
+- `key` names the kind of operation: two with the same feature, workspace,
+  item and key never run together, the second one rejects with a `TaskError`
+  `conflict`.
+- `useTasks({ feature, itemId?, key? })` returns what is running for your
+  feature in the active workspace, whichever screen started it. Disable the
+  conflicting actions with it and draw `<TaskProgress task={task} />` in
+  place: the top bar sits under the veil of any open dialog, so a screen
+  living in one must show the progress itself. A screen remounted while an
+  operation runs finds it there, and reloads its list when it ends.
+- `minimizable: false` keeps the dialog blocking, for a step whose follow-up
+  needs the person (a confirmation, a navigation). `dialog: false` skips the
+  dialog: the operation goes straight to the panel.
+- `onDetach` runs once, the first time the dialog is minimized. Close the
+  sheet of an item that is going away there (`gone()` in a settings panel)
+  as well as at the end, guarded so it runs once.
+- `cancel` offers "Annuler": make `run` reject when it is called. The
+  operation then leaves without an outcome and rejects with a `TaskError`
+  `cancelled`, which your `catch` ignores.
+- A dropped socket rejects with a `TaskError` `closed` (the server finishes
+  the command anyway) and a silent command with `timeout`. Both carry a
+  sentence that says what to do, which `errorNote` keeps.
 
 ## Talking to a device
 
