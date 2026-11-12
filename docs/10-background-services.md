@@ -107,6 +107,51 @@ item's override, permissions. `feature` answers for your own feature only;
 `device` for the Devices permissions on one device (capability
 `'devices.read'`). Nothing is cached: a right withdrawn stops the next run.
 
+## Work a member launched: `deps.tasks`
+
+A member clicks "run now", and your service does the work long after their
+command answered: a backup, a deployment, a conversion. Open it as a long
+operation of that account, so it shows in their operations area (the chip of
+the top bar, see [05-client](05-client.md#long-operations)) in every tab,
+whatever screen they moved to:
+
+```ts
+const task = deps.tasks.open({
+    userId: run.requestedBy,
+    workspaceId: job.workspaceId,
+    itemId: job.id,
+    key: 'run',
+    title: 'Sauvegarde',
+    subject: job.name,
+    cancel: () => abort.abort()
+});
+task.progress({ done, total, step: 'Envoi' });
+// ...then exactly one of:
+task.done('Sauvegarde terminée.');
+task.fail('La destination refuse la connexion.', 'conflict');
+task.cancelled();
+```
+
+- The host stamps your feature and shows the operation to that account only,
+  once it has checked the account still reads your feature (and that item) in
+  the workspace. Otherwise the handle does nothing: never branch on it.
+- With a `key`, opening the same `(workspaceId, itemId, key)` again for the
+  same account while it runs returns the same operation. Call `open` each
+  time your service finds the work again (a queue it polls, a restart): the
+  host forgets every operation when it restarts, and the row the tabs showed
+  as interrupted resumes.
+- `cancel` offers "Annuler" in the area. It is called once; stop the work,
+  then call `cancelled()`: the operation leaves without an outcome.
+- `fail(message, code)`: the message is the sentence shown. `code` decides
+  whether the person is offered to report it: `internal` (the default) for
+  what the instance must fix, `conflict` for what their side explains (their
+  host, their credentials).
+- Stopping your service (a maintenance) fails what it was running.
+
+Not for what runs on its own (a schedule, a reconciliation): nobody asked for
+it, so it belongs to your screens, not to someone's area. A command that does
+the work itself needs none of this: the client wraps it in `runTask`.
+
 ## Telling the administrators: `deps.alertInstance`
 
 Some failures belong to the instance, not to a member: a certificate the

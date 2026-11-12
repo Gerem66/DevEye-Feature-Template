@@ -528,6 +528,11 @@ cipher: { server, private } }`, the private cipher `null` while the caller's
   instance's administrators on their `system` channels, for what the instance
   must fix; `level` is `info`, `resolved`, `error` or `critical`; one alert per
   key every ten minutes, nothing outside production),
+  `tasks` (`SdkTasks`: `open({ userId, workspaceId, title, subject?, itemId?,
+key?, cancel? })` returns an `SdkTask`, `id`, `progress(update)`,
+  `done(note?)`, `fail(message, code?)`, `cancelled()`: the work a member
+  launched and your service runs, shown in that account's operations area,
+  see [10-background-services](10-background-services.md#work-a-member-launched-depstasks)),
   `createTicker({ intervalMs, tick })`, `logger`.
 - `SdkServerKeys`: `sealBytes(plain: Uint8Array, context?: string): string`,
   `openBytes(sealed: string, context?: string): Uint8Array | null` (null:
@@ -678,7 +683,9 @@ tickers[0].tick()`), `liveChanges` and `liveTopicChanges` (which topics a
   `live.changed(ws, [...])` beat) and `mails` (what `accountMail.send` and
   `sendToModerators` accepted, with the address; `sendToModerators` writes to
   the `accounts` given with `canModerate`), `instanceAlerts` (what
-  `alertInstance` raised), and `stores` maps each
+  `alertInstance` raised), `tasks` (every operation `tasks.open` opened, as
+  `RecordedTask`: its opening, its `updates`, its `outcome`, `null` while it
+  runs, and the `cancel` it gave, to play "Annuler"), and `stores` maps each
   workspace touched to its in-memory store. By default `access` grants every
   right, `accountMail` is configured and writes to the `accounts` given,
   `keys.sealBytes` answers a handle its `openBytes` opens (an unknown handle
