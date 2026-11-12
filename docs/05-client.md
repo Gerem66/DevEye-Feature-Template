@@ -172,6 +172,11 @@ await runTask(
 - `minimizable: false` keeps the dialog blocking, for a step whose follow-up
   needs the person (a confirmation, a navigation). `dialog: false` skips the
   dialog: the operation goes straight to the panel.
+- `const runTask = useTaskRunner()` gives the same function for a wait your
+  screen already draws (a busy button, a bar of its own): no dialog, and
+  nothing in the area while the screen is mounted. If it unmounts before the
+  end, the operation moves to the area, which carries the outcome instead.
+  Use it for a gesture that usually takes seconds but may take a minute.
 - `onDetach` runs once, the first time the dialog is minimized. Close the
   sheet of an item that is going away there (`gone()` in a settings panel)
   as well as at the end, guarded so it runs once.

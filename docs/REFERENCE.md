@@ -806,8 +806,10 @@ danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   `minimizable?`, `local?`, `cancel?`, `onDetach?`; `run` receives a
   `TaskContext`: `sendOptions` for the one command of the operation,
   `report({ value, step })` for work done in the tab, `raise()` to bring the
-  dialog back before a prompt, `origin`), `useTasks({ feature, itemId?, key?
-})` (the running operations of the active workspace, as `Task`),
+  dialog back before a prompt, `origin`, `id`), `useTaskRunner()` (the same
+  function for a wait the screen draws itself: nothing shows while it is
+  mounted, the area takes over if it unmounts), `useTasks({ feature, itemId?,
+key? })` (the running operations of the active workspace, as `Task`),
   `TaskProgress` (the progress drawn in place; `TaskProgressProps`),
   `TaskError` (`code`: `closed`, `timeout`, `lost`, `conflict` or `cancelled`;
   its message is the sentence to show).
