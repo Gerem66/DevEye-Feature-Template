@@ -92,6 +92,27 @@ edit, or `null` when the channel refused: treat that as the end of the live
 message, not as an error to retry. `send(..., { except })` skips the channels
 a live message concluded on, so no channel hears the same news twice.
 
+## Say when nothing would be sent
+
+Everything being off by default, a fresh item warns no one, and nothing on
+its sheet would say so. Put the host's notice at the top of your list and of
+your item's sheet:
+
+```tsx
+import { NotificationsNotice } from 'deveye-sdk-client';
+
+<NotificationsNotice scope={{ kind: 'feature', feature: 'x-counter' }} />
+<NotificationsNotice
+    scope={{ kind: 'item', feature: 'x-counter', itemId: String(item.id), itemLabel: item.name }}
+/>
+```
+
+At the feature scale it shows while no channel is declared (for a feature
+that notifies in its own name, while none is checked); on an item, while the
+item checks none. Its button opens the Notifications tab at that scale. It
+renders nothing for a reader who could not fix it, and while it loads, so it
+needs no permission check around it.
+
 ## Test it end to end
 
 In DevEye: your feature's settings, Notifications tab, add a channel (a
