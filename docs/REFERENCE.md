@@ -763,7 +763,8 @@ danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   settings rows), `ReadOnlyNotice` (the one shape of a read-only refusal in a
   settings panel), `NotificationsNotice` (`scope`: the notice of a feature
   that declares no channel, or of an item that checks none, with the button
-  to its Notifications tab; see
+  to its Notifications tab, and a close button that hides it for that reader
+  on that page; see
   [08-notifications](08-notifications.md#say-when-nothing-would-be-sent)), `ProviderKeys` + `ProviderKeyRow` (a fixed list of
   providers each wanting one key: the rows, the add/edit button and the
   dialog), `ErrorNote` (+ `ErrorNoteInput`, `ErrorNoteProps`: the banner of

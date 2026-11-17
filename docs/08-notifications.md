@@ -111,7 +111,10 @@ At the feature scale it shows while no channel is declared (for a feature
 that notifies in its own name, while none is checked); on an item, while the
 item checks none. Its button opens the Notifications tab at that scale. It
 renders nothing for a reader who could not fix it, and while it loads, so it
-needs no permission check around it.
+needs no permission check around it. Its close button hides it for that
+reader on that page only (your list in that workspace, or that item's sheet),
+until they bring it back from their Profile; deleting an item through
+`ctx.items.forget` clears it along with the rest.
 
 ## Test it end to end
 
