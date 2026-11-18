@@ -734,8 +734,9 @@ authority when the two differ.
   (shown, not pickable); `placeholder` reads when no option matches the value;
   the search field appears from eight options on, or with `searchable`;
   `filters` adds a row of chips (`SearchSelectFilter`), `exclusive` ones
-  acting as a radio; `id` serves a label's `htmlFor`; with `multiple`, each
-  option is a check box and `value` is an array), `SegmentedControl`,
+  acting as a radio; `resizeKey` opens a larger panel that grows by its
+  corner, its size kept by the browser; `id` serves a label's `htmlFor`; with
+  `multiple`, each option is a check box and `value` is an array), `SegmentedControl`,
   `ChoiceCards`, `ActionMenu` (a "⋯" button that unfolds secondary actions
   above everything: `items` of `ActionMenuItem` `{ label, icon?, onSelect,
 danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
