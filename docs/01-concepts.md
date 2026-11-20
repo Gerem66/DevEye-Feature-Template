@@ -32,7 +32,9 @@ user ── member of ──> workspace (personal | shared)
   the base of your resource keys and table names.
 - **Access**: absent = the feature does not exist for that member; `read`;
   `write` (implies read). Plus `channels` (manage alert channels) and your own
-  `extraPermissions`, all granted per role.
+  `extraPermissions`, all granted per role. A role may instead hold **every
+  feature**, yours included as soon as it is installed: `write`, every setting,
+  each toggle on and each choice at its `ownerValue`, as for the owner.
 - **Resource key**: `x-<slug>.<name>`, what the client caches under
   `useResource`. By convention, the command whose result it caches.
 - **Tiers of encryption**: `'server'` (encrypted at rest, server-readable,
