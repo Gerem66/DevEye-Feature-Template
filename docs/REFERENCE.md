@@ -356,14 +356,21 @@ done?, total?, step? }`, pushed to the caller only, at most four frames a
 verifiedAt, planPaused }` (`verified` is false while the owner's plan holds the
   name paused); throws `forbidden` unless the manifest declares `domains`),
   `providers: SdkProviders` (`get<T>(key)`: a published contract, whoever
-  offers it; `undefined` when nobody does) and `origins: SdkOrigins`
+  offers it; `undefined` when nobody does), `origins: SdkOrigins`
   (`{ app, public, site }`, where DevEye lives, as URLs without a trailing
   slash: `app` is the origin members use, `public` the one anyone reaches the
   public routes by, which differs when the host serves them on a domain of
   their own, the app itself possibly staying private, else the same; `site`
   the marketing site where the legal pages live, `null` when the host has
   none; for what a module hands to the outside world, an install snippet or a
-  callback URL, never derived from the browser's location).
+  callback URL, never derived from the browser's location) and `net: SdkNet`
+  (`fetch(url, init?)`: HTTP through the host's outbound guard, for any URL a
+  member could have chosen. The URL, each redirect and the address actually
+  connected to must be public, unless the instance opened its private network;
+  a hop to another host drops `authorization`, `cookie` and `x-api-key`. A
+  refused target rejects with a `NetRefused`, any HTTP status comes back as is.
+  `init` is `{ method?, headers?, body?: string, signal?, redirect?: 'follow' |
+'manual' }`, and the test harness takes a fake as `overrides.net`).
 - `SdkQuota` (`ctx.quota`, `deps.quotaFor(workspaceId)`): the owner's plan
   against your `manifest.quotas`, the owner being the one of the workspace of
   the call. `limit(key)` (`null` unlimited; `0` while the host serves priority

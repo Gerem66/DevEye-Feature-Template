@@ -134,10 +134,9 @@ abstract, read them:
 - [`features/weather/`](https://github.com/Gerem66/DevEye/tree/main/features/weather):
   the simple shape: one screen, a shared store, a topbar mini-widget, provider
   API keys in a Sources panel.
-- [`features/osint/`](https://github.com/Gerem66/DevEye/tree/main/features/osint):
-  the richer shape: several client components, a 30 s command timeout
-  (`api.send`'s third argument), password-based encryption on reads
-  (`useSecrecy` / `withSecrecy`), and handler tests on the in-memory harness
+- [`features/notes/`](https://github.com/Gerem66/DevEye/tree/main/features/notes):
+  password-based encryption on reads for private notes (`useSecrecy` /
+  `withSecrecy`), and handler tests on the in-memory harness
   (`src/server/handlers.test.ts`).
 - [`features/projects/`](https://github.com/Gerem66/DevEye/tree/main/features/projects):
   the largest: a secondary live topic for its chat, a provider it publishes and
