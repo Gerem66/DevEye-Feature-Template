@@ -314,19 +314,24 @@ drops, carries? }` on the SOURCE, and `admit(ctx)` / `settle(ctx)` on the
   `workspaceColumn`, `userColumn` (rewritten to whoever copies), `omit` (left to
   the column default: a source of the origin workspace, a sync state), `cache`
   (rows the destination rebuilds: moved, never copied). On the root only:
-  `orderColumn` (the copy lands last), `unique` `{ column, message }` (refused
-  when the destination already holds one), `tier` `{ column, open, private }`.
+  `orderColumn` (the copy lands last), `tier` `{ column, open, private }`. On
+  any table that names its `workspaceColumn`: `unique` `{ column, message }`
+  (refused when the destination workspace already holds one: an item's name
+  on the root, the listing of an app on a store on a child table).
   On any table of a tree without `tier`: `digests` (`ItemTreeDigest[]`, each
   `{ column, purpose, within, from, of }`): a column holding the keyed digest
-  (`keys.ref`) of a value taken out of the sealed column `from` by `of(plain)`,
+  (`keys.ref`) of a value taken out of the sealed column `from` by
+  `of(plain, row)` (`row` for what a plain column of the row adds to it),
   unique `within` the `'workspace'` or the `'item'`. A digest never travels:
   a copy lands with the destination's own, and a bundle that carries one is
   refused. `itemDigest(keys, digest, at, value)` is what your handlers call to
   write or look up the column; in a move, `itemDigestTaken(q, tree, itemId,
-target)` tells `plan` whether the target already holds that name and
-  `rekeyItemDigests(q, tree, itemId, target)` recomputes them in `apply`,
-  after `resealCells`; `rekeyTreeDigests(q, tree, { cipherFor, keys })`
-  rewrites every item of the tree, for a data step.
+target)` tells `plan` whether the target already holds a `unique` digest of
+  the item and `rekeyItemDigests(q, tree, itemId, target)` recomputes them in
+  `apply`, after `resealCells`; `rekeyTreeDigests(q, tree, { cipherFor, keys })`
+  rewrites every item of the tree, for a data step, and returns what it had
+  to set aside (`unreadable`, `duplicates`: rows given a digest of their own)
+  for the step to log.
   You never write the copy: `exportItemTree` / `importItemTree` are the host's
   business, with `itemTierOf` (which key seals the tree, an `ItemTier`),
   `countItemTreeRows` and the types `ItemTreeRow`, `ItemTreeRows`,
