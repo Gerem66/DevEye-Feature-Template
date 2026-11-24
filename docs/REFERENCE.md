@@ -215,9 +215,12 @@ authorUserId }, what)` (the same for a background job, the author's right
   `'accounts.mail'`, `sender: 'workspace'` builds an `SdkWorkspaceMail`, what
   the Mail transport sends; build it with the SAME function as the real email,
   or the tester proves nothing), `e2e` (`FeatureE2eEntry`: `scenarios`, each an
-  `SdkE2eScenario` `{ id, label, skip?, steps }` run by an administrator
-  against the live server with a throwaway account, and an optional `sweep()`
-  that removes what a crashed run left OUTSIDE your tables; a step receives an
+  `SdkE2eScenario` `{ id, label, skip?, external?, moderator?, steps }` run by
+  an administrator against the live server with a throwaway account, and an
+  optional `sweep()` that removes what a crashed run left OUTSIDE your tables;
+  `external` names the third party the scenario cannot pass without, which
+  keeps it out of the server's unattended CI run, and `moderator` opens the
+  throwaway account as an instance moderator; a step receives an
   `SdkE2eContext` `{ account, send, fetch, waitFor, defer, state, repo,
 origins, signal }`, throws to fail, may return a detail and set `timeoutMs`;
   `fetch(path, init?)` is a sessionless request to the server's own listener,
