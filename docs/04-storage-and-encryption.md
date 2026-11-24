@@ -100,6 +100,56 @@ covers anything fails the check.
 }
 ```
 
+### An intruder tries, and the host plays it
+
+The check above reads your SQL. This one runs your commands: declare
+`isolation` in your `e2e` entry and the host builds the scenario
+`<your-id>.isolation`, played by two throwaway accounts. The victim seeds in a
+shared workspace; the intruder attempts every probe from its own workspace,
+then naming the victim's workspace, then as a member whose role grants
+nothing. Every attempt must be refused with `forbidden` or `not_found`, no
+answer may carry the canary, and the victim's reads must come back unchanged.
+
+```ts
+e2e: {
+    scenarios: [],
+    isolation: {
+        sampleIds: { noteId: 1 },
+        async seed(ctx) {
+            const { note } = await ctx.send<{ note: { id: number } }>('x-counter.noteAdd', {
+                title: `Note ${ctx.itemCanary}`,
+                body: `Body ${ctx.canary}`
+            });
+            return { noteId: note.id };
+        },
+        reads: (ids) => [['x-counter.noteGet', { noteId: ids.noteId }], ['x-counter.noteList', {}]],
+        probes: (ids) => [['x-counter.noteEdit', { noteId: ids.noteId, title: 'Intruder' }]],
+        items: ['noteId']
+    }
+}
+```
+
+- A command whose only required fields are seeded ids (`{ noteId }`) is
+  probed by the host on its own: write the others, with an input that would
+  succeed for the victim. A probe refused for `validation` proves nothing.
+- `ctx.canary` goes in everything you create; `ctx.itemCanary` only in what a
+  shareable item shows. Once the item is closed to the intruder's role, no
+  answer may carry it.
+- `lenient` names a command that drops a foreign id instead of refusing it (a
+  reorder), `exempt` one that takes an id and is not probed. Both take a reason.
+
+Assert the block in a test of your own, no server needed:
+
+```ts
+import { isolationProblems } from '@deveye/types/sdk/server';
+
+assert.deepEqual(isolationProblems(serverEntry.features, serverEntry.e2e!.isolation!), []);
+```
+
+It fails when a command that takes an id (`id`, `ids`, `…Id`, `…Ids`, or an
+`access.item`) has neither a probe nor an exemption, or when a probe is not an
+input its command accepts.
+
 ## Beyond strings: `ctx.keys`, and tickets
 
 `ctx.cipher()` and the store encrypt strings. Two things they do not cover:

@@ -217,7 +217,11 @@ authorUserId }, what)` (the same for a background job, the author's right
   or the tester proves nothing), `e2e` (`FeatureE2eEntry`: `scenarios`, each an
   `SdkE2eScenario` `{ id, label, skip?, external?, moderator?, steps }` run by
   an administrator against the live server with a throwaway account, and an
-  optional `sweep()` that removes what a crashed run left OUTSIDE your tables;
+  optional `sweep()` that removes what a crashed run left OUTSIDE your tables,
+  and an optional `isolation` (`FeatureIsolation` `{ sampleIds, seed, reads,
+probes, items?, exempt?, lenient? }`: what an intruder from another
+  workspace attempts, turned by the host into a two-account scenario; check it
+  with `isolationProblems(features, isolation)`);
   `external` names the third party the scenario cannot pass without, which
   keeps it out of the server's unattended CI run, and `moderator` opens the
   throwaway account as an instance moderator; a step receives an
