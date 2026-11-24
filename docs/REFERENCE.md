@@ -7,6 +7,10 @@ and the app-provided `deveye-sdk-client` module.
 ## `@deveye/types/sdk`
 
 - `FeatureManifest`: the declaration; see [02-manifest](02-manifest.md).
+- `calendarDaySchema(message?)`: a `YYYY-MM-DD` string that names a day that
+  exists, within what a `DATE` column holds; `isCalendarDay(text)` is the
+  test alone. A bare pattern accepts `2026-99-99`, which then fails on the
+  column as a server error instead of a refused input.
 - `ManifestCommand`: `{ command, input, output }`, zod both ways.
 - `ExtraPermissionSpec`: `toggle` or `choice` (2..5 options, least-privileged
   `default`, explicit `ownerValue`). `MAX_EXTRA_PERMISSIONS = 10`.
@@ -553,9 +557,13 @@ key?, cancel? })` returns an `SdkTask`, `id`, `progress(update)`,
   tampered, wrong context, or server keys changed; `context` binds the blob to
   its row, `<table>:<column>:<id>`, the same string both ways),
   `derive(salt, info, length): Uint8Array` (HKDF-SHA256 over the server key,
-  never stored: for material that must survive the database). Server key,
-  module-owned key material only, never user data; the host seals under a
-  sub-key of its own for each module.
+  never stored: for material that must survive the database),
+  `ref(purpose, scope, value): string` (a keyed digest, HMAC-SHA256, 32 hex
+  characters: for a column you find a row by without decrypting it; `purpose`
+  names the use, `scope` is what the value is unique within, and the same
+  value under two scopes gives unrelated digests; unchanged by a rotation of
+  the server key). Server key, module-owned key material only, never user
+  data; the host seals and digests under a sub-key of its own for each module.
 - Sealed file container (`DEVB`): `sealStream(key, plain)` on the way into
   the object store, `openSealedStream` for the whole file, `openSealedRange`
   for an HTTP range (reads the header and the chunks that hold it only),

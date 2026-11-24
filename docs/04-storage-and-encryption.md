@@ -152,7 +152,17 @@ input its command accepts.
 
 ## Beyond strings: `ctx.keys`, and tickets
 
-`ctx.cipher()` and the store encrypt strings. Two things they do not cover:
+`ctx.cipher()` and the store encrypt strings. Three things they do not cover:
+
+- **Finding a row by an encrypted value.** Encryption is not deterministic, so
+  a name that must stay unique, or an author you group by, needs a digest in a
+  column next to the ciphertext. Do not hash it yourself: a bare SHA-256 is
+  recomputed by anyone who guesses the value. `ctx.keys.ref(purpose, scope,
+value)` returns a keyed one (32 hex characters) that only the server can
+  compute. `purpose` names the use, one per column; `scope` is what the value
+  is unique within, the workspace id for an item's name, the item id for its
+  child rows. The same value under two scopes gives unrelated digests, so a
+  copied or moved item gets its digests recomputed for where it lands.
 
 - **Key material of your own.** A module that runs its own bulk encryption
   (files, streams) owns a raw symmetric key. `ctx.keys` (the same
