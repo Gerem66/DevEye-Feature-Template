@@ -169,6 +169,14 @@ value)` returns a keyed one (32 hex characters) that only the server can
   are rewritten once at boot by a data step (`dataSteps` on your server
   entry, `rekeyTreeDigests`): SQL alone cannot, it has no key.
 
+    The host checks: one of its tests lists every `createHash(`, `crypto.hash(`
+    and `subtle.digest(` of an installed feature, tests aside, and fails on any
+    file your `deveye-digests.json` does not declare, with the number of calls
+    and why a key would add nothing (`{ "allow": { "src/server/tokens.ts":
+{ "count": 1, "reason": "…" } } }`). A random token, a file checksum, an
+    ETag, what a third-party API requires: fine. The digest of a value you
+    otherwise encrypt: use `ctx.keys.ref`.
+
 - **Key material of your own.** A module that runs its own bulk encryption
   (files, streams) owns a raw symmetric key. `ctx.keys` (the same
   `SdkServerKeys` a service gets as `deps.keys`) wraps it under the server key
