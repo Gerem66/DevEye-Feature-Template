@@ -58,6 +58,48 @@ await ctx.repo.saveKey(ctx.workspaceId, sealed);
 Migrations run at boot without a transaction: make every statement replayable
 (guard on INFORMATION_SCHEMA, no-op branch), exactly like DevEye's own.
 
+### Every query is bounded, and the host checks
+
+A forgotten `AND workspace_id = ?` fails nowhere: the query just returns other
+workspaces' rows. The host's `npm run check:queries` reads every query of an
+installed feature that ships a `deveye-scope.json` and rejects one that names a
+table without bounding it:
+
+- a table that holds `workspace_id` needs a predicate on it, or the column in
+  an `INSERT` list;
+- a table a foreign key leads to such a table is bounded by that key, or by a
+  join to rows already bounded;
+- a bound in one branch of an `OR` bounds nothing;
+- a filter built at run time goes in parentheses behind the workspace
+  predicate (`WHERE workspace_id = ? AND (${filters})`): at the top level it
+  could start with `OR`, so the whole condition stops counting.
+
+What the schema does not say goes in `deveye-scope.json`, at the root of the
+feature: `tables` (`account` with its columns, `child` with a parent no foreign
+key declares, `instance` with a reason), `keys` (columns that designate a row
+on their own: an unguessable token, a hostname the request brings) and
+`exempt` (a function, by `file#function`, with a `kind` among `service`,
+`instance`, `token`, `row`, `lookup`, `bounded`, `relay` and a reason). An exemption that no longer
+covers anything fails the check.
+
+```json
+{
+    "tables": {},
+    "keys": {
+        "ft_counter_pages": {
+            "columns": ["public_ref"],
+            "reason": "A page's public reference: whoever holds it reads the page."
+        }
+    },
+    "exempt": {
+        "src/server/repo.ts#listDue": {
+            "kind": "service",
+            "reason": "The scheduler reads what is due in every workspace."
+        }
+    }
+}
+```
+
 ## Beyond strings: `ctx.keys`, and tickets
 
 `ctx.cipher()` and the store encrypt strings. Two things they do not cover:

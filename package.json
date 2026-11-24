@@ -15,7 +15,8 @@
   "files": [
     "src",
     "assets",
-    "deveye-feature.json"
+    "deveye-feature.json",
+    "deveye-scope.json"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
