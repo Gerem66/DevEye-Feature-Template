@@ -364,7 +364,10 @@ true }`; `false` for a moderator), `progress(update: CommandProgress)` (`{
 done?, total?, step? }`, pushed to the caller only, at most four frames a
   second, each one restarting its timeout), `transport: SdkSocketTransport`
   (capability `'agents'`; every method throws `forbidden` otherwise),
-  `secrecy: SdkSecrecy` (`isUnlocked()`; `ticket(payload, { ttlSeconds?
+  `secrecy: SdkSecrecy` (`isUnlocked()`; `isPasswordProtected()`: whether the
+  guarded tier is really under the account's password, a personal workspace
+  with password-based encryption on, to ask before an item may be called
+  "protected"; `ticket(payload, { ttlSeconds?
 })`: a short-lived ticket signed by the host
   and bound to the caller, their session, this workspace and your module, that
   a public route of your service redeems with `deps.secrecy.redeem`, two
@@ -782,7 +785,11 @@ authority when the two differ.
   acting as a radio; `resizeKey` opens a larger panel that grows by its
   corner, its size kept by the browser; `id` serves a label's `htmlFor`; with
   `multiple`, each option is a check box and `value` is an array), `SegmentedControl`,
-  `ChoiceCards`, `ActionMenu` (a "⋯" button that unfolds secondary actions
+  `ChoiceCards`, `SecurityTierChoice` (the two cards, open or protected, of an
+  item whose module lets its tier be chosen: you write both descriptions;
+  the protected one explains itself instead of being offered when the account
+  has no password-based encryption, or for the reason you give in
+  `unavailable`; `SecurityTier`, `SecurityTierChoiceProps`), `ActionMenu` (a "⋯" button that unfolds secondary actions
   above everything: `items` of `ActionMenuItem` `{ label, icon?, onSelect,
 danger?, disabled?, detail? }`, `label`, an optional `trigger` in place of the
   dots; `ActionMenuProps`), `CopyButton` (copies `value`, confirms by its
