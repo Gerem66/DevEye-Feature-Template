@@ -162,7 +162,12 @@ value)` returns a keyed one (32 hex characters) that only the server can
   compute. `purpose` names the use, one per column; `scope` is what the value
   is unique within, the workspace id for an item's name, the item id for its
   child rows. The same value under two scopes gives unrelated digests, so a
-  copied or moved item gets its digests recomputed for where it lands.
+  digest never follows an item elsewhere: declare the column in your item
+  tree (`digests`, see the REFERENCE) and a copy lands with the destination's
+  own, a move recomputes them (`rekeyItemDigests`), and your handlers compute
+  the same value with `itemDigest`. Rows written before the column was keyed
+  are rewritten once at boot by a data step (`dataSteps` on your server
+  entry, `rekeyTreeDigests`): SQL alone cannot, it has no key.
 
 - **Key material of your own.** A module that runs its own bulk encryption
   (files, streams) owns a raw symmetric key. `ctx.keys` (the same

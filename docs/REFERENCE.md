@@ -212,7 +212,13 @@ authorUserId }, what)` (the same for a background job, the author's right
   `null` when empty or one of `ownHosts`). See
   [10-background-services](10-background-services.md#who-visits-depsgeo-and-the-visitor-helpers).
 - `FeatureServer`: your `./server` export: `features`, optional `createRepo(q)`,
-  `migrationsDir`, `createService(deps)`, `mailSamples` (every email you send,
+  `migrationsDir`, `dataSteps` (`FeatureDataStep[]`, each `{ id, atomic?,
+run(ctx) }`: a rewrite of your rows that needs a key, run once at boot after
+  the migrations and before any service, recorded by `id`; a step that throws
+  stops the boot; `ctx` is a sessionless `FeatureDataStepContext` `{ q, repo,
+cipherFor, keys, logger }` whose `cipherFor` throws when a workspace's key
+  does not open; write it to run again from the top, or set `atomic` to have
+  the step and its record commit together), `createService(deps)`, `mailSamples` (every email you send,
   on made-up data, for the administrator's mail tester: `SdkMailSample`
   `{ key, label, sender, build(ctx) }` where `ctx` is `{ origins, now }`;
   `sender: 'server'` builds an `SdkAccountMailMessage` and requires capability
@@ -275,8 +281,9 @@ workspaceId)`, optional `shareable(repo, itemId, workspaceId)` answering
   `false` for an item its tier forbids to project, required by a `shareTier`
   other than `'never'`; optional `move` (`FeatureItemsMove`: `plan(ctx)`
   returning `SdkMovePlan` `{ blockers, drops, carries?, rows }` from a
-  read-only `q`, and `apply(ctx)` given a TRANSACTIONAL `q`, your `repo` for
-  reads only, and the two workspaces' open ciphers) which lets an item change
+  read-only `q`, the open `cipher` of the workspace the item lives in and your
+  `keys`, and `apply(ctx)` given a TRANSACTIONAL `q`, your `repo` for reads
+  only, the two workspaces' open ciphers and your `keys`) which lets an item change
   workspace. Omit `move` and your items simply cannot be moved, which is the
   safe default and a valid answer when an item depends on a workspace source
   that cannot follow it; optional `copy` (`FeatureItemsCopy`: `tree`, an
@@ -309,6 +316,17 @@ drops, carries? }` on the SOURCE, and `admit(ctx)` / `settle(ctx)` on the
   (rows the destination rebuilds: moved, never copied). On the root only:
   `orderColumn` (the copy lands last), `unique` `{ column, message }` (refused
   when the destination already holds one), `tier` `{ column, open, private }`.
+  On any table of a tree without `tier`: `digests` (`ItemTreeDigest[]`, each
+  `{ column, purpose, within, from, of }`): a column holding the keyed digest
+  (`keys.ref`) of a value taken out of the sealed column `from` by `of(plain)`,
+  unique `within` the `'workspace'` or the `'item'`. A digest never travels:
+  a copy lands with the destination's own, and a bundle that carries one is
+  refused. `itemDigest(keys, digest, at, value)` is what your handlers call to
+  write or look up the column; in a move, `itemDigestTaken(q, tree, itemId,
+target)` tells `plan` whether the target already holds that name and
+  `rekeyItemDigests(q, tree, itemId, target)` recomputes them in `apply`,
+  after `resealCells`; `rekeyTreeDigests(q, tree, { cipherFor, keys })`
+  rewrites every item of the tree, for a data step.
   You never write the copy: `exportItemTree` / `importItemTree` are the host's
   business, with `itemTierOf` (which key seals the tree, an `ItemTier`),
   `countItemTreeRows` and the types `ItemTreeRow`, `ItemTreeRows`,
